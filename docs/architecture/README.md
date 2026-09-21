@@ -1,0 +1,30 @@
+# Architecture
+
+How Blinkify is put together and why the structure holds under change.
+
+## What belongs here
+
+- The layer model and the direction of dependency between renderer, shell and
+  engine
+- The IPC contract: its shape, how it is generated, and how it is versioned
+- Data flow for a concrete operation, end to end — import, preview, export
+- The edit-graph model and how it is evaluated for preview and for export
+- The caching strategy and the cache key derivation
+- Threading and cancellation: what runs where, and how work is stopped
+
+## What does not belong here
+
+- **A choice between alternatives** — that is an ADR in
+  [`../decisions/`](../decisions/). Architecture documents describe what is;
+  ADRs record why it was chosen over what it is not.
+- **How to run the build** — that is [`../engineering/`](../engineering/).
+- **What a screen looks like** — that is [`../design/`](../design/).
+
+## Conventions
+
+- One concern per file, named after the concern: `ipc-contract.md`,
+  `edit-graph-evaluation.md`, `cache-keys.md`.
+- Diagrams are ASCII or Mermaid in the Markdown itself. A diagram that lives in
+  a binary file stops matching the code within a month.
+- Every document states which Epic or issue it came from, so a reader can find
+  the discussion.

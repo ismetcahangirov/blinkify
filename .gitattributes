@@ -1,0 +1,11 @@
+# Normalise line endings so a Windows checkout does not produce a whole-file
+# diff, and so the project-graph and format gates compare like with like.
+* text=auto eol=lf
+
+# Binary, never normalised.
+*.png binary
+*.ico binary
+*.jpg binary
+*.mp4 binary
+*.mov binary
+*.mkv binary
