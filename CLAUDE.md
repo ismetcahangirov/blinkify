@@ -182,6 +182,15 @@ are where architecture goes to die. Name the thing after what it does.
   Git history is permanent; a key pushed once is a key that must be rotated.
 - **Never rewrite published history.** No force-push to `main`, ever, and none
   to a shared branch without saying so first.
+- **The repository owner is the sole author of every commit.** No assistant,
+  tool or model is ever named as an author, co-author or generator — no
+  `Co-Authored-By` trailer naming an AI, no "Generated with" line, no
+  attribution in a commit message, pull request body, issue comment or release
+  note. Authorship metadata states who is accountable for the code, and that is
+  a person; a tool that helped write a line is no more an author than the editor
+  it was typed into. This matters more here than it looks, because git history
+  is permanent and rewriting it is forbidden two bullets up — a trailer added
+  once cannot be taken back.
 
 ---
 
@@ -524,6 +533,10 @@ Absolute. No exceptions, no "just this once", no flag to turn them off.
     cause or open an issue and mark the Definition of Done honestly.
 11. **No editing an accepted ADR's decision.** Supersede it.
 12. **No committing the media test corpus.**
+13. **No AI or tool attribution anywhere in the project's record.** Not in a
+    commit trailer, not in a commit message, not in a pull request body, not in
+    an issue, not in a release note. No gate can catch this — it is caught in
+    review, which is why it is listed here and not only in section 5.
 
 ---
 
