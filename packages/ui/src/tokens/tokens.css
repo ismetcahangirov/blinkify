@@ -1,0 +1,222 @@
+/*
+ * Blinkify design tokens — the single file in which a colour value may appear.
+ *
+ * Issue #15. Rule, enforced by `tools/colour-gate.mjs`: no other file in
+ * `apps/` or `packages/` may contain a literal colour. Everything else reads a
+ * token from here.
+ *
+ * ── Two layers, and the order matters ────────────────────────────────────────
+ *
+ *   Layer 1  PRIMITIVES  — raw values. The brand triad measured from the logo,
+ *                          the neutral ramp, the state hues. These name a
+ *                          colour, not a job.
+ *   Layer 2  SEMANTIC    — role to value. These name a job, never a colour.
+ *                          Components consume only this layer.
+ *
+ * A light theme is a redefinition of layer 2 alone — see the commented block at
+ * the foot of this file. That is the whole reason for the split: a component
+ * that reads `--surface` needs no edit when `--surface` stops being dark. A
+ * component that reads `--neutral-3` would need one, which is why doing so is a
+ * review failure.
+ *
+ * ── The gradient is a brand surface, not a UI surface ────────────────────────
+ *
+ * `--brand-gradient` belongs on the logo, the primary action's brand treatment,
+ * the playhead handle and selection accents. It must never become a panel
+ * background: the editing chrome sits next to the video the user is judging by
+ * eye, and a saturated panel shifts their perception of the image. This is why
+ * professional tools look grey, and it is a deliberate choice rather than a
+ * lack of ambition. See `docs/design/colour-tokens.md`.
+ *
+ * ── Contrast ────────────────────────────────────────────────────────────────
+ *
+ * Every pair a user reads is measured, documented in
+ * `docs/design/colour-tokens.md`, and asserted by `contrast.test.ts`, which
+ * parses THIS file. Changing a value here and not the table fails the build;
+ * that is the point. Dark interfaces fail contrast quietly otherwise.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ──────────────────────────────────────────────────────────────────────────
+   * LAYER 1 — PRIMITIVES
+   * ────────────────────────────────────────────────────────────────────────── */
+
+  /* Brand. Measured from the logo: the eye's cyan-to-violet sweep.
+     These three values are the brand. They are not adjusted to taste. */
+  --brand-azure: #22a3fd;
+  --brand-indigo: #4e52fc;
+  --brand-violet: #8b46fb;
+
+  /* The brand gradient, at the logo's own angle. Brand surfaces only. */
+  --brand-gradient: linear-gradient(
+    135deg,
+    #22a3fd 0%,
+    #4e52fc 50%,
+    #8b46fb 100%
+  );
+
+  /* Indigo lifted and deepened, for the two interaction states of a brand
+     fill. Derived from `--brand-indigo`, not measured from the logo, and moved
+     only as far as the contrast table allows: lifting further costs the white
+     label its 4.5:1, deepening further costs the button its edge against the
+     background. Both limits are asserted, not remembered. */
+  --brand-indigo-lift: #5a5efd;
+  --brand-indigo-deep: #4245e8;
+
+  /* Neutral ramp, darkest to lightest, 13 steps.
+   *
+   * Not pure grey: every step carries a slight blue cast (hue ~215°, very low
+   * saturation) so the chrome reads as related to the brand. The cast is kept
+   * under the threshold where it would tint the eye's white point and change
+   * how the user judges the video in the preview — the reason a colour-managed
+   * editor is grey in the first place.
+   *
+   *   1  application background        7  border
+   *   2  sunken surface (timeline)     8  raised control fill
+   *   3  surface                       9  border-strong, disabled text
+   *   4  raised surface                10 secondary text
+   *   5  overlay surface (highest)     11 high-emphasis secondary text
+   *   6  subtle border, hover fill     12 primary text
+   *                                    13 pure white — brand fills only
+   */
+  --neutral-1: #0a0c10;
+  --neutral-2: #0e1116;
+  --neutral-3: #12161c;
+  --neutral-4: #171c23;
+  --neutral-5: #1d222a;
+  --neutral-6: #242a33;
+  --neutral-7: #2c333d;
+  --neutral-8: #39424e;
+  --neutral-9: #616d7e;
+  --neutral-10: #8a94a3;
+  --neutral-11: #b8c0cb;
+  --neutral-12: #e7ebf1;
+  /* Step 13 is pure white and is reserved for foreground on a saturated brand
+     fill, where step 12 measures 4.46:1 and misses AA by a hair. Body text is
+     step 12 on purpose: pure white on near-black is harsh to read for the hours
+     an edit takes. */
+  --neutral-13: #ffffff;
+
+  /* State hues. Chosen to clear 4.5:1 on every surface step, which is what
+     pushes them lighter than the equivalent colours on a light interface. */
+  --hue-success: #3fb950;
+  --hue-warning: #e3a33c;
+  --hue-danger: #f4676b;
+  /* Lossless is its own hue, not a second green. A user must be able to tell
+     "this export succeeded" from "this export changed no pixels" at a glance,
+     because they mean different things and only one of them is the product. */
+  --hue-lossless: #2fd9c3;
+
+  /* Timeline clip fills. Deliberately dark and desaturated: a timeline of
+     bright clips competes with the preview above it, and the clip is a
+     container for a thumbnail strip rather than a thing to look at itself. */
+  --hue-clip-video: #273358;
+  --hue-clip-video-edge: #55639b;
+  --hue-clip-audio: #1b4740;
+  --hue-clip-audio-edge: #3f7f73;
+
+  /* ──────────────────────────────────────────────────────────────────────────
+   * LAYER 2 — SEMANTIC ROLES
+   *
+   * Role to value. Components read these and nothing above them.
+   * ────────────────────────────────────────────────────────────────────────── */
+
+  /* Surfaces, in stacking order. */
+  --background: var(--neutral-1); /* the application window itself */
+  --surface-sunken: var(--neutral-2); /* recessed: timeline track bed */
+  --surface: var(--neutral-3); /* panels */
+  --surface-raised: var(--neutral-4); /* cards, inputs, toolbars */
+  --surface-overlay: var(--neutral-5); /* menus, popovers, dialogs */
+
+  /* Fills for interactive states on a neutral control. */
+  --surface-hover: var(--neutral-6);
+  --surface-active: var(--neutral-8);
+
+  /* Borders.
+     `--border` separates; it is decoration and carries no contrast duty.
+     `--border-strong` is what makes a control identifiable as a control, so it
+     is held to the 3:1 that WCAG 1.4.11 requires of a component boundary. */
+  --border: var(--neutral-7);
+  --border-strong: var(--neutral-9);
+
+  /* Text. */
+  --text-primary: var(--neutral-12);
+  --text-secondary: var(--neutral-10);
+  /* Disabled text is exempt from WCAG 1.4.3 as an inactive component, but it is
+     still read by someone trying to work out why a control will not respond, so
+     it is held to 3:1 on every surface rather than allowed to fade out. */
+  --text-disabled: var(--neutral-9);
+  /* Accent-coloured text and icons on a dark surface. Azure, not the accent
+     fill: brand indigo as text measures 3.67:1 and fails AA, and shipping a
+     link nobody can read is exactly the quiet failure this token set exists to
+     prevent. */
+  --text-accent: var(--brand-azure);
+
+  /* Accent — the primary action's fill. Brand indigo, unmodified, carrying pure
+     white. Hover moves lighter and pressed moves darker; both keep their text
+     above 4.5:1 and their own edge above 3:1 against the background. */
+  --accent: var(--brand-indigo);
+  --accent-hover: var(--brand-indigo-lift);
+  --accent-pressed: var(--brand-indigo-deep);
+  --accent-foreground: var(--neutral-13);
+
+  /* Focus. One ring, everywhere.
+   *
+   * The geometry is a token rather than a component's choice because the
+   * contrast claim depends on it. Azure on the indigo accent fill measures
+   * 1.96:1 — well under the 3:1 a focus indicator owes WCAG §1.4.11 — so the
+   * ring is never allowed to touch the control it focuses. Drawn with a
+   * non-zero offset it sits on the surface behind the control instead, where it
+   * measures between 5.87:1 and 7.19:1, and the failing pair simply stops
+   * existing. Set the offset to zero and the ring becomes unmeasurable against
+   * every saturated fill in the system.
+   *
+   * Consume as: `outline: var(--focus-ring-width) solid var(--focus-ring);
+   *              outline-offset: var(--focus-ring-offset);`
+   */
+  --focus-ring: var(--brand-azure);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* State roles. */
+  --success: var(--hue-success);
+  --warning: var(--hue-warning);
+  --danger: var(--hue-danger);
+  /* Used by the lossless indicator and nothing else. If this colour appears
+     anywhere that is not a statement about whether pixels were preserved, the
+     signal it carries is gone. `CLAUDE.md` section 17. */
+  --lossless: var(--hue-lossless);
+
+  /* Timeline. The canvas renderer (#33) cannot read CSS, so it resolves these
+     through `getComputedStyle(document.documentElement)` at paint time — see
+     `docs/design/colour-tokens.md`. That is why the playhead is a solid colour
+     here and the gradient is applied to its DOM handle instead: a gradient
+     token would be unusable from canvas and would push #33 into hard-coding. */
+  --timeline-track: var(--surface-sunken);
+  --timeline-clip-video: var(--hue-clip-video);
+  --timeline-clip-video-border: var(--hue-clip-video-edge);
+  --timeline-clip-audio: var(--hue-clip-audio);
+  --timeline-clip-audio-border: var(--hue-clip-audio-edge);
+  --timeline-clip-label: var(--neutral-12);
+  --timeline-clip-selected-border: var(--brand-azure);
+  --timeline-playhead: var(--brand-azure);
+  --timeline-ruler-text: var(--neutral-10);
+}
+
+/*
+ * The light theme is out of scope for #15 — Epic #2 states it explicitly. It is
+ * recorded here as a shape, not as a promise: when it is built it redefines
+ * layer 2 and nothing else.
+ *
+ *   :root[data-theme="light"] {
+ *     --background: var(--neutral-12);
+ *     --surface: var(--neutral-13);
+ *     --text-primary: var(--neutral-1);
+ *     ...
+ *   }
+ *
+ * If a light theme ever needs to edit a component, layer 2 has a hole in it and
+ * the hole is the bug.
+ */

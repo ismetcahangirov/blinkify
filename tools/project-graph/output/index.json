@@ -5,8 +5,8 @@
     "tools"
   ],
   "totals": {
-    "files": 29,
-    "tests": 2,
+    "files": 34,
+    "tests": 3,
     "violations": 0
   },
   "byWorkspace": {
@@ -33,18 +33,20 @@
       ]
     },
     "packages/ui": {
-      "files": 1,
-      "tests": 0,
+      "files": 4,
+      "tests": 1,
       "untested": [
         "packages/ui/src/index.ts"
       ]
     },
     "tools": {
-      "files": 13,
+      "files": 15,
       "tests": 0,
       "untested": [
         "tools/apply-labels.mjs",
         "tools/check-links.mjs",
+        "tools/colour-gate-test.mjs",
+        "tools/colour-gate.mjs",
         "tools/crate-boundaries-test.mjs",
         "tools/crate-boundaries.mjs",
         "tools/generate-types-index.mjs",
@@ -258,7 +260,50 @@
       "workspace": "packages/ui",
       "layer": "design-system",
       "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/tokens/contrast.ts",
+        "packages/ui/src/tokens/contrastPairs.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/tokens/contrast.ts": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
       "dependsOn": [],
+      "dependedOnBy": [
+        "packages/ui/src/index.ts",
+        "packages/ui/src/tokens/tokens.test.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/tokens/tokens.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/tokens/contrastPairs.ts": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/ui/src/index.ts",
+        "packages/ui/src/tokens/tokens.test.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/tokens/tokens.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/tokens/tokens.test.ts": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": true,
+      "dependsOn": [
+        "packages/ui/src/tokens/contrast.ts",
+        "packages/ui/src/tokens/contrastPairs.ts"
+      ],
       "dependedOnBy": [],
       "coveredByTests": [],
       "hasNoDependents": true
@@ -273,6 +318,24 @@
       "hasNoDependents": true
     },
     "tools/check-links.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/colour-gate-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/colour-gate.mjs": {
       "workspace": "tools",
       "layer": "tooling",
       "isTest": false,

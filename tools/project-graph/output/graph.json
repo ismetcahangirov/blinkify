@@ -426,9 +426,106 @@
     },
     {
       "source": "packages/ui/src/index.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./tokens/contrast.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/ui/src/tokens/contrast.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./tokens/contrastPairs.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/ui/src/tokens/contrastPairs.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [],
-      "orphan": true,
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/ui/src/tokens/contrast.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/ui/src/index.ts",
+        "packages/ui/src/tokens/tokens.test.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/ui/src/tokens/contrastPairs.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/ui/src/index.ts",
+        "packages/ui/src/tokens/tokens.test.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/ui/src/tokens/tokens.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./contrast.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "packages/ui/src/tokens/contrast.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./contrastPairs.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "packages/ui/src/tokens/contrastPairs.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
       "valid": true
     },
     {
@@ -440,6 +537,20 @@
     },
     {
       "source": "tools/check-links.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/colour-gate-test.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/colour-gate.mjs",
       "dependencies": [],
       "dependents": [],
       "orphan": false,
@@ -530,8 +641,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 29,
-    "totalDependenciesCruised": 16,
+    "totalCruised": 34,
+    "totalDependenciesCruised": 20,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

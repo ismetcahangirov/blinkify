@@ -2,6 +2,11 @@
 
 The visual language of Blinkify and the structure of its interface.
 
+## Contents
+
+- [`colour-tokens.md`](./colour-tokens.md) — the palette, the role of every
+  token, and the measured contrast of every pair a user reads
+
 ## What belongs here
 
 - Brand tokens derived from the logo: palette, semantic colour roles

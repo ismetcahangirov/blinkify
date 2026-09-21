@@ -1,15 +1,71 @@
+@import "tailwindcss";
+@import "@blinkify/ui/tokens.css";
+
 /*
- * Placeholder only. The real token set is derived from the logo in #15 and the
- * scales are defined in #16 — do not grow this file into a design system.
- * Dark first: CLAUDE.md section 17, because video work happens against dark
+ * The renderer's stylesheet.
+ *
+ * It holds no colour values. Every one of them lives in
+ * `packages/ui/src/tokens/tokens.css` (#15) and arrives here through the import
+ * above; `pnpm colours:check` fails the build on a literal in this file.
+ *
+ * Dark first — CLAUDE.md section 17 — because video work happens against dark
  * chrome so the preview is what the eye adapts to.
  */
 
+/*
+ * The token set, published to Tailwind.
+ *
+ * `inline` rather than a plain `@theme`: the values here are already `var()`
+ * references into the token file, and without `inline` Tailwind would emit a
+ * second indirection of its own and a `bg-surface` utility would stop tracking
+ * a runtime theme change.
+ *
+ * The names mirror the semantic tokens exactly, which is why `--text-primary`
+ * becomes the slightly repetitive `text-text-primary` utility. A shorter alias
+ * would mean two vocabularies for one palette — the documentation calling it
+ * `--text-primary` and the markup calling it something else — and a translation
+ * step is where a design system starts being guessed at.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-accent: var(--text-accent);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-pressed: var(--accent-pressed);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-focus-ring: var(--focus-ring);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-lossless: var(--lossless);
+
+  --color-timeline-track: var(--timeline-track);
+  --color-timeline-clip-video: var(--timeline-clip-video);
+  --color-timeline-clip-video-border: var(--timeline-clip-video-border);
+  --color-timeline-clip-audio: var(--timeline-clip-audio);
+  --color-timeline-clip-audio-border: var(--timeline-clip-audio-border);
+  --color-timeline-clip-label: var(--timeline-clip-label);
+  --color-timeline-clip-selected-border: var(--timeline-clip-selected-border);
+  --color-timeline-playhead: var(--timeline-playhead);
+  --color-timeline-ruler-text: var(--timeline-ruler-text);
+}
+
 :root {
-  color-scheme: dark;
-  --shell-bg: #0b0d0f;
-  --shell-fg: #e8eaed;
-  --shell-muted: #8b9199;
   font-family:
     "Segoe UI Variable Text",
     "Segoe UI",
@@ -18,54 +74,35 @@
     sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-}
-
 html,
 body,
 #root {
   height: 100%;
-  margin: 0;
 }
 
 body {
-  background: var(--shell-bg);
-  color: var(--shell-fg);
-}
-
-.shell {
-  display: flex;
-  height: 100%;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-}
-
-.shell__wordmark {
-  margin: 0;
-  font-size: 2.5rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.shell__tagline,
-.shell__status {
-  margin: 0;
-  color: var(--shell-muted);
-}
-
-.shell__status {
-  font-size: 0.8125rem;
+  background: var(--background);
+  color: var(--text-primary);
 }
 
 /*
- * The update banner. Plain on purpose — #15 and #16 own the token set, and
- * styling this against tokens that do not exist yet means styling it twice.
- * It sits at the top of the shell rather than over it: an update offer is
- * information, not an interruption, and a modal would stop someone opening the
- * application they came to open.
+ * One focus treatment for the whole application, defined once.
+ *
+ * The offset is not decoration. Azure on the accent fill measures 1.96:1, well
+ * under the 3:1 a focus indicator owes WCAG 1.4.11; the offset puts the ring on
+ * the surface behind the control, where it measures 5.87:1 or better. See
+ * docs/design/colour-tokens.md.
+ */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/*
+ * The update banner. Still plain — #17 rebuilds it on the primitives — but no
+ * longer holding its own colours. It sits at the top of the shell rather than
+ * over it: an update offer is information, not an interruption, and a modal
+ * would stop someone opening the application they came to open.
  */
 .update-banner {
   position: fixed;
@@ -78,8 +115,8 @@ body {
   justify-content: center;
   gap: 0.75rem;
   padding: 0.625rem 1rem;
-  background: #16191d;
-  border-bottom: 1px solid #262b31;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
   font-size: 0.8125rem;
 }
 
@@ -91,7 +128,7 @@ body {
 .update-banner__error {
   width: 100%;
   text-align: center;
-  color: #f0a3a3;
+  color: var(--danger);
 }
 
 .update-banner__actions {
@@ -101,15 +138,19 @@ body {
 
 .update-banner button {
   padding: 0.3125rem 0.75rem;
-  border: 1px solid #333a42;
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
-  background: #1f242a;
-  color: var(--shell-fg);
+  background: var(--surface-overlay);
+  color: var(--text-primary);
   font: inherit;
   cursor: pointer;
 }
 
+.update-banner button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
 .update-banner button:disabled {
   cursor: default;
-  opacity: 0.6;
+  color: var(--text-disabled);
 }
