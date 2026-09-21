@@ -5,7 +5,7 @@
     "tools"
   ],
   "totals": {
-    "files": 24,
+    "files": 25,
     "tests": 1,
     "violations": 0
   },
@@ -39,7 +39,7 @@
       ]
     },
     "tools": {
-      "files": 12,
+      "files": 13,
       "tests": 0,
       "untested": [
         "tools/apply-labels.mjs",
@@ -53,7 +53,8 @@
         "tools/project-graph/generate.mjs",
         "tools/project-graph/injection-test.mjs",
         "tools/project-graph/query.mjs",
-        "tools/project-graph/validate.mjs"
+        "tools/project-graph/validate.mjs",
+        "tools/version.mjs"
       ]
     }
   },
@@ -302,6 +303,15 @@
       "hasNoDependents": true
     },
     "tools/project-graph/validate.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/version.mjs": {
       "workspace": "tools",
       "layer": "tooling",
       "isTest": false,

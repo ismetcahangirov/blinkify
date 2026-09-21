@@ -3,10 +3,11 @@
 Two workflows. The distinction between them is the point of this document:
 **one blocks a merge, the other blocks a release.**
 
-| Workflow                                         | Runs on                                | Blocks    |
-| ------------------------------------------------ | -------------------------------------- | --------- |
-| [`ci.yml`](../../.github/workflows/ci.yml)       | Every pull request, and push to `main` | A merge   |
-| [`heavy.yml`](../../.github/workflows/heavy.yml) | Weekly, on demand, and on a `v*` tag   | A release |
+| Workflow                                             | Runs on                                | Blocks                                                           |
+| ---------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------- |
+| [`ci.yml`](../../.github/workflows/ci.yml)           | Every pull request, and push to `main` | A merge                                                          |
+| [`heavy.yml`](../../.github/workflows/heavy.yml)     | Weekly, on demand, and on a `v*` tag   | A release                                                        |
+| [`release.yml`](../../.github/workflows/release.yml) | A `v*` tag                             | Nothing — it _is_ the release. See [`release.md`](./release.md). |
 
 Both run on `windows-latest`, and only there.
 

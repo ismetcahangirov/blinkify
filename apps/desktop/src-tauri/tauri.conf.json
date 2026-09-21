@@ -33,6 +33,15 @@
     "publisher": "Ismet Cahangirov",
     "copyright": "Copyright © 2026 Ismet Cahangirov",
     "category": "Video",
+    "fileAssociations": [
+      {
+        "ext": ["blinkify"],
+        "name": "Blinkify Project",
+        "description": "A Blinkify project",
+        "role": "Editor",
+        "mimeType": "application/x-blinkify"
+      }
+    ],
     "shortDescription": "Edit video without degrading it",
     "longDescription": "A Windows desktop video editor that copies what it can and re-encodes only what it must, and tells you which is which.",
     "icon": [
@@ -43,6 +52,10 @@
       "icons/icon.ico"
     ],
     "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": false
+      },
       "nsis": {
         "installMode": "currentUser"
       }

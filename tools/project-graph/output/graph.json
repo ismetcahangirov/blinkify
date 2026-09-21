@@ -370,6 +370,13 @@
       "dependents": [],
       "orphan": false,
       "valid": true
+    },
+    {
+      "source": "tools/version.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
     }
   ],
   "summary": {
@@ -379,7 +386,7 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 24,
+    "totalCruised": 25,
     "totalDependenciesCruised": 10,
     "optionsUsed": {
       "combinedDependencies": false,

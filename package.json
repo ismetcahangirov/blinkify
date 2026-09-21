@@ -25,6 +25,8 @@
     "format:rust:check": "cargo fmt --all --check",
     "check:links": "node tools/check-links.mjs",
     "labels:check": "node tools/apply-labels.mjs --check",
+    "version:check": "node tools/version.mjs",
+    "version:set": "node tools/version.mjs --set",
     "graph": "node tools/project-graph/generate.mjs",
     "graph:check": "node tools/project-graph/check.mjs",
     "graph:validate": "node tools/project-graph/validate.mjs",
@@ -35,7 +37,7 @@
     "deny:licenses": "cargo deny check licenses",
     "deny:test": "node tools/licence-gate-test.mjs",
     "gates:prove": "pnpm run graph:injection && pnpm run graph:determinism && pnpm run boundaries:rust:test && pnpm run deny:test",
-    "verify": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run format:rust:check && pnpm run lint:rust && pnpm run test && pnpm run build && pnpm run check:links && pnpm run graph:validate && pnpm run boundaries:rust && pnpm run deny:licenses && pnpm run gates:prove && pnpm run graph:check"
+    "verify": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run format:rust:check && pnpm run lint:rust && pnpm run test && pnpm run build && pnpm run check:links && pnpm run version:check && pnpm run graph:validate && pnpm run boundaries:rust && pnpm run deny:licenses && pnpm run gates:prove && pnpm run graph:check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

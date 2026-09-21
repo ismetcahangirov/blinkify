@@ -10,7 +10,8 @@ How to work on Blinkify day to day.
   what each one does not cover, and how to prove one still fires
 - [`ci.md`](./ci.md) — the two pipelines, what blocks a merge versus what blocks
   a release, and how to reproduce a CI failure locally
-- The release process and the unsigned-binary gap
+- [`release.md`](./release.md) — cutting a release, the updater signing key, and
+  the unsigned-binary gap
 - Local environment setup: toolchain versions, WebView2, MSVC build tools
 - Debugging guides — the Tauri IPC boundary, the FFmpeg sidecar, the timeline
   canvas
