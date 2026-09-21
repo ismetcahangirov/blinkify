@@ -87,7 +87,12 @@ export default tseslint.config(
 
   /* Node-side tooling. */
   {
-    files: ["tools/**/*.mjs", "*.config.{ts,mts,mjs}", "**/vite.config.ts"],
+    files: [
+      "tools/**/*.mjs",
+      "*.config.{ts,mts,mjs}",
+      "**/vite.config.ts",
+      ".dependency-cruiser.cjs",
+    ],
     languageOptions: {
       globals: { ...globals.node },
     },
@@ -96,9 +101,12 @@ export default tseslint.config(
     },
   },
 
-  /* Plain .mjs tools are not in a tsconfig; do not type-check them. */
+  /* Plain .mjs and .cjs tooling is not in a tsconfig; do not type-check it.
+     Without this the project service rejects the file outright — `was not
+     found by the project service` — which fails the lint gate on a config file
+     that is not TypeScript and never will be. */
   {
-    files: ["**/*.mjs"],
+    files: ["**/*.mjs", "**/*.cjs"],
     ...tseslint.configs.disableTypeChecked,
   },
 );

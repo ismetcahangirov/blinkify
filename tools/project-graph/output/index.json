@@ -1,0 +1,314 @@
+{
+  "scanned": [
+    "apps",
+    "packages",
+    "tools"
+  ],
+  "totals": {
+    "files": 24,
+    "tests": 1,
+    "violations": 0
+  },
+  "byWorkspace": {
+    "apps/desktop": {
+      "files": 6,
+      "tests": 1,
+      "untested": [
+        "apps/desktop/src/main.tsx",
+        "apps/desktop/src/shell.store.ts",
+        "apps/desktop/src/styles.css",
+        "apps/desktop/vite.config.ts"
+      ]
+    },
+    "packages/types": {
+      "files": 5,
+      "tests": 0,
+      "untested": [
+        "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/ReEncodeReason.ts",
+        "packages/types/src/generated/SeamReason.ts",
+        "packages/types/src/generated/index.ts",
+        "packages/types/src/index.ts"
+      ]
+    },
+    "packages/ui": {
+      "files": 1,
+      "tests": 0,
+      "untested": [
+        "packages/ui/src/index.ts"
+      ]
+    },
+    "tools": {
+      "files": 12,
+      "tests": 0,
+      "untested": [
+        "tools/apply-labels.mjs",
+        "tools/check-links.mjs",
+        "tools/crate-boundaries-test.mjs",
+        "tools/crate-boundaries.mjs",
+        "tools/generate-types-index.mjs",
+        "tools/licence-gate-test.mjs",
+        "tools/project-graph/check.mjs",
+        "tools/project-graph/determinism-test.mjs",
+        "tools/project-graph/generate.mjs",
+        "tools/project-graph/injection-test.mjs",
+        "tools/project-graph/query.mjs",
+        "tools/project-graph/validate.mjs"
+      ]
+    }
+  },
+  "violations": [],
+  "files": {
+    "apps/desktop/src/App.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/App.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/App.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/shell.store.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/App.test.tsx",
+        "apps/desktop/src/main.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/App.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/main.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/styles.css"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/shell.store.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "apps/desktop/src/App.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/styles.css": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "apps/desktop/src/main.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/vite.config.ts": {
+      "workspace": "apps/desktop",
+      "layer": "apps/desktop",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/types/src/generated/ExportTier.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/ReEncodeReason.ts",
+        "packages/types/src/generated/SeamReason.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/ReEncodeReason.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/SeamReason.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/index.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/ReEncodeReason.ts",
+        "packages/types/src/generated/SeamReason.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/index.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/index.ts": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/apply-labels.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/check-links.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/crate-boundaries-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/crate-boundaries.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/generate-types-index.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/licence-gate-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/project-graph/check.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/project-graph/determinism-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/project-graph/generate.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/project-graph/injection-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/project-graph/query.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/project-graph/validate.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    }
+  }
+}

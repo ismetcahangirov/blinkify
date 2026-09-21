@@ -1,0 +1,85 @@
+# cargo-deny — the licence gate for every Rust dependency.
+#
+# ADR-0002 and CLAUDE.md section 10: a GPL or AGPL dependency anywhere in the
+# tree would make Blinkify GPL and remove the option of a commercial product.
+# That is not a licence preference, it is a one-way door, and the whole point of
+# this file is that walking through it fails a gate rather than being noticed in
+# a legal review two years from now.
+#
+# `cargo deny check licenses` is a blocking gate. Adding a licence to `allow`
+# is a deliberate act: read section 10 first, and record the reasoning here.
+
+[graph]
+# Check every feature combination. A GPL crate hiding behind an off-by-default
+# feature is still a GPL crate in the dependency tree, and a future `--features`
+# flag turns it on without touching this file.
+all-features = true
+
+[licenses]
+# Permissive only. Every entry is a licence that imposes no obligation on the
+# combined work beyond attribution, which THIRD_PARTY.md carries.
+#
+# LGPL is deliberately absent. ADR-0002 permits it only across a process
+# boundary, and the FFmpeg sidecar — the one thing that uses it — is a separate
+# process invoked by argument vector, not a Rust crate. An LGPL *crate* would be
+# statically linked into the binary, which is the case ADR-0002 rules out. If
+# one is ever genuinely needed it gets its own ADR, not a line here.
+allow = [
+    "MIT",
+    "MIT-0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "BSL-1.0",
+    "CC0-1.0",
+    "Unicode-3.0",
+    "Unlicense",
+    "NCSA",
+    # File-level copyleft. It reaches the file it covers and nothing else: it
+    # places no obligation on Blinkify's own sources or on the shipped binary
+    # beyond keeping the crate's own source available, which crates.io already
+    # does. Distinct from GPL and LGPL, which reach the combined work, and
+    # which is why those are not here.
+    "MPL-2.0",
+]
+
+# A licence expression the scanner is less than this sure about is treated as
+# unknown and fails the gate. The default is 0.8; a crate whose licence we can
+# only guess at is exactly the case this file exists to catch.
+confidence-threshold = 0.93
+
+# An allowed licence that nothing in the tree currently uses is not a problem —
+# it is a decision already taken about a licence family, waiting for the first
+# crate that needs it. Warning about each one buries the output that matters
+# under noise that is correct.
+unused-allowed-license = "allow"
+
+# Empty on purpose. An exception is a crate allowed to carry a licence the
+# project otherwise rejects, and every one of them is a decision that belongs in
+# an ADR with the alternatives that were rejected — not a line added in passing.
+exceptions = []
+
+[bans]
+# Licence checking is this file's job today. Duplicate-version and banned-crate
+# policy arrives with the FFmpeg sidecar work in Epic #3, where there will be
+# something to say about it.
+multiple-versions = "allow"
+wildcards = "deny"
+
+[advisories]
+# Advisories are checked by `cargo deny check advisories` in CI (#13). They are
+# a separate gate from licences on purpose: a new advisory can turn a green
+# build red without anybody changing a line, and that must not be confused with
+# a contributor having introduced a GPL dependency.
+yanked = "deny"
+
+[sources]
+# crates.io only. A git dependency is an unreviewed, unpinned-by-registry supply
+# chain edge; CLAUDE.md section 10 requires a pinned lockfile and a licence you
+# can name, and a git URL gives neither by default.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

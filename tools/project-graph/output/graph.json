@@ -1,0 +1,542 @@
+{
+  "modules": [
+    {
+      "source": "apps/desktop/src/App.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./App.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/App.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/App.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./shell.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shell.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/App.test.tsx",
+        "apps/desktop/src/main.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/main.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./App.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/App.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./styles.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/styles.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/shell.store.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/desktop/src/App.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/styles.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "apps/desktop/src/main.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/vite.config.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/ExportTier.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ReEncodeReason",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ReEncodeReason.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SeamReason",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/SeamReason.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/ReEncodeReason.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/SeamReason.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ExportTier",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ExportTier.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ReEncodeReason",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ReEncodeReason.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SeamReason",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/SeamReason.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/index.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./generated/index.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/ui/src/index.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
+      "source": "tools/apply-labels.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/check-links.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/crate-boundaries-test.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/crate-boundaries.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/generate-types-index.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/licence-gate-test.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/project-graph/check.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/project-graph/determinism-test.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/project-graph/generate.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/project-graph/injection-test.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/project-graph/query.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/project-graph/validate.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    }
+  ],
+  "summary": {
+    "violations": [],
+    "error": 0,
+    "warn": 0,
+    "info": 0,
+    "ignore": 0,
+    "advisedExitCode": 0,
+    "totalCruised": 24,
+    "totalDependenciesCruised": 10,
+    "optionsUsed": {
+      "combinedDependencies": false,
+      "detectJSDocImports": false,
+      "detectProcessBuiltinModuleCalls": false,
+      "doNotFollow": {
+        "path": "node_modules"
+      },
+      "enhancedResolveOptions": {
+        "exportsFields": [
+          "exports"
+        ],
+        "conditionNames": [
+          "import",
+          "require",
+          "node",
+          "default",
+          "types"
+        ],
+        "extensions": [
+          ".js",
+          ".jsx",
+          ".ts",
+          ".tsx",
+          ".mjs",
+          ".cjs",
+          ".json",
+          ".d.ts"
+        ],
+        "mainFields": [
+          "module",
+          "main",
+          "types",
+          "typings"
+        ]
+      },
+      "exclude": {
+        "path": "^(apps|packages|tools)/.*/(dist|build|coverage)/|^(apps|packages|tools)/.*/\\.turbo/|^apps/desktop/src-tauri/(gen|target)/|^tools/project-graph/output/"
+      },
+      "exoticRequireStrings": [],
+      "externalModuleResolutionStrategy": "node_modules",
+      "metrics": false,
+      "moduleSystems": [
+        "es6",
+        "cjs",
+        "tsd",
+        "amd"
+      ],
+      "outputTo": "-",
+      "outputType": "json",
+      "preserveSymlinks": false,
+      "reporterOptions": {
+        "dot": {
+          "collapsePattern": "node_modules/(?:@[^/]+/[^/]+|[^/]+)"
+        },
+        "archi": {
+          "collapsePattern": "^(?:packages|apps|tools)/[^/]+|node_modules/(?:@[^/]+/[^/]+|[^/]+)"
+        }
+      },
+      "rulesFile": ".dependency-cruiser.cjs",
+      "skipAnalysisNotInRules": false,
+      "tsPreCompilationDeps": true,
+      "args": "apps packages tools"
+    },
+    "ruleSetUsed": {
+      "forbidden": [
+        {
+          "name": "no-circular",
+          "severity": "error",
+          "comment": "Circular dependencies make modules impossible to reason about or test in isolation.",
+          "from": {},
+          "to": {
+            "circular": true
+          },
+          "scope": "module"
+        },
+        {
+          "name": "no-deprecated-core",
+          "severity": "error",
+          "comment": "Deprecated Node core modules will be removed in a future runtime.",
+          "from": {},
+          "to": {
+            "dependencyTypes": [
+              "core"
+            ],
+            "path": "^(punycode|domain|sys|constants)$"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "not-to-dev-dep",
+          "severity": "error",
+          "comment": "Shipped code must not import a devDependency — it will be absent from the bundle the installer carries.",
+          "from": {
+            "path": "^(apps|packages)",
+            "pathNot": "\\.(test|spec)\\.(ts|tsx)$|/__tests__/|(^|/)(eslint|vite|vitest)\\.config\\.(ts|mts|mjs)$"
+          },
+          "to": {
+            "dependencyTypes": [
+              "npm-dev"
+            ]
+          },
+          "scope": "module"
+        },
+        {
+          "name": "no-non-package-json",
+          "severity": "error",
+          "comment": "Dependency used but not declared in package.json — breaks on a clean install.",
+          "from": {},
+          "to": {
+            "dependencyTypes": [
+              "unknown",
+              "undetermined",
+              "npm-no-pkg",
+              "npm-unknown"
+            ],
+            "pathNot": "^(apps|packages|tools)/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "renderer-not-into-engine",
+          "severity": "error",
+          "comment": "CLAUDE.md section 2: the renderer never reaches the engine directly. It calls Tauri commands and consumes Tauri events, both typed by packages/types, which is generated from the Rust definitions. A renderer file importing from crates/ or src-tauri/ either will not build or is a second, hand-maintained copy of the IPC contract — and a drifting IPC contract is the bug class packages/types exists to design out.",
+          "from": {
+            "path": "^apps/desktop/src/"
+          },
+          "to": {
+            "path": "^(crates/|apps/desktop/src-tauri/)"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "ui-package-stays-shared",
+          "severity": "error",
+          "comment": "packages/* are leaf libraries. A design system that reaches back into an application is not a design system — it is that application with extra steps, and it cannot be used anywhere else. Named for packages/ui, which CLAUDE.md section 4 calls out by name; scoped to every shared package because the reasoning does not stop at ui.",
+          "from": {
+            "path": "^packages/"
+          },
+          "to": {
+            "path": "^apps/"
+          },
+          "scope": "module"
+        },
+        {
+          "name": "engine-contract-is-generated",
+          "severity": "error",
+          "comment": "packages/types is generated from the Rust types by `pnpm types:generate`. Nothing in it may import application or design-system code: the contract has to be readable by anything that speaks to the engine, and an import out of it inverts that.",
+          "from": {
+            "path": "^packages/types/"
+          },
+          "to": {
+            "path": "^(apps/|packages/ui/)"
+          },
+          "scope": "module"
+        }
+      ]
+    }
+  }
+}
