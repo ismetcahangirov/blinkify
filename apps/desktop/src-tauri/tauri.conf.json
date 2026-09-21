@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Blinkify",
+  "version": "../package.json",
+  "identifier": "com.blinkify.desktop",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "pnpm --filter @blinkify/desktop dev",
+    "beforeBuildCommand": "pnpm --filter @blinkify/desktop build"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "title": "Blinkify",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 640,
+        "resizable": true,
+        "theme": "Dark",
+        "backgroundColor": "#0B0D0F"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data:; media-src 'self' asset: http://asset.localhost; style-src 'self' 'unsafe-inline'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Ismet Cahangirov",
+    "copyright": "Copyright © 2026 Ismet Cahangirov",
+    "category": "Video",
+    "shortDescription": "Edit video without degrading it",
+    "longDescription": "A Windows desktop video editor that copies what it can and re-encodes only what it must, and tells you which is which.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  }
+}

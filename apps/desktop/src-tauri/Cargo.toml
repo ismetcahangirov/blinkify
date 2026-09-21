@@ -1,0 +1,26 @@
+[package]
+name = "blinkify-desktop"
+description = "The Blinkify Tauri shell. Thin: window, commands, events."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+# Tauri 2 builds the application as a library so the mobile targets and the
+# desktop binary share one entry point.
+name = "blinkify_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+blinkify-engine = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tauri = { version = "2.11.6", features = [] }
+
+[lints]
+workspace = true

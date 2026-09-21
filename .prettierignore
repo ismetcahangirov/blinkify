@@ -1,0 +1,7 @@
+node_modules
+dist
+target
+.turbo
+pnpm-lock.yaml
+apps/desktop/src-tauri/gen
+tools/project-graph/output

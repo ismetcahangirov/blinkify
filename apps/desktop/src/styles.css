@@ -1,0 +1,61 @@
+/*
+ * Placeholder only. The real token set is derived from the logo in #15 and the
+ * scales are defined in #16 — do not grow this file into a design system.
+ * Dark first: CLAUDE.md section 17, because video work happens against dark
+ * chrome so the preview is what the eye adapts to.
+ */
+
+:root {
+  color-scheme: dark;
+  --shell-bg: #0b0d0f;
+  --shell-fg: #e8eaed;
+  --shell-muted: #8b9199;
+  font-family:
+    "Segoe UI Variable Text",
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--shell-bg);
+  color: var(--shell-fg);
+}
+
+.shell {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.shell__wordmark {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.shell__tagline,
+.shell__status {
+  margin: 0;
+  color: var(--shell-muted);
+}
+
+.shell__status {
+  font-size: 0.8125rem;
+}
