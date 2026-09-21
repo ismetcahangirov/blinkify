@@ -12,6 +12,15 @@ runs:
       uses: actions/setup-node@v5
       with:
         node-version-file: .nvmrc
+        # Off, and this is not optional. `package-manager-cache` defaults to
+        # true, and setup-node reads `packageManager` from package.json and then
+        # shells out to `pnpm store path` to find the directory to cache — while
+        # pnpm is still two steps from existing. The failure is
+        # `Unable to locate executable file: pnpm`, reported against setup-node,
+        # which reads as a broken runner image rather than as an ordering
+        # problem. This action does its own store caching below, after pnpm is
+        # installed, so nothing is lost by turning it off.
+        package-manager-cache: false
 
     - name: Activate the pnpm pinned in packageManager
       shell: pwsh
