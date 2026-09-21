@@ -1,0 +1,57 @@
+name: Set up Node and pnpm
+description: >
+  Install the pinned Node, activate the pinned pnpm, restore the pnpm store and
+  install the workspace with a frozen lockfile. Every version comes from a file
+  in the repository, never from a literal here — CLAUDE.md section 3: an
+  unpinned toolchain makes a CI failure unreproducible locally.
+
+runs:
+  using: composite
+  steps:
+    - name: Install Node from .nvmrc
+      uses: actions/setup-node@v5
+      with:
+        node-version-file: .nvmrc
+
+    - name: Activate the pnpm pinned in packageManager
+      shell: pwsh
+      run: |
+        # `packageManager` in package.json is the single source of truth, so the
+        # version is never typed twice and cannot drift from what a contributor
+        # runs locally.
+        $pm = (Get-Content package.json -Raw | ConvertFrom-Json).packageManager
+        if (-not $pm) { throw "package.json has no packageManager field." }
+
+        # Corepack is bundled with Node 24 and is the intended route. It is on
+        # its way out of the Node distribution, so fall back to a global install
+        # of the same pinned version rather than failing the whole pipeline on a
+        # Node bump — the pin still holds either way.
+        if (Get-Command corepack -ErrorAction SilentlyContinue) {
+          corepack enable
+          corepack prepare $pm --activate
+        } else {
+          Write-Output "::notice::corepack is absent from this Node build; installing $pm with npm instead."
+          npm install -g $pm
+        }
+        pnpm --version
+
+    - name: Locate the pnpm store
+      id: store
+      shell: pwsh
+      run: 'Add-Content $env:GITHUB_OUTPUT "path=$(pnpm store path --silent)"'
+
+    - name: Restore the pnpm store
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.store.outputs.path }}
+        key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+        # A partial restore still saves most of the download. A lockfile change
+        # usually moves a handful of packages, not all of them.
+        restore-keys: pnpm-store-${{ runner.os }}-
+
+    - name: Install the workspace
+      shell: pwsh
+      # `--frozen-lockfile` so a lockfile that does not match package.json fails
+      # here rather than being silently updated, which would make CI test a
+      # dependency tree no contributor has.
+      run: pnpm install --frozen-lockfile

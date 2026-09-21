@@ -1,0 +1,53 @@
+name: Set up Rust
+description: >
+  Install the toolchain pinned in rust-toolchain.toml and restore the cargo
+  caches. Rust builds on a Windows runner are slow enough without caching that
+  an uncached pipeline runs past the 15-minute budget in CLAUDE.md section 13,
+  and a pipeline that routinely overruns gets bypassed.
+
+inputs:
+  target-cache:
+    description: >
+      Cache slot for `target/`. Jobs that produce different artifacts must not
+      share one — a debug `cargo test` tree and a release bundle tree evict each
+      other all day and neither job ever gets a warm cache. Pass an empty string
+      for a job that only reads `cargo metadata` and compiles nothing.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install the toolchain pinned in rust-toolchain.toml
+      shell: pwsh
+      # `rustup show` resolves the channel in rust-toolchain.toml and installs
+      # it if absent, components and target included. No version is named here,
+      # so this cannot drift from what a contributor gets by entering the
+      # directory.
+      run: |
+        rustup show
+        rustc --version
+        cargo --version
+
+    - name: Restore the cargo registry
+      uses: actions/cache@v4
+      with:
+        # The index and the downloaded .crate files. Deliberately not
+        # `~/.cargo/bin`: a cached binary there would shadow a tool this
+        # pipeline means to install at a pinned version.
+        path: |
+          ~/.cargo/registry/index
+          ~/.cargo/registry/cache
+          ~/.cargo/git/db
+        key: cargo-registry-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+        restore-keys: cargo-registry-${{ runner.os }}-
+
+    - name: Restore the build directory
+      if: inputs.target-cache != ''
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: cargo-target-${{ inputs.target-cache }}-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+        # Falling back to an older tree is worth it: cargo rebuilds what moved
+        # and reuses the rest, which on a Tauri dependency tree is most of it.
+        restore-keys: cargo-target-${{ inputs.target-cache }}-${{ runner.os }}-
