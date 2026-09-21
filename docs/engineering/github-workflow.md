@@ -77,10 +77,21 @@ Breaking changes to the IPC contract carry `!` after the scope and a
 
 Where an issue is blocked by another that is still in review, branch from the
 blocking branch and set the pull request's base to it. State the dependency in
-the PR body. When the base merges, GitHub retargets the stacked PR to `main`
-automatically.
+the PR body.
 
-Use this sparingly. A stack three deep is a sign the issues were sliced wrong.
+**Do not delete a branch that another open pull request is stacked on.** GitHub
+does retarget a stacked PR when its base merges — but `gh pr merge --delete-branch`
+deletes the base branch, and a pull request whose base branch disappears is
+**closed**, not retargeted. Worse, a closed PR's base cannot be changed, so it
+cannot be reopened either: the work has to be rebased onto `main` and submitted
+as a new pull request. Merge the base with plain `gh pr merge --squash`, retarget
+the stacked PR with `gh pr edit <n> --base main`, then delete the branch.
+
+This bit us merging #58 with #62 stacked on it; #62 was auto-closed and had to
+be resubmitted as #64.
+
+Use stacking sparingly. A stack three deep is a sign the issues were sliced
+wrong — and it is three deep that makes the deletion order matter.
 
 ## Branch protection on `main`
 
