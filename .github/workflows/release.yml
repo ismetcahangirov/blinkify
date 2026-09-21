@@ -1,0 +1,122 @@
+# The release workflow.
+#
+# Tag, build, sign the update manifest, publish. Triggered by pushing a `v*`
+# tag, so a release is always a deliberate act and never a side effect of a
+# merge.
+#
+# The order of the first three steps is the whole design, and each of them
+# fails *before* anything is built:
+#
+#   1. The tag must agree with the tree. A tag that disagrees would publish an
+#      installer whose version is not the one the tag names — and the updater
+#      compares versions, not tags, so the mismatch would not surface as a
+#      failed release. It would surface months later as an installed build that
+#      never updates.
+#
+#   2. The signing key must be present. Without it the bundler skips updater
+#      signing and says so in a log line nobody reads, leaving a release whose
+#      manifest carries no signature. Every installed client then correctly
+#      rejects it — silently, forever. A release that cannot be updated is
+#      worse than no release, because it is already in users' hands.
+#
+#   3. Only then is anything built.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+# Writing a GitHub Release and uploading assets to it.
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup-node-pnpm
+
+      - name: The tag must agree with the tree
+        run: node tools/version.mjs --against-tag ${{ github.ref_name }}
+
+      - name: Refuse to build without a signing key
+        shell: pwsh
+        env:
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:KEY)) {
+            Write-Output "::error::TAURI_SIGNING_PRIVATE_KEY is not set in Actions secrets."
+            Write-Output "::error::An unsigned update manifest is rejected by every installed client."
+            Write-Output "::error::See docs/engineering/release.md."
+            exit 1
+          }
+          Write-Output "Signing key present."
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          target-cache: release
+
+      - name: Compose the release notes
+        id: notes
+        shell: pwsh
+        # The SmartScreen warning goes in front of the user *before* they
+        # download. Finding out after Windows has already called your installer
+        # suspicious is how a legitimate build gets deleted unread.
+        run: |
+          $body = @"
+          ## Blinkify ${{ github.ref_name }}
+
+          Download ``blinkify_*_x64-setup.exe`` below. The installer is per-user and asks for no administrator rights.
+
+          ### The installer is not code-signed
+
+          Windows SmartScreen will show **"Windows protected your PC"** on first run, and Defender may flag the download. This is what Windows does with any unsigned installer from a publisher it has not seen before. It is not a sign that the build is unsafe, and it is not a defect in it.
+
+          To run it anyway: **More info** then **Run anyway**.
+
+          A code-signing certificate is tracked separately. Until one is bought and has built SmartScreen reputation, every release will look like this.
+
+          ### Verifying what you downloaded
+
+          Every asset here was built by the [Release workflow](https://github.com/${{ github.repository }}/actions/workflows/release.yml) from tag ``${{ github.ref_name }}``, in public, on a GitHub runner. The build log is the provenance.
+          "@
+          $delimiter = "EOF_NOTES_$(New-Guid)"
+          Add-Content $env:GITHUB_OUTPUT "body<<$delimiter"
+          Add-Content $env:GITHUB_OUTPUT $body
+          Add-Content $env:GITHUB_OUTPUT $delimiter
+
+      # Published by the Tauri organisation. It wraps `tauri build`, signs the
+      # update manifest with the key below, and uploads `latest.json` alongside
+      # the installer.
+      - name: Build, sign and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # CLAUDE.md section 11 and section 20 rule 7: the key lives in Actions
+          # secrets and nowhere else. It is never printed, never written to the
+          # workspace, and never committed.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Blinkify ${{ github.ref_name }}
+          releaseBody: ${{ steps.notes.outputs.body }}
+          # A draft, deliberately. The updater reads the published release, so
+          # publishing is the moment every installed build starts offering this
+          # version. That should be a human pressing a button after checking the
+          # installer runs, not the last line of a script.
+          releaseDraft: true
+          prerelease: false
+          includeUpdaterJson: true

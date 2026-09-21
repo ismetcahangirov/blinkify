@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 24,
-    "tests": 1,
+    "files": 29,
+    "tests": 2,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 6,
-      "tests": 1,
+      "files": 9,
+      "tests": 2,
       "untested": [
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/shell.store.ts",
@@ -21,12 +21,13 @@
       ]
     },
     "packages/types": {
-      "files": 5,
+      "files": 6,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
         "packages/types/src/generated/SeamReason.ts",
+        "packages/types/src/generated/UpdateOffer.ts",
         "packages/types/src/generated/index.ts",
         "packages/types/src/index.ts"
       ]
@@ -39,7 +40,7 @@
       ]
     },
     "tools": {
-      "files": 12,
+      "files": 13,
       "tests": 0,
       "untested": [
         "tools/apply-labels.mjs",
@@ -53,7 +54,8 @@
         "tools/project-graph/generate.mjs",
         "tools/project-graph/injection-test.mjs",
         "tools/project-graph/query.mjs",
-        "tools/project-graph/validate.mjs"
+        "tools/project-graph/validate.mjs",
+        "tools/version.mjs"
       ]
     }
   },
@@ -75,6 +77,7 @@
       "layer": "renderer",
       "isTest": false,
       "dependsOn": [
+        "apps/desktop/src/UpdateBanner.tsx",
         "apps/desktop/src/shell.store.ts"
       ],
       "dependedOnBy": [
@@ -83,6 +86,34 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/App.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/UpdateBanner.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/UpdateBanner.tsx",
+        "apps/desktop/src/update.store.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/UpdateBanner.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/update.store.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/UpdateBanner.test.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/UpdateBanner.test.tsx"
       ],
       "hasNoDependents": false
     },
@@ -118,6 +149,22 @@
         "apps/desktop/src/main.tsx"
       ],
       "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/update.store.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/UpdateBanner.test.tsx",
+        "apps/desktop/src/UpdateBanner.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/UpdateBanner.test.tsx"
+      ],
       "hasNoDependents": false
     },
     "apps/desktop/vite.config.ts": {
@@ -167,6 +214,17 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/UpdateOffer.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/index.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -174,7 +232,8 @@
       "dependsOn": [
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
-        "packages/types/src/generated/SeamReason.ts"
+        "packages/types/src/generated/SeamReason.ts",
+        "packages/types/src/generated/UpdateOffer.ts"
       ],
       "dependedOnBy": [
         "packages/types/src/index.ts"
@@ -189,9 +248,11 @@
       "dependsOn": [
         "packages/types/src/generated/index.ts"
       ],
-      "dependedOnBy": [],
+      "dependedOnBy": [
+        "apps/desktop/src/update.store.ts"
+      ],
       "coveredByTests": [],
-      "hasNoDependents": true
+      "hasNoDependents": false
     },
     "packages/ui/src/index.ts": {
       "workspace": "packages/ui",
@@ -302,6 +363,15 @@
       "hasNoDependents": true
     },
     "tools/project-graph/validate.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/version.mjs": {
       "workspace": "tools",
       "layer": "tooling",
       "isTest": false,

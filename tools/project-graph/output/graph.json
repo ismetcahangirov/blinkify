@@ -30,6 +30,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./UpdateBanner.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/UpdateBanner.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./shell.store.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -49,6 +66,76 @@
       "dependents": [
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/main.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/UpdateBanner.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./UpdateBanner.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/UpdateBanner.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./update.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/update.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/UpdateBanner.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./update.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/update.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/UpdateBanner.test.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -117,6 +204,35 @@
       "dependencies": [],
       "dependents": [
         "apps/desktop/src/main.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/update.store.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/UpdateBanner.test.tsx",
+        "apps/desktop/src/UpdateBanner.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -195,6 +311,15 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/UpdateOffer.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/index.ts",
       "dependencies": [
         {
@@ -247,6 +372,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./UpdateOffer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/UpdateOffer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -276,7 +418,9 @@
           "valid": true
         }
       ],
-      "dependents": [],
+      "dependents": [
+        "apps/desktop/src/update.store.ts"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -370,6 +514,13 @@
       "dependents": [],
       "orphan": false,
       "valid": true
+    },
+    {
+      "source": "tools/version.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
     }
   ],
   "summary": {
@@ -379,8 +530,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 24,
-    "totalDependenciesCruised": 10,
+    "totalCruised": 29,
+    "totalDependenciesCruised": 16,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

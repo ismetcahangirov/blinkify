@@ -71,6 +71,18 @@ jobs:
       - uses: ./.github/actions/setup-node-pnpm
       - run: pnpm test:ts
 
+  version:
+    name: Version consistency
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-node-pnpm
+      # Five files carry the version across two package managers. The failure
+      # this catches is not a wrong number in a file — it is an installed build
+      # whose version disagrees with the release manifest, so the updater
+      # concludes there is nothing to do and the user never gets the fix.
+      - run: pnpm version:check
+
   docs-links:
     name: Docs links
     runs-on: windows-latest

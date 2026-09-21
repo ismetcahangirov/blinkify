@@ -21,6 +21,25 @@ blinkify-engine = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tauri = { version = "2.11.6", features = [] }
+# CLAUDE.md section 20 rule 8 permits exactly one outbound request: the update
+# check. This plugin is it, and it verifies a minisign signature on the manifest
+# before anything is downloaded.
+tauri-plugin-updater = "2.9.0"
+# The update offer crosses the IPC boundary, so its TypeScript type is generated
+# from the Rust definition rather than written twice.
+ts-rs = { workspace = true }
+
+[dev-dependencies]
+# The signature gate is the whole security model of auto-update, so it is tested
+# rather than assumed. `minisign` signs a throwaway payload in the test and
+# `minisign-verify` is the verifier Tauri itself uses; neither needs the
+# production private key, which is why this test can exist at all.
+minisign = "0.7.9"
+minisign-verify = "0.2.4"
+# Tauri stores the public key base64-encoded around the minisign file format,
+# so the test has to undo that before it can parse the key.
+base64 = "0.22.1"
+serde_json = { workspace = true }
 
 [lints]
 workspace = true

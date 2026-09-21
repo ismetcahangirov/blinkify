@@ -59,3 +59,57 @@ body {
 .shell__status {
   font-size: 0.8125rem;
 }
+
+/*
+ * The update banner. Plain on purpose — #15 and #16 own the token set, and
+ * styling this against tokens that do not exist yet means styling it twice.
+ * It sits at the top of the shell rather than over it: an update offer is
+ * information, not an interruption, and a modal would stop someone opening the
+ * application they came to open.
+ */
+.update-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  background: #16191d;
+  border-bottom: 1px solid #262b31;
+  font-size: 0.8125rem;
+}
+
+.update-banner__text,
+.update-banner__error {
+  margin: 0;
+}
+
+.update-banner__error {
+  width: 100%;
+  text-align: center;
+  color: #f0a3a3;
+}
+
+.update-banner__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.update-banner button {
+  padding: 0.3125rem 0.75rem;
+  border: 1px solid #333a42;
+  border-radius: 4px;
+  background: #1f242a;
+  color: var(--shell-fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.update-banner button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}

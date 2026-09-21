@@ -48,26 +48,51 @@ Not bundled, not redistributed, listed because they are part of what runs.
 
 ## Renderer dependencies that ship in the bundle
 
-Populated as the scaffold lands in
-[#10](https://github.com/ismetcahangirov/blinkify/issues/10) and the design
-system in [#17](https://github.com/ismetcahangirov/blinkify/issues/17).
-Expected: React, Zustand and Radix primitives, all MIT.
+Direct dependencies only; the Radix primitives arrive with the design system in
+[#17](https://github.com/ismetcahangirov/blinkify/issues/17).
 
-| Component  | Version | Licence |
-| ---------- | ------- | ------- |
-| _none yet_ |         |         |
+| Component         | Version | Licence           |
+| ----------------- | ------- | ----------------- |
+| React             | 19.3.0  | MIT               |
+| React DOM         | 19.3.0  | MIT               |
+| Zustand           | 5.0.15  | MIT               |
+| `@tauri-apps/api` | 2.11.1  | Apache-2.0 OR MIT |
 
 ## Rust crates that ship in the binary
 
-Populated as the engine lands. Gated by `cargo deny check licenses`, which
-rejects GPL and AGPL outright.
+Direct dependencies of the two crates that compile into the executable. The
+transitive set is **496 packages** and is gated by `cargo deny check licenses`,
+which rejects GPL and AGPL outright and fails on any licence not explicitly
+allowed in `deny.toml`.
 
-| Crate      | Version | Licence |
-| ---------- | ------- | ------- |
-| _none yet_ |         |         |
+| Crate                  | Version | Licence           | Why it ships                                       |
+| ---------------------- | ------- | ----------------- | -------------------------------------------------- |
+| `tauri`                | 2.11.6  | Apache-2.0 OR MIT | The shell. ADR-0001.                               |
+| `tauri-plugin-updater` | 2.12.0  | Apache-2.0 OR MIT | The update check — the one outbound request.       |
+| `serde`                | 1.0.229 | MIT OR Apache-2.0 | The IPC contract's serialisation.                  |
+| `serde_json`           | 1.0.151 | MIT OR Apache-2.0 | Same.                                              |
+| `thiserror`            | 2.0.20  | MIT OR Apache-2.0 | Engine error types.                                |
+| `ts-rs`                | 12.0.1  | MIT               | Generates the TypeScript side of the IPC contract. |
+
+One entry is worth reading twice. `tauri-plugin-updater` pulls in `reqwest` and,
+under it, `webpki-root-certs` — Mozilla's root CA bundle, licensed
+**CDLA-Permissive-2.0**. That is a _data_ licence, not a code licence: it grants
+use, modification and redistribution of the certificate data with no condition
+beyond the disclaimers, and places no obligation on the software shipped beside
+it. It is allowed explicitly in `deny.toml`, with that reasoning next to it,
+because the licence gate rejected it until somebody made a decision — which is
+the gate working.
 
 ## Licence texts
 
-Full licence texts are shipped alongside the installed application. Until the
-packaging issue ([#14](https://github.com/ismetcahangirov/blinkify/issues/14))
-lands, this table is the record.
+**Not yet shipped with the installer.** This is an open obligation, not a solved
+one.
+
+The permissive licences above require the notice to travel with the binary. With
+496 transitive packages, the only version of that which stays true is
+**generated** at build time and bundled by the installer — a hand-maintained
+table goes stale on the first `cargo update`, and a stale attribution file is a
+compliance failure rather than a formatting one.
+
+Tracked in [#73](https://github.com/ismetcahangirov/blinkify/issues/73). Until it
+lands, this document is the record and it covers direct dependencies only.
