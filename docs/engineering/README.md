@@ -4,8 +4,8 @@ How to work on Blinkify day to day.
 
 ## What belongs here
 
-- `github-workflow.md` — branch naming, Conventional Commits, the
-  Epic-to-sub-issue relationship (added in #12)
+- [`github-workflow.md`](./github-workflow.md) — branch naming, Conventional
+  Commits, the Epic-to-sub-issue relationship
 - The release process and the unsigned-binary gap
 - Local environment setup: toolchain versions, WebView2, MSVC build tools
 - Debugging guides — the Tauri IPC boundary, the FFmpeg sidecar, the timeline
