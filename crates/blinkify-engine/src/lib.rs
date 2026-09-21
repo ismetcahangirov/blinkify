@@ -1,0 +1,19 @@
+//! The Blinkify media engine.
+//!
+//! # The one rule this crate exists to hold
+//!
+//! `CLAUDE.md` section 1: no operation may degrade media quality that did not
+//! have to be degraded. Every export decision resolves to exactly one of three
+//! tiers, and the planner must choose the **lowest tier that satisfies the
+//! edit**.
+//!
+//! # No Tauri
+//!
+//! This crate must not depend on `tauri`, directly or transitively. An engine
+//! crate that needs a window cannot be tested without one, which means it will
+//! stop being tested. `cargo test -p blinkify-engine` runs with no window, no
+//! `WebView2` and no renderer, and CI asserts the dependency is absent.
+
+pub mod tier;
+
+pub use tier::{ExportTier, ReEncodeReason, SeamReason};

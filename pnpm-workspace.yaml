@@ -1,0 +1,28 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Hoisted node linker, matching TezUsta. Keep it: the dependency-cruiser
+# phantom-dependency rule in #11 only means the same thing in both repositories
+# if the node_modules layout is the same.
+#
+# pnpm 11 reads these from here, not from .npmrc. Setting `node-linker` in
+# .npmrc looks like it works — install succeeds and says nothing — and quietly
+# leaves the isolated layout in place.
+nodeLinker: hoisted
+
+# A package not declared in a package.json must not resolve. That is the whole
+# point of the `no-non-package-json` rule; an auto-installed peer would silently
+# satisfy an import nobody declared.
+autoInstallPeers: false
+strictPeerDependencies: false
+
+# Postinstall scripts are opt-in. pnpm blocks them by default and that default
+# is right: an install script is arbitrary code from a transitive dependency.
+# Each entry here is a deliberate decision, not a default someone accepted.
+#
+# unrs-resolver — the native resolver behind eslint-import-resolver-typescript.
+# Its script selects the platform binding; without it the import boundary rules
+# in #11 cannot resolve a path alias, so the gate would pass by not looking.
+allowBuilds:
+  unrs-resolver: true

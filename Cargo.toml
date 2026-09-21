@@ -1,0 +1,50 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "apps/desktop/src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+license = "MIT"
+repository = "https://github.com/ismetcahangirov/blinkify"
+
+[workspace.dependencies]
+blinkify-engine = { path = "crates/blinkify-engine" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+ts-rs = "12.0.1"
+
+[workspace.lints.rust]
+# CLAUDE.md section 11: every media file is hostile input. A parser that needs
+# `unsafe` to read one needs a review, not a default.
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+
+# These are the ones that actually bite when parsing a container: a length that
+# came out of a file must never reach an index or a cast unchecked.
+indexing_slicing = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+cast_possible_truncation = "deny"
+cast_sign_loss = "deny"
+cast_possible_wrap = "deny"
+integer_division = "deny"
+
+# Noise at this altitude.
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+
+[profile.release]
+# The engine is the hot path; the shell is not. One codegen unit and thin LTO
+# is the trade that matters for decode throughput.
+lto = "thin"
+codegen-units = 1
+strip = "symbols"

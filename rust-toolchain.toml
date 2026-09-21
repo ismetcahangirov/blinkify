@@ -1,0 +1,7 @@
+[toolchain]
+# Pinned. CLAUDE.md section 3: an unpinned toolchain makes a CI failure
+# unreproducible locally, which is the failure mode that costs a whole evening.
+channel = "1.98.1"
+components = ["rustfmt", "clippy"]
+targets = ["x86_64-pc-windows-msvc"]
+profile = "minimal"
