@@ -37,3 +37,5 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("the Blinkify window could not be created");
 }
+
+pub fn scratch_broken() -> u32 { "not a u32" }
