@@ -1,0 +1,4 @@
+# Blank issues are disabled deliberately. An issue with no structure is an
+# issue someone has to interview the author about before it can be worked on.
+# CLAUDE.md section 6: issue templates are mandatory.
+blank_issues_enabled: false

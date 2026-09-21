@@ -6,7 +6,8 @@ from.
 ## What belongs here
 
 - [`roadmap.md`](./roadmap.md) — the Epics, their order, and their dependencies
-- `issue-rules.md` — requirements versus acceptance criteria (added in #12)
+- [`issue-rules.md`](./issue-rules.md) — requirements versus acceptance
+  criteria
 - Planning notes, scope decisions and their rationale
 - Retrospectives on an Epic once it closes
 

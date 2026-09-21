@@ -1,0 +1,125 @@
+# Blinkify label set — the source of truth for the labels on this repository.
+#
+# A label created in the GitHub UI and not added here is how a label set rots:
+# six months later nobody remembers what `needs-triage-2` meant or who made it.
+# CLAUDE.md section 6 — labels are committed.
+#
+# Apply the whole set (idempotent; re-running produces no changes):
+#
+#     node tools/apply-labels.mjs
+#     node tools/apply-labels.mjs --check    # CI: fail if GitHub has drifted
+#
+# That script shells out to, once per entry:
+#
+#     gh label create "<name>" --color "<color>" --description "<description>" --force
+#
+# `--force` updates a label that already exists instead of failing, which is
+# what makes re-running a no-op rather than an error.
+#
+# Every issue carries, at minimum: one `type:`, one `area:`, one `priority:`
+# and one `size:`. `epic` replaces `size:` on a tracking issue.
+
+# Type - what kind of change this is. Exactly one per issue.
+- name: "type:bug"
+  color: "D73A4A"
+  description: "Something is broken"
+- name: "type:chore"
+  color: "BFD4F2"
+  description: "Tooling, config, maintenance"
+- name: "type:docs"
+  color: "0075CA"
+  description: "Documentation only"
+- name: "type:feature"
+  color: "1D76DB"
+  description: "New user-facing capability"
+- name: "type:performance"
+  color: "FBCA04"
+  description: "Performance work"
+- name: "type:refactor"
+  color: "5319E7"
+  description: "Internal change, no behaviour change"
+- name: "type:security"
+  color: "B60205"
+  description: "Security fix or hardening"
+- name: "type:test"
+  color: "0E8A16"
+  description: "Tests only"
+
+# Area - which part of the product it touches. Exactly one per issue.
+- name: "area:audio"
+  color: "0891B2"
+  description: "Audio processing, waveforms, noise reduction"
+- name: "area:design-system"
+  color: "14B8A6"
+  description: "Tokens, primitives, brand, iconography"
+- name: "area:devops"
+  color: "99F6E4"
+  description: "CI/CD, tooling, project graph"
+- name: "area:engine"
+  color: "006B75"
+  description: "Rust core, FFmpeg orchestration, decode pipeline"
+- name: "area:export"
+  color: "0E7490"
+  description: "Export planner, stream copy, smart-cut, encoding"
+- name: "area:packaging"
+  color: "2DD4BF"
+  description: "Installer, code signing, auto-update"
+- name: "area:player"
+  color: "164E63"
+  description: "Preview player, playback clock, scrubbing"
+- name: "area:timeline"
+  color: "155E75"
+  description: "Timeline renderer, edit graph, clip interaction"
+- name: "area:ui"
+  color: "0D9488"
+  description: "Application shell, panels, inspector, dialogs"
+
+# Priority - exactly one per issue.
+- name: "priority:critical"
+  color: "B60205"
+  description: "Drop everything"
+- name: "priority:high"
+  color: "D93F0B"
+  description: "Next up"
+- name: "priority:low"
+  color: "0E8A16"
+  description: "Nice to have"
+- name: "priority:medium"
+  color: "FBCA04"
+  description: "Scheduled"
+
+# Size - the estimate. Exactly one, except on an epic.
+- name: "size:large"
+  color: "A67C00"
+  description: "Should probably be split"
+- name: "size:medium"
+  color: "D4B106"
+  description: "Several files or a full module with tests"
+- name: "size:small"
+  color: "E4E669"
+  description: "Focused change, one area"
+
+# Status - optional; the GitHub project board is usually better.
+- name: "status:blocked"
+  color: "000000"
+  description: "Cannot proceed - see the issue for what blocks it"
+- name: "status:in-progress"
+  color: "BFDADC"
+  description: "Being worked on"
+- name: "status:ready"
+  color: "C2E0C6"
+  description: "Ready to be picked up"
+- name: "status:review"
+  color: "D4C5F9"
+  description: "In review"
+
+# Cross-cutting flags.
+- name: "epic"
+  color: "3E4B9E"
+  description: "Tracking issue with sub-issues"
+- name: "lossless-critical"
+  color: "8B46FB"
+  description: "Touches the no-quality-loss guarantee - requires stream-hash proof"
+- name: "needs-design-decision"
+  color: "E99695"
+  description: "Blocked on the project owner visual or product decision"
