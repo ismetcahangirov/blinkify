@@ -17,3 +17,5 @@
 pub mod tier;
 
 pub use tier::{ExportTier, ReEncodeReason, SeamReason};
+
+pub mod scratch;
