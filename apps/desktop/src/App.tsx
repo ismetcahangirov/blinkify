@@ -1,3 +1,4 @@
+import { UpdateBanner } from "./UpdateBanner.js";
 import { useShellStore } from "./shell.store.js";
 
 /**
@@ -12,6 +13,7 @@ export function App() {
 
   return (
     <main className="shell">
+      <UpdateBanner />
       <h1 className="shell__wordmark">Blinkify</h1>
       <p className="shell__tagline">Edit video without degrading it.</p>
       <p className="shell__status" data-testid="engine-status">

@@ -48,6 +48,11 @@ The updater verifies a signature on the release manifest and refuses anything
 that fails. That is the whole security model of auto-update: without it, anyone
 who can serve a manifest can serve an executable to every installed copy.
 
+**This is already done.** The keypair exists, the private half is in Actions
+secrets, and the public half is in `tauri.conf.json`. What follows is the
+procedure — for a reader who needs to understand it, and for the day it has to
+be repeated.
+
 The keypair is generated **once**, by the repository owner, on their own
 machine:
 
@@ -73,6 +78,21 @@ the only remedy is asking every user to reinstall by hand.
 `release.yml` fails before it builds if the secret is missing. A build without
 the key produces a manifest with no signature, every client correctly rejects
 it, and nobody finds out until the next release does not arrive.
+
+### Rotating it is not free
+
+Changing the keypair means every **already-installed** copy holds the old public
+key and will reject everything signed with the new one. Those installations are
+stranded: they have to be replaced by hand. So rotate only if the private key is
+believed compromised, and expect to publish a direct download alongside it.
+
+### The signature check is tested, not assumed
+
+`apps/desktop/src-tauri/src/updater.rs` carries the negative cases — a tampered
+payload, a signature made with a different key, a signature that does not parse
+— and a positive control, so the tests cannot all pass because verification
+rejects everything. None of them needs the production private key: they generate
+a throwaway keypair, which is what makes the positive case possible at all.
 
 ## The installer is not code-signed
 
@@ -129,6 +149,13 @@ project — belongs to #32, not here.
 The path is wired and the signature check is tested, but "publish 0.2.0 and
 watch an installed 0.1.0 offer it" needs two real releases. That happens at the
 first real release; it is not something a pull request can prove.
+
+### Licence texts do not ship with the installer yet
+
+The permissive licences in the tree require the notice to travel with the
+binary, and it does not. `THIRD_PARTY.md` records the direct dependencies and
+why each one ships; the generated attribution bundle for all 496 transitive
+packages is [#73](https://github.com/ismetcahangirov/blinkify/issues/73).
 
 ### Install, update and uninstall have not been run on a clean machine
 

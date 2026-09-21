@@ -38,6 +38,16 @@ allow = [
     "Unicode-3.0",
     "Unlicense",
     "NCSA",
+    # Not a code licence at all. It covers Mozilla's root CA bundle, which
+    # arrives through `webpki-root-certs` under `reqwest` under the updater —
+    # the update check speaks HTTPS, so a trust store has to come from
+    # somewhere. The Community Data License Agreement Permissive 2.0 grants use,
+    # modification and redistribution of the *data* with no condition beyond the
+    # disclaimers, and places no obligation on the software it ships beside.
+    # Distinct from the copyleft family for the same reason MIT is: it does not
+    # reach the combined work. Added deliberately, with this reasoning, per the
+    # note above.
+    "CDLA-Permissive-2.0",
     # File-level copyleft. It reaches the file it covers and nothing else: it
     # places no obligation on Blinkify's own sources or on the shipped binary
     # beyond keeping the crate's own source available, which crates.io already
