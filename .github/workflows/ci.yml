@@ -52,6 +52,19 @@ jobs:
       - uses: ./.github/actions/setup-node-pnpm
       - run: pnpm lint
 
+      # The colour gate rides in this job rather than its own so the set of
+      # required status checks on `main` does not move. It is a lint rule in
+      # everything but implementation: ESLint cannot read the `.css` files where
+      # two thirds of an interface's colours live, so the rule is a scanner.
+      - name: No colour outside the token file (#15)
+        run: pnpm colours:check
+
+      # Before the gate above is believed. A colour gate that has never been
+      # seen to reject anything is indistinguishable from one that does not
+      # work — CLAUDE.md section 14.
+      - name: That gate still catches one (colours:check:test)
+        run: pnpm colours:check:test
+
   typecheck:
     name: Typecheck (tsc)
     runs-on: windows-latest

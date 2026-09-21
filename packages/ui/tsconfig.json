@@ -3,6 +3,10 @@
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
+    /* `node` is here for the token tests, which read `tokens.css` and the
+       contrast table off disk. The design system itself ships no Node code —
+       a component reaching for `fs` is a review failure, not a type error. */
+    "types": ["node"],
     "rootDir": "src",
     "outDir": "dist",
     "noEmit": false,

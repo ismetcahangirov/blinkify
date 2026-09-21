@@ -1,6 +1,6 @@
 # Architecture gates
 
-Four checks stand between a change and `main`. Each one enforces a boundary
+Five checks stand between a change and `main`. Each one enforces a boundary
 that [`../../CLAUDE.md`](../../CLAUDE.md) states as a rule. This document says
 how they work, what each one does **not** cover, and how to prove one still
 works after you touch it.
@@ -13,8 +13,9 @@ works after you touch it.
 | `pnpm graph:check`     | The committed project graph matches the source tree       | section 14 |
 | `pnpm boundaries:rust` | No engine crate reaches `tauri`, directly or transitively | section 2  |
 | `pnpm deny:licenses`   | No GPL, AGPL or LGPL Rust crate                           | section 10 |
+| `pnpm colours:check`   | No colour value outside the design token file             | #15        |
 
-All four run in `pnpm verify`, and all four block a merge — see
+All five run in `pnpm verify`, and all five block a merge — see
 [`ci.md`](./ci.md) for how they are wired into the pipeline and in what order.
 
 ## Two languages, two tools — and why that is not pedantry
@@ -34,6 +35,43 @@ walks the **transitive** dependency graph of every workspace member under
 `crates/`. Transitive, not direct: a crate that pulls Tauri in through an
 intermediate still cannot be built without it, so a direct-only check would
 report success while the property it claims to protect was already gone.
+
+## The colour gate, and why it is not ESLint
+
+`tools/colour-gate.mjs` enforces one rule: exactly one file in `apps/` and
+`packages/` may contain a colour value, and it is
+`packages/ui/src/tokens/tokens.css`. Everything else reads a semantic token.
+
+It is a scanner rather than an ESLint rule because ESLint reads TypeScript, and
+two thirds of the colours in a React application live in `.css` files. A rule
+that covered only the TypeScript half would report green over a stylesheet full
+of literals — the same shape of hollow gate the injection tests exist to catch.
+
+What it catches: hex literals, colour functions (`rgb()`, `oklch()`,
+`color-mix()`), and — in CSS only, where the word is unambiguous — the CSS
+named colours. `var()` references are stripped first, so `var(--brand-azure)`
+is not read as the named colour `azure`, and comments are stripped, so a token
+documented by its value is not a violation.
+
+What it does **not** catch, and cannot:
+
+- A colour smuggled in through a computed string —
+  `` `#${hex}` `` or `` `rgb(${r} ${g} ${b})` ``. Review catches that one.
+- A **wrong** token. `--danger` on a save button passes every gate and is still
+  wrong. The gate proves a value came from the token file, not that the right
+  token was chosen.
+- Anything outside `apps/` and `packages/`. `docs/` is full of colour values on
+  purpose — that is where the palette is explained.
+
+Test files are exempt, because the contrast machinery has to be able to name a
+colour in order to be tested at all. A test styles nothing, so the exemption
+cannot reach the interface.
+
+The related test — `tokens.test.ts` in `packages/ui` — is a different gate with
+a different job: it measures every documented pair against WCAG AA and fails if
+the palette drifts or the table in
+[`../design/colour-tokens.md`](../design/colour-tokens.md) stops matching the
+tokens it describes.
 
 ## What no gate covers: the IPC edge
 
@@ -78,12 +116,13 @@ So CLAUDE.md section 14 requires an injection test for any change under
 pnpm gates:prove
 ```
 
-| Script                      | Proves                                                           |
-| --------------------------- | ---------------------------------------------------------------- |
-| `pnpm graph:injection`      | Each of the seven rules fires on its own violation, **by name**  |
-| `pnpm graph:determinism`    | Two generator runs over an unchanged tree are byte-identical     |
-| `pnpm boundaries:rust:test` | The Tauri check catches a direct **and** a transitive dependency |
-| `pnpm deny:test`            | The licence gate rejects GPL, AGPL and LGPL, and accepts MIT     |
+| Script                      | Proves                                                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `pnpm graph:injection`      | Each of the seven rules fires on its own violation, **by name**                                                   |
+| `pnpm graph:determinism`    | Two generator runs over an unchanged tree are byte-identical                                                      |
+| `pnpm boundaries:rust:test` | The Tauri check catches a direct **and** a transitive dependency                                                  |
+| `pnpm deny:test`            | The licence gate rejects GPL, AGPL and LGPL, and accepts MIT                                                      |
+| `pnpm colours:check:test`   | The colour gate catches a hex, an `rgb()` and a named colour, and does not catch a `var()` reference or a comment |
 
 Asserting on the rule _name_ rather than on a non-zero exit code is the point.
 Exit 1 could come from any rule, or from the tool failing to start. Only the
