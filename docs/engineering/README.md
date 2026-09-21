@@ -6,6 +6,8 @@ How to work on Blinkify day to day.
 
 - [`github-workflow.md`](./github-workflow.md) — branch naming, Conventional
   Commits, the Epic-to-sub-issue relationship
+- [`architecture-gates.md`](./architecture-gates.md) — the four boundary gates,
+  what each one does not cover, and how to prove one still fires
 - The release process and the unsigned-binary gap
 - Local environment setup: toolchain versions, WebView2, MSVC build tools
 - Debugging guides — the Tauri IPC boundary, the FFmpeg sidecar, the timeline

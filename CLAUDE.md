@@ -382,6 +382,8 @@ dependants.
 pnpm graph                                   # regenerate output/
 pnpm graph:check                             # fails if the committed graph is stale
 pnpm graph:validate                          # fails on a boundary-rule violation
+pnpm boundaries:rust                         # fails if an engine crate reaches tauri
+pnpm gates:prove                             # proves all four gates still fire
 node tools/project-graph/query.mjs <file>    # dependencies, dependants, covering tests
 ```
 
@@ -398,10 +400,19 @@ Rules:
   `node_modules` in `exclude`, and unanchored `exclude` patterns all silently
   delete the edges the rules reason about — leaving a gate that passes and
   proves nothing. Any change under `options:` must be proved with an injection
-  test: introduce a violation, confirm `graph:validate` fails, revert.
-- **Two languages, two tools.** dependency-cruiser covers the renderer; the Rust
-  side is covered by a crate-boundary check and `cargo deny`. Do not pretend one
-  tool covers both.
+  test: `pnpm gates:prove` writes each forbidden import, asserts the named rule
+  fires, and removes it again. A rule you have not seen fail is a rule you have
+  not tested.
+- **A new boundary rule arrives with its injection case.** Same change, same
+  pull request. Otherwise the rule is indistinguishable from one that does not
+  work.
+- **Two languages, two tools.** dependency-cruiser covers the renderer;
+  `tools/crate-boundaries.mjs` and `cargo deny` cover the Rust side. A green
+  `graph:validate` says nothing about the engine. Do not pretend one tool
+  covers both.
+
+`docs/engineering/architecture-gates.md` explains each gate, what it does not
+cover, and how to prove one still works.
 
 ---
 
@@ -561,10 +572,12 @@ pnpm typecheck                 # tsc --noEmit
 pnpm test                      # Vitest + cargo test
 pnpm build                     # build all packages
 
-# Project graph
+# Project graph and the architecture gates
 pnpm graph                     # regenerate
 pnpm graph:check               # fail if the committed graph is stale
-pnpm graph:validate            # fail on a boundary violation
+pnpm graph:validate            # fail on a TypeScript boundary violation
+pnpm boundaries:rust           # fail if an engine crate reaches tauri
+pnpm gates:prove               # prove every gate above still fires
 node tools/project-graph/query.mjs <file>
 
 # Rust, directly
