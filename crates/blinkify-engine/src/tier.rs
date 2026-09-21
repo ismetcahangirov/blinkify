@@ -39,7 +39,7 @@ pub enum ReEncodeReason {
     /// The user asked for an output codec the source is not already in.
     OutputCodecDiffersFromSource,
     /// No encoder on this machine can produce a seam that matches the source,
-    /// and the user chose a full re-encode over moving the cut. See ADR-0003.
+    /// and the user chose a full re-encode over moving the cut. See `ADR-0003`.
     NoEncoderMatchesSourceProfile,
 }
 

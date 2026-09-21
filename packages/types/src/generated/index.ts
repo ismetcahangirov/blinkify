@@ -4,5 +4,6 @@
 // after changing them; a stale barrel here means the renderer is compiling
 // against a contract the engine no longer implements.
 
-// No types exported yet. The IPC surface lands with the engine in Epic #3.
-export {};
+export * from "./ExportTier";
+export * from "./ReEncodeReason";
+export * from "./SeamReason";

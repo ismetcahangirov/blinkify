@@ -11,6 +11,10 @@
  * Deterministic: the file list is sorted and no clock is read, so regenerating
  * on an unchanged tree produces a byte-identical file (the same property the
  * project graph relies on in #11).
+ *
+ * Imports are written extensionless to match what ts-rs emits in the same
+ * directory. Mixing the two styles inside one generated folder is the kind of
+ * inconsistency that later gets "fixed" in the wrong direction.
  */
 
 import { readdirSync, writeFileSync, mkdirSync, readFileSync } from "node:fs";
@@ -44,7 +48,7 @@ const body =
         "export {};",
         "",
       ]
-    : [...modules.map((m) => `export * from "./${m}.js";`), ""];
+    : [...modules.map((m) => `export * from "./${m}";`), ""];
 
 const next = [...banner, ...body].join("\n");
 
