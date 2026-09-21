@@ -1,0 +1,96 @@
+# The release gate.
+#
+# These suites block a **release**, not a merge. CLAUDE.md section 13: the
+# pull-request gate has a 15-minute budget, and a full `pnpm tauri build` plus
+# clippy, `cargo test` and Vitest already fills it. Generating a media corpus,
+# hashing packet payloads across it, and running a frame-rate benchmark on top
+# would not fit — and a pipeline that routinely overruns gets bypassed, which
+# costs more than the suites are worth.
+#
+# So they run here: weekly, on demand, and on a release tag.
+#
+# ────────────────────────────────────────────────────────────────────────────
+# THIS IS NOT YET A GATE. Both suites belong to Epics that have not started:
+#
+#   * the losslessness suite and its media corpus — Epic #6, issue #45
+#   * the timeline frame-rate benchmark          — Epic #5, issue #33
+#
+# Until those land, the jobs below report that they are absent and say so in the
+# run summary. They are deliberately written now, empty, because the shape of
+# the split — what blocks a merge versus what blocks a release — is a decision
+# from Epic #1 (#13) and belongs in the repository where the next person will
+# find it, not in an issue comment.
+#
+# A job here that goes green while proving nothing is exactly the failure this
+# repository is built to avoid, so each one states plainly what it did not do.
+# ────────────────────────────────────────────────────────────────────────────
+
+name: Heavy suites
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Sundays, 03:00 UTC. Nothing depends on the hour; it is off the weekday
+    # queue so a scheduled run never competes with a pull request for a runner.
+    - cron: "0 3 * * 0"
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: heavy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  losslessness:
+    name: Losslessness suite
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-node-pnpm
+
+      - name: Run the suite, or report that it does not exist yet
+        shell: pwsh
+        run: |
+          $scripts = (Get-Content package.json -Raw | ConvertFrom-Json).scripts
+          if ($scripts.PSObject.Properties.Name -contains "test:lossless") {
+            pnpm run test:lossless
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            Add-Content $env:GITHUB_STEP_SUMMARY "- Losslessness suite: **passed**"
+            exit 0
+          }
+
+          # The corpus decision belongs to #45: generated with the bundled
+          # FFmpeg at job start, or fetched from a release asset. Either way it
+          # is never committed — CLAUDE.md section 20 rule 12. Whichever #45
+          # chooses, it adds a `test:lossless` script and this branch stops
+          # being taken.
+          Write-Output "::warning::The losslessness suite does not exist yet (#45). This job proved nothing."
+          Add-Content $env:GITHUB_STEP_SUMMARY "- Losslessness suite: **NOT IMPLEMENTED** — owned by #45 (Epic #6). This run proved nothing about output fidelity."
+
+  timeline-benchmark:
+    name: Timeline frame-rate benchmark
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-node-pnpm
+
+      - name: Run the benchmark, or report that it does not exist yet
+        shell: pwsh
+        run: |
+          $scripts = (Get-Content package.json -Raw | ConvertFrom-Json).scripts
+          if ($scripts.PSObject.Properties.Name -contains "bench:timeline") {
+            pnpm run bench:timeline
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            Add-Content $env:GITHUB_STEP_SUMMARY "- Timeline benchmark: **passed**"
+            exit 0
+          }
+
+          # CLAUDE.md section 12: 60 fps during drag, trim and zoom on a long
+          # timeline, and an optimisation without a before-number is a guess.
+          # #33 owns both the renderer and the measurement.
+          Write-Output "::warning::The timeline benchmark does not exist yet (#33). This job proved nothing."
+          Add-Content $env:GITHUB_STEP_SUMMARY "- Timeline benchmark: **NOT IMPLEMENTED** — owned by #33 (Epic #5). This run proved nothing about frame rate."

@@ -14,7 +14,8 @@ works after you touch it.
 | `pnpm boundaries:rust` | No engine crate reaches `tauri`, directly or transitively | section 2  |
 | `pnpm deny:licenses`   | No GPL, AGPL or LGPL Rust crate                           | section 10 |
 
-All four run in `pnpm verify`, and all four block a merge.
+All four run in `pnpm verify`, and all four block a merge — see
+[`ci.md`](./ci.md) for how they are wired into the pipeline and in what order.
 
 ## Two languages, two tools — and why that is not pedantry
 
@@ -138,3 +139,5 @@ confused with a contributor having introduced a GPL dependency.
 - [`../../tools/project-graph/README.md`](../../tools/project-graph/README.md) — the tooling
 - [`../decisions/ADR-0002-lgpl-ffmpeg-sidecar.md`](../decisions/ADR-0002-lgpl-ffmpeg-sidecar.md) — the licence boundary
 - [`toolchain.md`](./toolchain.md) — pinned versions and the traps in them
+- [`ci.md`](./ci.md) — where these gates run, and what does not fit in the
+  pull-request budget

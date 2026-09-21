@@ -1,0 +1,188 @@
+# The pull-request gate.
+#
+# Every check here blocks a merge. CLAUDE.md section 20 rule 10: no merging with
+# a red gate, and no disabling a gate to go green.
+#
+# Windows only, and first, deliberately. Blinkify targets Windows; a Linux
+# pipeline would go green while the product was broken for every user — and the
+# traps that cost real time here (the MSVC linker, the NSIS bundler, WebView2)
+# are all Windows traps that a Linux runner cannot see.
+#
+# This workflow holds the 15-minute budget in CLAUDE.md section 13. The
+# losslessness suite and the timeline benchmark do not fit inside it and live in
+# `heavy.yml`, which blocks a release rather than a merge.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A superseded run proves nothing about the commit that replaced it, and it
+# holds a runner the new one needs.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # cargo-deny ships no lockfile entry, so it is pinned here and cached on this
+  # key. Bumping it is a deliberate edit, not a silent `latest`.
+  CARGO_DENY_VERSION: "0.20.2"
+  # Colour codes in a log file are noise, and `-D warnings` output is read.
+  CARGO_TERM_COLOR: never
+
+jobs:
+  format:
+    name: Format (Prettier)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-node-pnpm
+      - run: pnpm format:check
+
+  lint:
+    name: Lint (ESLint)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-node-pnpm
+      - run: pnpm lint
+
+  typecheck:
+    name: Typecheck (tsc)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-node-pnpm
+      # `turbo run typecheck` depends on `^build`, so the workspace packages are
+      # built as a side effect and the renderer bundle is proved to compile.
+      - run: pnpm typecheck
+      - run: pnpm build
+
+  test-typescript:
+    name: Test (Vitest)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-node-pnpm
+      - run: pnpm test:ts
+
+  docs-links:
+    name: Docs links
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-node-pnpm
+      - run: pnpm check:links
+
+  project-graph:
+    name: Project graph
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-node-pnpm
+
+      - name: Boundaries (graph:validate)
+        run: pnpm graph:validate
+
+      # Runs before graph:check, on purpose. If a rule has been disarmed, the
+      # committed graph is a faithful record of a check that proves nothing, and
+      # graph:check would go green on it. Better to fail on the disarmed rule
+      # than on its consequence.
+      - name: Every rule still fires (graph:injection)
+        run: pnpm graph:injection
+
+      - name: Generator is deterministic (graph:determinism)
+        run: pnpm graph:determinism
+
+      # Last: determinism has to hold before a diff can mean "the tree moved".
+      - name: Committed graph is current (graph:check)
+        run: pnpm graph:check
+
+  rust:
+    name: Rust (fmt, clippy, tests)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-rust
+        with:
+          target-cache: debug
+
+      - name: Format (cargo fmt)
+        run: cargo fmt --all --check
+
+      # `-D warnings` or it is advisory, and an advisory clippy is an ignored
+      # clippy. Several workspace lints — indexing_slicing, unwrap_used,
+      # cast_possible_truncation — exist because a length that came out of a
+      # media file must never reach an index or a cast unchecked.
+      - name: Lint (cargo clippy)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # CLAUDE.md section 13: the engine must test with no Tauri present. This
+      # job installs no WebView2 and opens no window, so that property is
+      # exercised rather than asserted.
+      - name: Test (cargo test)
+        run: cargo test --workspace
+
+  boundaries:
+    name: Boundaries and licences (Rust)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-node-pnpm
+      # No target cache: everything in this job reads `cargo metadata` and
+      # compiles nothing.
+      - uses: ./.github/actions/setup-rust
+
+      - name: Restore cargo-deny
+        id: deny-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/cargo-deny.exe
+          key: cargo-deny-${{ runner.os }}-${{ env.CARGO_DENY_VERSION }}
+
+      - name: Install cargo-deny
+        if: steps.deny-cache.outputs.cache-hit != 'true'
+        run: cargo install cargo-deny --locked --version ${{ env.CARGO_DENY_VERSION }}
+
+      - name: No engine crate reaches Tauri
+        run: pnpm boundaries:rust
+
+      - name: That check still catches one (boundaries:rust:test)
+        run: pnpm boundaries:rust:test
+
+      - name: No GPL, AGPL or LGPL crate
+        run: pnpm deny:licenses
+
+      - name: That gate still rejects one (deny:test)
+        run: pnpm deny:test
+
+  installer:
+    name: Installer (tauri build)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-node-pnpm
+      - uses: ./.github/actions/setup-rust
+        with:
+          target-cache: release
+
+      - name: Build the NSIS installer
+        run: pnpm tauri build
+
+      # Uploaded on every run so a reviewer can install the pull request rather
+      # than take a green tick on faith. The installer is unsigned — see #14 and
+      # the SmartScreen gap recorded in Epic #1.
+      - name: Upload the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: blinkify-installer-${{ github.sha }}
+          path: |
+            target/release/bundle/nsis/*.exe
+            target/release/Blinkify.exe
+          if-no-files-found: error
+          retention-days: 14
