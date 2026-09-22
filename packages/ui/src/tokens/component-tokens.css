@@ -1,0 +1,108 @@
+/*
+ * Layer 3 — component tokens (#17).
+ *
+ * The third and last layer of the design system:
+ *
+ *   Layer 1  PRIMITIVES  a colour, a step        `--neutral-4`, `--space-2`
+ *   Layer 2  SEMANTIC    a job                   `--surface`, `--type-body-size`
+ *   Layer 3  COMPONENT   one component's measurement  `--switch-thumb-size`
+ *
+ * This layer exists so that `components/components.css` can hold no literal
+ * value at all. A switch has to be some number of pixels wide, and that number
+ * belongs somewhere; putting it in the component stylesheet would mean the
+ * gate that keeps literals out has to allow literals, which is not a gate.
+ *
+ * Two rules for adding to this file:
+ *
+ *   1. **Derive where derivation is real.** `--switch-travel` is the track
+ *      minus the thumb minus the borders, so it is a `calc()` and it stays
+ *      correct when the switch is resized. A `calc()` written to avoid typing a
+ *      number, where the relationship is a coincidence, is worse than the
+ *      number — it claims a dependency that does not exist.
+ *   2. **One component's measurement, not a scale.** If a second component
+ *      wants the same value, it belongs in `scales.css` as a scale step, not
+ *      here twice.
+ */
+
+:root {
+  /* ── Overlays ───────────────────────────────────────────────────────────── */
+
+  /* The scrim's translucency. The colour itself is `--scrim` in tokens.css; the
+     opacity is here because it is a property of the dialog's overlay element
+     rather than of the colour, and because a translucent colour token would
+     stop the contrast machinery being able to resolve the file. */
+  --scrim-opacity: 0.72;
+
+  /* How far an overlay starts from its resting size. Small on purpose: an
+     overlay that grows from 80% reads as a web page, and at 120ms it is a
+     flicker rather than a movement. */
+  --overlay-enter-scale: 0.96;
+
+  --tooltip-max-width: 18rem; /* 288px — about 40 characters at caption size */
+  --popover-max-width: 22rem; /* 352px */
+  --menu-min-width: 11rem; /* 176px — a label plus a shortcut without wrapping */
+  --select-min-width: 8rem; /* 128px */
+  --dialog-width: 26rem; /* 416px */
+  /* A dialog never touches the window edge. Expressed here rather than in the
+     component because the viewport units are values like any other, and the
+     gate that keeps values out of component stylesheets does not get to make an
+     exception for the ones that look structural. */
+  --dialog-max-width: calc(100vw - var(--space-8));
+  --dialog-max-height: calc(100vh - var(--space-8));
+
+  /* ── Switch ─────────────────────────────────────────────────────────────── */
+
+  --switch-width: 2rem; /* 32px */
+  --switch-height: 1.25rem; /* 20px */
+  --switch-thumb-size: 1rem; /* 16px */
+  /* The track, less the thumb, less the border and the inset that centres the
+     thumb in it. Derived, so resizing the switch cannot leave the thumb
+     travelling off the end of its own track. */
+  --switch-travel: calc(
+    var(--switch-width) - var(--switch-thumb-size) - var(--border-width) * 4
+  );
+
+  /* ── Slider ─────────────────────────────────────────────────────────────── */
+
+  --slider-track-height: 0.25rem; /* 4px */
+  --slider-thumb-size: 0.75rem; /* 12px */
+
+  /* ── Numeric fields ─────────────────────────────────────────────────────── */
+
+  /* Both are reserved widths rather than content widths. A number that changes
+     width as it changes value moves every control to its right, and the user is
+     watching the number precisely because they are changing it. */
+  --numeric-readout-width: 3.5rem; /* 56px — "100.0%" in the mono face */
+  --numeric-field-width: 4.5rem; /* 72px — six digits and a sign */
+
+  /* ── Scroll area ────────────────────────────────────────────────────────── */
+
+  /* 12px of gutter holding an 8px thumb. Windows' own scrollbar is 17px and
+     light; in a 240px library panel that is seven per cent of the width spent
+     on a control nobody looks at. */
+  --scrollbar-size: 0.75rem; /* 12px */
+  --scrollbar-padding: calc(var(--space-1) / 2); /* 2px */
+
+  /* ── Tabs ───────────────────────────────────────────────────────────────── */
+
+  /* Twice the border width, so the selected tab's bar reads as deliberate
+     against the rule it sits on rather than as that rule being slightly off. */
+  --tab-indicator-height: calc(var(--border-width) * 2);
+
+  /* ── Motion that is not a transition ────────────────────────────────────── */
+
+  /* One rotation of a loading spinner.
+   *
+   * Named `--spinner-cycle` rather than `--duration-spinner` on purpose. Every
+   * `--duration-*` token is zeroed under `prefers-reduced-motion`, and
+   * `scales.test.ts` enforces that for any that are added later — but a
+   * spinner is the one piece of motion that must survive, because a frozen
+   * spinner says the application hung. It is marked `data-motion="essential"`
+   * where it is used, and it is kept out of the duration namespace so nobody
+   * later zeroes it by following a rule that is right about everything else.
+   *
+   * It is also not on the motion scale: that scale is transition durations,
+   * bounded at 180ms because longer reads as lag, and a spinner completing a
+   * turn in 180ms would read as panic. */
+  --spinner-cycle: 900ms;
+}

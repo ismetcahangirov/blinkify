@@ -1,3 +1,4 @@
+import { Button } from "@blinkify/ui";
 import { useEffect } from "react";
 
 import { useUpdateStore } from "./update.store.js";
@@ -10,8 +11,14 @@ import { useUpdateStore } from "./update.store.js";
  * rather than saying "an update is available" and leaving the person to work
  * out whether it matters.
  *
- * Deliberately plain. The design system is Epic #2 (#15 – #17), and styling
- * this against tokens that do not exist yet would mean styling it twice.
+ * Built on the primitives from `@blinkify/ui` (#17). The install action is the
+ * primary one and says so; "Not now" is secondary, because dismissing an update
+ * offer should be easy and should not be what the eye lands on first.
+ *
+ * The install button carries its own `loading` state rather than swapping its
+ * label for "Installing…". The label stays in the layout, so the banner does
+ * not reflow under the pointer at the moment the user has just committed to
+ * something irreversible.
  */
 export function UpdateBanner() {
   const status = useUpdateStore((state) => state.status);
@@ -45,22 +52,18 @@ export function UpdateBanner() {
       )}
 
       <div className="update-banner__actions">
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          loading={status === "installing"}
           onClick={() => {
             void install();
           }}
-          disabled={status === "installing"}
         >
-          {status === "installing" ? "Installing…" : "Install and restart"}
-        </button>
-        <button
-          type="button"
-          onClick={dismiss}
-          disabled={status === "installing"}
-        >
+          Install and restart
+        </Button>
+        <Button onClick={dismiss} disabled={status === "installing"}>
           Not now
-        </button>
+        </Button>
       </div>
     </aside>
   );

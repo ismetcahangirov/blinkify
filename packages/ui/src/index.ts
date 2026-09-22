@@ -20,8 +20,53 @@
  * width, and re-exporting it would put a Node built-in on the path of anything
  * that imports the design system. Tests import it by its own path.
  *
- * Primitives land in #17.
+ * The primitives (#17) are exported below. They are styled with plain CSS
+ * classes rather than Tailwind utilities, because this package may not depend
+ * on the application that configures Tailwind — and because a primitive styled
+ * with the renderer's utilities would render unstyled in Storybook, which is
+ * exactly where it has to be reviewable.
  */
+
+export {
+  Button,
+  type ButtonProps,
+  type ButtonVariant,
+  type ControlSize,
+} from "./components/Button.js";
+export { IconButton, type IconButtonProps } from "./components/IconButton.js";
+export {
+  Tooltip,
+  TooltipProvider,
+  TOOLTIP_DELAY_MS,
+  TOOLTIP_SKIP_DELAY_MS,
+  FLOATING_OFFSET_PX,
+  type TooltipProps,
+  type TooltipProviderProps,
+} from "./components/Tooltip.js";
+export { Slider, type SliderProps } from "./components/Slider.js";
+export {
+  NumberInput,
+  type NumberInputProps,
+} from "./components/NumberInput.js";
+export { Switch, type SwitchProps } from "./components/Switch.js";
+export { Tabs, type TabsProps, type TabDefinition } from "./components/Tabs.js";
+export {
+  Select,
+  type SelectProps,
+  type SelectOption,
+} from "./components/Select.js";
+export { Popover, type PopoverProps } from "./components/Popover.js";
+export {
+  DropdownMenu,
+  ContextMenu,
+  type DropdownMenuProps,
+  type ContextMenuProps,
+  type MenuItemDefinition,
+  type MenuGroupDefinition,
+} from "./components/Menu.js";
+export { Dialog, DialogClose, type DialogProps } from "./components/Dialog.js";
+export { ScrollArea, type ScrollAreaProps } from "./components/ScrollArea.js";
+export { classNames } from "./components/classNames.js";
 
 export {
   WCAG_AA,
