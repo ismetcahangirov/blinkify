@@ -1,0 +1,22 @@
+/*
+ * The design system, as one import.
+ *
+ * A consumer writes `@import "@blinkify/ui/styles.css";` and gets the typefaces
+ * and every token. The order below is load-bearing and is the reason this file
+ * exists rather than three imports at each call site:
+ *
+ *   1. fonts     declares the families the type scale names.
+ *   2. tokens    declares colour, including the semantic surface and border
+ *                roles that elevation is built out of.
+ *   3. scales    declares type, spacing, radius, elevation and motion, and
+ *                references (2).
+ *
+ * Custom properties resolve at use time rather than at parse time, so (3) would
+ * in fact survive being imported before (2). The order is kept anyway, because
+ * a file that reads bottom-up teaches the next person the wrong model of what
+ * depends on what.
+ */
+
+@import "./fonts/fonts.css";
+@import "./tokens/tokens.css";
+@import "./tokens/scales.css";

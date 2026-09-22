@@ -13,6 +13,10 @@ export default tseslint.config(
       "**/.turbo/**",
       "apps/desktop/src-tauri/gen/**",
       "tools/project-graph/output/**",
+      // Nested git worktrees. Some tools create these inside the repository;
+      // git skips them and so must the lint, or every gate runs twice over a
+      // copy of the tree and reports on the copy.
+      ".kilo/**",
     ],
   },
 

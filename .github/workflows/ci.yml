@@ -65,6 +65,15 @@ jobs:
       - name: That gate still catches one (colours:check:test)
         run: pnpm colours:check:test
 
+      # Same job, same reasoning: a scanner where ESLint cannot see. Blinkify
+      # must render on a machine with no network, so nothing the interface
+      # needs before first paint may come off one.
+      - name: No remote asset reference (#16)
+        run: pnpm offline:check
+
+      - name: That gate still catches one (offline:check:test)
+        run: pnpm offline:check:test
+
   typecheck:
     name: Typecheck (tsc)
     runs-on: windows-latest

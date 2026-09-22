@@ -8,7 +8,10 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./tokens.css": "./src/tokens/tokens.css"
+    "./styles.css": "./src/index.css",
+    "./tokens.css": "./src/tokens/tokens.css",
+    "./scales.css": "./src/tokens/scales.css",
+    "./fonts.css": "./src/fonts/fonts.css"
   },
   "scripts": {
     "build": "tsc --build",

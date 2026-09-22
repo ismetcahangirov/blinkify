@@ -425,6 +425,40 @@
       "valid": true
     },
     {
+      "source": "packages/ui/src/fonts/fontMetrics.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/ui/src/fonts/fonts.test.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/ui/src/fonts/fonts.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./fontMetrics.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "packages/ui/src/fonts/fontMetrics.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/ui/src/index.ts",
       "dependencies": [
         {
@@ -471,6 +505,7 @@
       "dependencies": [],
       "dependents": [
         "packages/ui/src/index.ts",
+        "packages/ui/src/tokens/scales.test.ts",
         "packages/ui/src/tokens/tokens.test.ts"
       ],
       "orphan": false,
@@ -483,6 +518,31 @@
         "packages/ui/src/index.ts",
         "packages/ui/src/tokens/tokens.test.ts"
       ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/ui/src/tokens/scales.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./contrast.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "packages/ui/src/tokens/contrast.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -585,6 +645,20 @@
       "valid": true
     },
     {
+      "source": "tools/offline-assets-gate-test.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/offline-assets-gate.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "tools/project-graph/check.mjs",
       "dependencies": [],
       "dependents": [],
@@ -641,8 +715,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 34,
-    "totalDependenciesCruised": 20,
+    "totalCruised": 39,
+    "totalDependenciesCruised": 22,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

@@ -5,8 +5,8 @@
     "tools"
   ],
   "totals": {
-    "files": 34,
-    "tests": 3,
+    "files": 39,
+    "tests": 5,
     "violations": 0
   },
   "byWorkspace": {
@@ -33,14 +33,14 @@
       ]
     },
     "packages/ui": {
-      "files": 4,
-      "tests": 1,
+      "files": 7,
+      "tests": 3,
       "untested": [
         "packages/ui/src/index.ts"
       ]
     },
     "tools": {
-      "files": 15,
+      "files": 17,
       "tests": 0,
       "untested": [
         "tools/apply-labels.mjs",
@@ -51,6 +51,8 @@
         "tools/crate-boundaries.mjs",
         "tools/generate-types-index.mjs",
         "tools/licence-gate-test.mjs",
+        "tools/offline-assets-gate-test.mjs",
+        "tools/offline-assets-gate.mjs",
         "tools/project-graph/check.mjs",
         "tools/project-graph/determinism-test.mjs",
         "tools/project-graph/generate.mjs",
@@ -256,6 +258,30 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/ui/src/fonts/fontMetrics.ts": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/ui/src/fonts/fonts.test.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/fonts/fonts.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/fonts/fonts.test.ts": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": true,
+      "dependsOn": [
+        "packages/ui/src/fonts/fontMetrics.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
     "packages/ui/src/index.ts": {
       "workspace": "packages/ui",
       "layer": "design-system",
@@ -275,9 +301,11 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/ui/src/index.ts",
+        "packages/ui/src/tokens/scales.test.ts",
         "packages/ui/src/tokens/tokens.test.ts"
       ],
       "coveredByTests": [
+        "packages/ui/src/tokens/scales.test.ts",
         "packages/ui/src/tokens/tokens.test.ts"
       ],
       "hasNoDependents": false
@@ -295,6 +323,17 @@
         "packages/ui/src/tokens/tokens.test.ts"
       ],
       "hasNoDependents": false
+    },
+    "packages/ui/src/tokens/scales.test.ts": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": true,
+      "dependsOn": [
+        "packages/ui/src/tokens/contrast.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
     },
     "packages/ui/src/tokens/tokens.test.ts": {
       "workspace": "packages/ui",
@@ -372,6 +411,24 @@
       "hasNoDependents": true
     },
     "tools/licence-gate-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/offline-assets-gate-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/offline-assets-gate.mjs": {
       "workspace": "tools",
       "layer": "tooling",
       "isTest": false,
