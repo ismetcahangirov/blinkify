@@ -1,0 +1,84 @@
+/*
+ * The bundled typefaces.
+ *
+ * Issue #16: "font files bundled with the application, never fetched at
+ * runtime". The files sit next to this stylesheet, are committed, and are the
+ * bytes that ship. There is no `@fontsource` dependency and no link to a font
+ * service, because the failure mode both invite is the one that matters here:
+ * a desktop application whose interface has no typeface until a network request
+ * completes. Blinkify must open on a machine with no network at all — see
+ * `tools/offline-assets-gate.mjs`, which fails the build on any remote asset
+ * URL anywhere in `apps/` or `packages/`.
+ *
+ * ── Two families, and why it is two ─────────────────────────────────────────
+ *
+ *   Inter           the interface. Everything a user reads.
+ *   JetBrains Mono  timecode, and nothing else.
+ *
+ * The second family exists because Inter's digits are proportional: measured
+ * from the very file below, its `1` advances 833 units against `4`'s 1323 on a
+ * 2048 em. A timecode set in Inter therefore changes width as it counts, and a
+ * running timecode that jitters is a visible defect in an editor — the user is
+ * watching that number move. JetBrains Mono advances every digit, the colon,
+ * the semicolon and the full stop at exactly 600 units on a 1000 em, so the
+ * field is dimensionally frozen no matter what it reads.
+ *
+ * That claim is not taken on trust. `fonts.test.ts` parses the WOFF2 below and
+ * asserts the advances are equal, which is why the timecode font may be
+ * replaced but may not be replaced with a proportional one.
+ *
+ * ── Provenance ──────────────────────────────────────────────────────────────
+ *
+ * Recorded in `README.md` beside this file: exact source URL, version and
+ * SHA-256 of each file, so "where did this byte come from" has an answer that
+ * is not somebody's memory. Licences are the two OFL files in this directory
+ * and are listed in `THIRD_PARTY.md`.
+ */
+
+/*
+ * `font-display: block`, not `swap`.
+ *
+ * `swap` is correct for a web page, where the font arrives over a network and
+ * showing fallback text beats showing nothing. Here the file is on local disk
+ * and decodes in single-digit milliseconds, so `swap` buys nothing and costs a
+ * visible reflow of the entire interface a moment after launch. `block` holds
+ * the text invisible for that handful of milliseconds and the application
+ * appears once, already correct.
+ */
+
+/*
+ * The subset is Latin. A full-Unicode face is measured in megabytes and this
+ * application ships an English interface.
+ *
+ * Text outside the range — a filename in Cyrillic, Arabic or CJK, which a media
+ * library will certainly meet — falls through to the system UI font by design.
+ * It renders; it simply is not Inter. Dropping the `unicode-range` would not
+ * improve that, because the glyphs are not in the file either way.
+ */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  /* One variable file covering the whole weight axis, so the scale in
+     `scales.css` can name 400, 500 and 600 without three more downloads. */
+  font-weight: 100 900;
+  font-display: block;
+  src: url("./inter-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  /* A single weight. Timecode is never bold, never light, and a second weight
+     would be 21 KB bought for nothing. */
+  font-weight: 400;
+  font-display: block;
+  src: url("./jetbrains-mono-latin-400-normal.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}

@@ -6,6 +6,8 @@ The visual language of Blinkify and the structure of its interface.
 
 - [`colour-tokens.md`](./colour-tokens.md) — the palette, the role of every
   token, and the measured contrast of every pair a user reads
+- [`scales.md`](./scales.md) — type, spacing, radius, elevation and motion: the
+  non-colour half of the system, and the typefaces it is set in
 
 ## What belongs here
 

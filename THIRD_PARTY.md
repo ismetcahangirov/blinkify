@@ -46,6 +46,24 @@ Not bundled, not redistributed, listed because they are part of what runs.
 | WebView2 runtime                                 | Microsoft, with Windows                  | Ships with Windows 11; may be absent on Windows 10. The installer detects and guides — [#14](https://github.com/ismetcahangirov/blinkify/issues/14). |
 | Hardware video encoders (NVENC, Quick Sync, AMF) | NVIDIA / Intel / AMD, via the GPU driver | The only H.264 and HEVC encoding path Blinkify uses. See ADR-0003.                                                                                   |
 
+## Typefaces bundled in the interface
+
+Committed to the repository rather than installed, so that "bundled with the
+application, never fetched at runtime" is a property of the shipped bytes —
+[#16](https://github.com/ismetcahangirov/blinkify/issues/16). The files, their
+licence texts and their provenance live together in
+[`packages/ui/src/fonts/`](./packages/ui/src/fonts/).
+
+| Component                   | Version                            | Licence                   | Obligation                                                                                              |
+| --------------------------- | ---------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Inter (variable, Latin)     | `@fontsource-variable/inter@5.3.0` | SIL Open Font License 1.1 | Ship the licence text; do not sell the font alone; do not reuse the reserved name on a modified version |
+| JetBrains Mono (400, Latin) | `@fontsource/jetbrains-mono@5.3.0` | SIL Open Font License 1.1 | Same                                                                                                    |
+
+Both are embedded unmodified, under their own names, with the licence text
+alongside. The OFL permits embedding in a bundled application without extending
+its terms to the application — which is why a font licence gets a row here and
+not an ADR.
+
 ## Renderer dependencies that ship in the bundle
 
 Direct dependencies only; the Radix primitives arrive with the design system in

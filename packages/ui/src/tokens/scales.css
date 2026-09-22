@@ -1,0 +1,368 @@
+/*
+ * Blinkify scales — type, spacing, radius, elevation and motion.
+ *
+ * Issue #16. Colour lives next door in `tokens.css`, the one file in the
+ * repository permitted to hold a colour value; everything here that needs a
+ * colour reads a semantic token from there. That is why `tokens.css` is
+ * imported first in `../index.css`, rather than leaving the order to whoever
+ * writes the next stylesheet.
+ *
+ * ── Why a fixed scale at all ────────────────────────────────────────────────
+ *
+ * Without one, a component that needs "a bit more space here" gets 13px, the
+ * next gets 14px, and eighteen months later the interface is a collection of
+ * screens that were each individually reasonable. The scale is not a
+ * restriction on judgement; it is what makes judgement transferable between two
+ * components written a year apart.
+ *
+ * ── The two layers, again ───────────────────────────────────────────────────
+ *
+ * Same structure as the colour file, for the same reason:
+ *
+ *   Layer 1  SCALE  — the steps themselves. `--space-4`, `--radius-md`,
+ *                     `--duration-fast`. These name a size, not a job.
+ *   Layer 2  ROLE   — the job. `--type-body-size`, `--elevation-2-background`.
+ *
+ * A component reads layer 2 wherever a layer-2 token exists for what it is
+ * doing. Spacing is the deliberate exception: padding and gap vary too much by
+ * context to be usefully named, so components read `--space-*` directly. Naming
+ * `--space-panel-padding` and forty siblings would produce a set of tokens used
+ * once each, which is a scale with extra steps.
+ */
+
+:root {
+  /* ──────────────────────────────────────────────────────────────────────────
+   * FAMILIES
+   *
+   * The files are bundled and committed — see `../fonts/README.md`. The system
+   * stacks after each family cover text outside the Latin subset we ship, which
+   * a media library full of filenames will certainly contain.
+   * ────────────────────────────────────────────────────────────────────────── */
+
+  --type-family-sans:
+    "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+
+  /* Timecode only. Its digits are dimensionally identical — asserted against
+     the font binary in `../fonts/fonts.test.ts` — which is the entire reason it
+     is a second family rather than a style of the first. */
+  --type-family-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+
+  /* ──────────────────────────────────────────────────────────────────────────
+   * LAYER 1 — TYPE SCALE
+   *
+   * Six roles, no more. Each earns its place by being needed somewhere in the
+   * four zones; a seventh would be a decision nobody can later reconstruct.
+   *
+   * Sizes are rem against a 16px root, so a future interface-density control is
+   * one root-font-size change rather than a sweep through every token. Windows
+   * display scaling arrives as the WebView's device pixel ratio and does not
+   * interact with this.
+   *
+   * The interface runs small on purpose. This is a dense editing tool whose
+   * chrome exists to stay out of the way of the picture — CLAUDE.md section 17
+   * — not a document reader.
+   * ────────────────────────────────────────────────────────────────────────── */
+
+  /* Display — the largest thing in the product. Empty states, the first-run
+     screen. It appears at most once in a view and never inside a panel. */
+  --type-display-size: 1.75rem; /* 28px */
+  --type-display-line: 2.125rem; /* 34px */
+  --type-display-weight: 600;
+  --type-display-tracking: -0.02em;
+
+  /* Title — panel headings, dialog titles, inspector section headers. */
+  --type-title-size: 1.125rem; /* 18px */
+  --type-title-line: 1.5rem; /* 24px */
+  --type-title-weight: 600;
+  --type-title-tracking: -0.01em;
+
+  /* Body — running text and inspector values. The default for anything a user
+     reads a whole sentence of. */
+  --type-body-size: 0.875rem; /* 14px */
+  --type-body-line: 1.25rem; /* 20px */
+  --type-body-weight: 400;
+  --type-body-tracking: 0em;
+
+  /* Label — control labels, buttons, tabs, menu items. Most text in the
+     application is this, because most text in an editor names a control rather
+     than says something. Medium weight: a label at 400 on a dark surface reads
+     thin at 13px, which is a property of light text on dark rather than of this
+     typeface. */
+  --type-label-size: 0.8125rem; /* 13px */
+  --type-label-line: 1rem; /* 16px */
+  --type-label-weight: 500;
+  --type-label-tracking: 0em;
+
+  /* Caption — ruler numbers, hints, secondary metadata, a track header's format
+     string. The floor: nothing in Blinkify is set smaller, and anything at this
+     size still owes its contrast duty in docs/design/colour-tokens.md. */
+  --type-caption-size: 0.6875rem; /* 11px */
+  --type-caption-line: 0.875rem; /* 14px */
+  --type-caption-weight: 400;
+  --type-caption-tracking: 0.01em;
+
+  /* Timecode — the playhead position, clip in and out points, the duration
+     column, export progress.
+   *
+   * The role the second family exists for. Held to the mono family and
+   * `tabular-nums` together: the family guarantees the advance, and the feature
+   * keeps the guarantee when a fallback family has to take over. The slight
+   * positive tracking is because a monospace face set beside Inter reads tight
+   * at this size. */
+  --type-timecode-size: 0.8125rem; /* 13px */
+  --type-timecode-line: 1rem; /* 16px */
+  --type-timecode-weight: 400;
+  --type-timecode-tracking: 0.01em;
+
+  /* ──────────────────────────────────────────────────────────────────────────
+   * LAYER 1 — SPACING
+   *
+   * A 4px base, as the issue requires. Every step is a whole multiple of 4px,
+   * asserted in `scales.test.ts`, because a 4px grid with one 6px exception in
+   * it is not a grid.
+   *
+   * The steps thin out above 6: 28px and 36px serve nothing that 24px or 32px
+   * does not, and an unused token is a token someone eventually uses for the
+   * wrong thing.
+   * ────────────────────────────────────────────────────────────────────────── */
+
+  --space-0: 0rem; /*  0px — a named zero, so "no gap" is still a decision */
+  --space-1: 0.25rem; /*  4px — icon to its label, the tightest legal gap */
+  --space-2: 0.5rem; /*  8px — inside a control */
+  --space-3: 0.75rem; /* 12px — between controls in a toolbar */
+  --space-4: 1rem; /* 16px — panel padding, the default */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem; /* 24px — between sections in the inspector */
+  --space-8: 2rem; /* 32px */
+  --space-10: 2.5rem; /* 40px */
+  --space-12: 3rem; /* 48px */
+  --space-16: 4rem; /* 64px — empty-state breathing room, and nothing else */
+
+  /* ──────────────────────────────────────────────────────────────────────────
+   * LAYER 1 — RADIUS
+   *
+   * Small numbers. A video editor is a tool, and a 12px radius on a toolbar
+   * button makes a tool look like a toy. `md` is the default for anything the
+   * user clicks; `lg` is for surfaces that float above the interface.
+   * ────────────────────────────────────────────────────────────────────────── */
+
+  --radius-none: 0px;
+  --radius-sm: 2px; /* chips, tags, the timeline clip body */
+  --radius-md: 4px; /* buttons, inputs, selects — the default */
+  --radius-lg: 8px; /* dialogs, popovers, cards */
+  --radius-full: 9999px; /* slider thumbs and anything genuinely circular */
+
+  /* The one border width in the system. A second width is how two panels end up
+     looking like they came from different applications. */
+  --border-width: 1px;
+
+  /* ──────────────────────────────────────────────────────────────────────────
+   * LAYER 2 — ELEVATION
+   *
+   * Depth by surface and border, never by shadow.
+   *
+   * Not a stylistic preference. A drop shadow works by darkening what is behind
+   * it, and on a near-black background there is nothing left to darken: the
+   * shadow is invisible and its only surviving effect is to push every raised
+   * element onto its own compositing layer. The interface pays the GPU and the
+   * user sees nothing.
+   *
+   * So Blinkify has no `--shadow-*` token, and the absence is the decision
+   * rather than an omission. Depth comes out of the neutral ramp, which was
+   * built for exactly this: each step is a visible lift against the one below,
+   * measured in docs/design/colour-tokens.md.
+   *
+   * Level 3 is the only one taking `--border-strong`. An overlay has to be
+   * separable from the panel it covers and, with no shadow, the border is the
+   * only thing doing that work.
+   * ────────────────────────────────────────────────────────────────────────── */
+
+  /* 0 — the application window. Nothing is behind it. */
+  --elevation-0-background: var(--background);
+  --elevation-0-border: transparent;
+
+  /* 1 — a panel: the library, the inspector, the timeline bed. */
+  --elevation-1-background: var(--surface);
+  --elevation-1-border: var(--border);
+
+  /* 2 — a control surface sitting on a panel: toolbar, input, card. */
+  --elevation-2-background: var(--surface-raised);
+  --elevation-2-border: var(--border);
+
+  /* 3 — something floating over the interface that must read as interrupting
+     it: menu, popover, dialog, tooltip. */
+  --elevation-3-background: var(--surface-overlay);
+  --elevation-3-border: var(--border-strong);
+
+  /* ──────────────────────────────────────────────────────────────────────────
+   * LAYER 1 — MOTION
+   *
+   * Short. Shorter than a website, deliberately.
+   *
+   * The user of an editor operates the tool continuously rather than reading
+   * it: they open the same menu forty times in an hour, and anything above
+   * roughly 150ms on a panel or a menu stops reading as polish and starts
+   * reading as the application being slow. `--duration-slow` exists for the one
+   * case that genuinely benefits — a dialog taking over the window, where the
+   * motion says where the dialog came from — and using it on a hover is a
+   * review failure.
+   *
+   * Every duration here is redefined to zero under `prefers-reduced-motion` at
+   * the foot of this file, and `scales.test.ts` fails if one is added here and
+   * not there.
+   * ────────────────────────────────────────────────────────────────────────── */
+
+  --duration-instant: 0ms; /* state changes that must not animate at all */
+  --duration-fast: 80ms; /* hover, focus, press — anything under the pointer */
+  --duration-normal: 120ms; /* a menu or a popover opening */
+  --duration-slow: 180ms; /* a dialog entering. The ceiling. */
+
+  /* Easing.
+   *
+   * `standard` for anything that starts and ends on screen. `entrance` and
+   * `exit` are asymmetric on purpose: something arriving decelerates into place
+   * so the eye can catch it, something leaving accelerates away so it stops
+   * competing for attention. `linear` is for anything representing real elapsed
+   * time — a progress bar, a buffering indicator — where an eased curve would
+   * misreport how much work is left. */
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --easing-entrance: cubic-bezier(0, 0, 0, 1);
+  --easing-exit: cubic-bezier(0.3, 0, 1, 1);
+  --easing-linear: linear;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * TYPE ROLES, as classes
+ *
+ * The tokens above are the vocabulary; these are the six sentences. A role is
+ * four or six properties that belong together, and shipping them apart means
+ * every component re-composes them — and one of them eventually forgets
+ * `tabular-nums` on a timecode, which is the defect this whole role exists to
+ * prevent.
+ *
+ * Tailwind's `text-*` utilities remain available for the genuine one-off. These
+ * are for the ninety per cent that is not one.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.type-display {
+  font-family: var(--type-family-sans);
+  font-size: var(--type-display-size);
+  line-height: var(--type-display-line);
+  font-weight: var(--type-display-weight);
+  letter-spacing: var(--type-display-tracking);
+}
+
+.type-title {
+  font-family: var(--type-family-sans);
+  font-size: var(--type-title-size);
+  line-height: var(--type-title-line);
+  font-weight: var(--type-title-weight);
+  letter-spacing: var(--type-title-tracking);
+}
+
+.type-body {
+  font-family: var(--type-family-sans);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+  font-weight: var(--type-body-weight);
+  letter-spacing: var(--type-body-tracking);
+}
+
+.type-label {
+  font-family: var(--type-family-sans);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  font-weight: var(--type-label-weight);
+  letter-spacing: var(--type-label-tracking);
+}
+
+.type-caption {
+  font-family: var(--type-family-sans);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  font-weight: var(--type-caption-weight);
+  letter-spacing: var(--type-caption-tracking);
+}
+
+.type-timecode {
+  font-family: var(--type-family-mono);
+  font-size: var(--type-timecode-size);
+  line-height: var(--type-timecode-line);
+  font-weight: var(--type-timecode-weight);
+  letter-spacing: var(--type-timecode-tracking);
+  /* Belt and braces. The family already advances every digit identically; this
+     holds the guarantee when a fallback family has to take over, the one case
+     where the family alone would not. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * ELEVATION, as classes
+ *
+ * A background and a border chosen together, applied together. The pairing is
+ * the point: `--surface-overlay` with `--border` reads as a panel that failed
+ * to separate rather than as a menu.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.elevation-0 {
+  background: var(--elevation-0-background);
+  border: var(--border-width) solid var(--elevation-0-border);
+}
+
+.elevation-1 {
+  background: var(--elevation-1-background);
+  border: var(--border-width) solid var(--elevation-1-border);
+}
+
+.elevation-2 {
+  background: var(--elevation-2-background);
+  border: var(--border-width) solid var(--elevation-2-border);
+}
+
+.elevation-3 {
+  background: var(--elevation-3-background);
+  border: var(--border-width) solid var(--elevation-3-border);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * REDUCED MOTION
+ *
+ * Two mechanisms, because one of them is not enough.
+ *
+ * The first zeroes every duration token. Anything that animated by reading a
+ * `--duration-*` — which is everything in `packages/ui` — stops moving, keeps
+ * its end state, and needs no knowledge of the preference itself.
+ *
+ * The second is the net underneath. Third-party markup, a Radix animation, a
+ * keyframe someone wrote in a hurry: none of those read our tokens, and a user
+ * who asked the operating system for less motion did not ask only the parts of
+ * the interface we remembered to wire up. 1ms rather than 0s because a
+ * zero-duration animation never fires `animationend`, and a component waiting
+ * on that event to unmount would simply stay on screen — a reduced-motion
+ * setting that breaks menus teaches the user to turn it off.
+ *
+ * `[data-motion="essential"]` is the exit. Essential motion carries information
+ * no static frame carries: an indeterminate progress indicator saying work is
+ * still happening. Decoration is not essential, and marking something essential
+ * to keep an effect you liked is the misuse this paragraph exists to name.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0ms;
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+  }
+
+  *:not([data-motion="essential"], [data-motion="essential"] *),
+  *:not([data-motion="essential"], [data-motion="essential"] *)::before,
+  *:not([data-motion="essential"], [data-motion="essential"] *)::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

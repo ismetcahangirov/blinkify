@@ -1,6 +1,6 @@
 # Architecture gates
 
-Five checks stand between a change and `main`. Each one enforces a boundary
+Six checks stand between a change and `main`. Each one enforces a boundary
 that [`../../CLAUDE.md`](../../CLAUDE.md) states as a rule. This document says
 how they work, what each one does **not** cover, and how to prove one still
 works after you touch it.
@@ -14,8 +14,9 @@ works after you touch it.
 | `pnpm boundaries:rust` | No engine crate reaches `tauri`, directly or transitively | section 2  |
 | `pnpm deny:licenses`   | No GPL, AGPL or LGPL Rust crate                           | section 10 |
 | `pnpm colours:check`   | No colour value outside the design token file             | #15        |
+| `pnpm offline:check`   | No remote asset the interface needs in order to appear    | #16        |
 
-All five run in `pnpm verify`, and all five block a merge — see
+All six run in `pnpm verify`, and all six block a merge — see
 [`ci.md`](./ci.md) for how they are wired into the pipeline and in what order.
 
 ## Two languages, two tools — and why that is not pedantry
@@ -73,6 +74,47 @@ the palette drifts or the table in
 [`../design/colour-tokens.md`](../design/colour-tokens.md) stops matching the
 tokens it describes.
 
+## The offline-assets gate
+
+`tools/offline-assets-gate.mjs` enforces one property: nothing the interface
+needs in order to appear may come off a network.
+
+It exists because the failure is quiet in the way that matters most. A
+`<link>` to a font service, or an `url(https://…)` in a stylesheet, works on the
+machine of whoever added it, works in CI, works in every demonstration — and
+then a user opens Blinkify on a train and the interface has no typeface.
+`CLAUDE.md` section 20 rule 8 forbids a network call other than the update
+check; this gate is the half of that rule a scanner can see.
+
+What it catches, after stripping comments:
+
+| Where  | Shape                                          |
+| ------ | ---------------------------------------------- |
+| `.css` | `url(https://…)`, `@import "https://…"`        |
+| markup | `src="https://…"`, `<link … href="https://…">` |
+
+Protocol-relative `//host/path` counts, because it is a remote URL that merely
+declines to name its scheme — and it is the form a copied snippet usually
+carries.
+
+What it deliberately does **not** catch:
+
+- A URL in a comment or in prose. `packages/ui/src/fonts/README.md` records
+  exactly where each font file came from, and it has to stay able to. A gate
+  that flagged documentation would be routed around inside a month.
+- An `<a href>` a user clicks. That is a navigation, not an asset.
+
+What it does **not** catch and cannot:
+
+- A runtime `fetch()`. Nothing in the gate reads control flow, and a request
+  fired from a component is caught by review and by the Tauri capability
+  allowlist, not here.
+- Anything outside `apps/` and `packages/`. The updater endpoint lives in
+  `tauri.conf.json` and is the one outbound request Blinkify is allowed.
+- A font file that is committed but wrong. `fonts.test.ts` covers that: it
+  parses the WOFF2 that actually ships and asserts the timecode digits are all
+  one width.
+
 ## What no gate covers: the IPC edge
 
 The most important coupling in this codebase is invisible to static analysis in
@@ -116,13 +158,14 @@ So CLAUDE.md section 14 requires an injection test for any change under
 pnpm gates:prove
 ```
 
-| Script                      | Proves                                                                                                            |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `pnpm graph:injection`      | Each of the seven rules fires on its own violation, **by name**                                                   |
-| `pnpm graph:determinism`    | Two generator runs over an unchanged tree are byte-identical                                                      |
-| `pnpm boundaries:rust:test` | The Tauri check catches a direct **and** a transitive dependency                                                  |
-| `pnpm deny:test`            | The licence gate rejects GPL, AGPL and LGPL, and accepts MIT                                                      |
-| `pnpm colours:check:test`   | The colour gate catches a hex, an `rgb()` and a named colour, and does not catch a `var()` reference or a comment |
+| Script                      | Proves                                                                                                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm graph:injection`      | Each of the seven rules fires on its own violation, **by name**                                                                                                                 |
+| `pnpm graph:determinism`    | Two generator runs over an unchanged tree are byte-identical                                                                                                                    |
+| `pnpm boundaries:rust:test` | The Tauri check catches a direct **and** a transitive dependency                                                                                                                |
+| `pnpm deny:test`            | The licence gate rejects GPL, AGPL and LGPL, and accepts MIT                                                                                                                    |
+| `pnpm colours:check:test`   | The colour gate catches a hex, an `rgb()` and a named colour, and does not catch a `var()` reference or a comment                                                               |
+| `pnpm offline:check:test`   | The offline gate catches a font-service `<link>`, a remote `url()`, a remote `@import` and a remote `src`, and does not catch a URL in a comment or an `<a href>` a user clicks |
 
 Asserting on the rule _name_ rather than on a non-zero exit code is the point.
 Exit 1 could come from any rule, or from the tool failing to start. Only the

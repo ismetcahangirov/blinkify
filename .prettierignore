@@ -2,6 +2,11 @@ node_modules
 dist
 target
 .turbo
+
+# Nested git worktrees. Some tools create these inside the repository; git
+# already skips them, and Prettier walking into one means `pnpm verify` fails
+# on a copy of the tree rather than on the tree.
+.kilo
 pnpm-lock.yaml
 apps/desktop/src-tauri/gen
 tools/project-graph/output

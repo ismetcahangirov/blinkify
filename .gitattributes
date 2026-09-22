@@ -9,3 +9,9 @@
 *.mp4 binary
 *.mov binary
 *.mkv binary
+
+# Fonts. Binary, and the metric test reads them byte for byte.
+*.woff2 binary
+*.woff binary
+*.ttf binary
+*.otf binary

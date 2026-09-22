@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@blinkify/ui/tokens.css";
+@import "@blinkify/ui/styles.css";
 
 /*
  * The renderer's stylesheet.
@@ -7,6 +7,10 @@
  * It holds no colour values. Every one of them lives in
  * `packages/ui/src/tokens/tokens.css` (#15) and arrives here through the import
  * above; `pnpm colours:check` fails the build on a literal in this file.
+ *
+ * It holds no sizes, radii or durations either. Those live in
+ * `packages/ui/src/tokens/scales.css` (#16) and arrive through the same import,
+ * which also brings the two bundled typefaces.
  *
  * Dark first — CLAUDE.md section 17 — because video work happens against dark
  * chrome so the preview is what the eye adapts to.
@@ -65,13 +69,111 @@
   --color-timeline-ruler-text: var(--timeline-ruler-text);
 }
 
+/*
+ * Tailwind ships scales of its own, and they are not Blinkify's.
+ *
+ * Left in place, `text-xl`, `rounded-2xl` and `ease-in-out` keep working and
+ * quietly put off-scale values into the interface — a failure the colour gate
+ * cannot see, because nothing was hard-coded anywhere. Clearing each namespace
+ * we own means a utility either resolves to a token from #16 or does not exist,
+ * which is the only version of this that a reviewer can check.
+ *
+ * `--radius-*` is the exception, and deliberately so: Blinkify and Tailwind
+ * both named the same concept with the same obvious word. Tailwind's theme
+ * lives in `@layer theme` and `scales.css` is unlayered, and unlayered
+ * declarations beat layered ones whatever the source order — so `rounded-md`
+ * emits `border-radius: var(--radius-md)` and resolves to the Blinkify 4px
+ * without anything being mapped. Only the steps we hold no token for are
+ * cleared, and `rounded-2xl` then does not exist at all.
+ *
+ * Verified in the built stylesheet rather than assumed: with every name below
+ * applied to an element, `text-4xl`, `rounded-2xl` and `ease-in` generate no
+ * rule, while `rounded-md` and `ease-standard` generate Blinkify's values.
+ */
+@theme {
+  --text-*: initial;
+  --font-*: initial;
+  --ease-*: initial;
+  --leading-*: initial;
+  --tracking-*: initial;
+
+  --radius-xs: initial;
+  --radius-xl: initial;
+  --radius-2xl: initial;
+  --radius-3xl: initial;
+  --radius-4xl: initial;
+}
+
+/*
+ * The scales, published to Tailwind.
+ *
+ * `inline` for the same reason the colours use it: the values are already
+ * `var()` references into the token files, and a second indirection would stop
+ * a utility tracking a runtime change.
+ *
+ * Names mirror the tokens, so `--type-label-size` is `text-label` and
+ * `--space-3` is `p-3`. The one rename is `--type-family-sans` to Tailwind's
+ * `--font-sans`, because Tailwind owns the `--font-*` namespace and a token of
+ * that name would be a variable defined in terms of itself.
+ */
+@theme inline {
+  /* `p-3` is 3 × this, which is 12px — the same arithmetic as `--space-3`,
+     by construction rather than by coincidence. */
+  --spacing: var(--space-1);
+
+  --font-sans: var(--type-family-sans);
+  --font-mono: var(--type-family-mono);
+
+  /* Each role carries its line height, weight and tracking, so `text-body` is
+     the whole role rather than a size that still needs three more utilities. */
+  --text-display: var(--type-display-size);
+  --text-display--line-height: var(--type-display-line);
+  --text-display--font-weight: var(--type-display-weight);
+  --text-display--letter-spacing: var(--type-display-tracking);
+
+  --text-title: var(--type-title-size);
+  --text-title--line-height: var(--type-title-line);
+  --text-title--font-weight: var(--type-title-weight);
+  --text-title--letter-spacing: var(--type-title-tracking);
+
+  --text-body: var(--type-body-size);
+  --text-body--line-height: var(--type-body-line);
+  --text-body--font-weight: var(--type-body-weight);
+  --text-body--letter-spacing: var(--type-body-tracking);
+
+  --text-label: var(--type-label-size);
+  --text-label--line-height: var(--type-label-line);
+  --text-label--font-weight: var(--type-label-weight);
+  --text-label--letter-spacing: var(--type-label-tracking);
+
+  --text-caption: var(--type-caption-size);
+  --text-caption--line-height: var(--type-caption-line);
+  --text-caption--font-weight: var(--type-caption-weight);
+  --text-caption--letter-spacing: var(--type-caption-tracking);
+
+  /* `text-timecode` sets the size and the metrics but cannot set the family or
+     `font-variant-numeric`, which Tailwind's type namespace has no slot for.
+     Use the `.type-timecode` class from the design system instead — it is the
+     whole role, and forgetting one half of a timecode is the defect the role
+     exists to prevent. */
+  --text-timecode: var(--type-timecode-size);
+  --text-timecode--line-height: var(--type-timecode-line);
+  --text-timecode--font-weight: var(--type-timecode-weight);
+  --text-timecode--letter-spacing: var(--type-timecode-tracking);
+
+  --ease-standard: var(--easing-standard);
+  --ease-entrance: var(--easing-entrance);
+  --ease-exit: var(--easing-exit);
+  --ease-linear: var(--easing-linear);
+
+  /* What a bare `transition` utility means here. Tailwind's own defaults are
+     150ms and its own curve; both are a website's pace, not an editor's. */
+  --default-transition-duration: var(--duration-fast);
+  --default-transition-timing-function: var(--easing-standard);
+}
+
 :root {
-  font-family:
-    "Segoe UI Variable Text",
-    "Segoe UI",
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: var(--type-family-sans);
 }
 
 html,
@@ -100,9 +202,10 @@ body {
 
 /*
  * The update banner. Still plain — #17 rebuilds it on the primitives — but no
- * longer holding its own colours. It sits at the top of the shell rather than
- * over it: an update offer is information, not an interruption, and a modal
- * would stop someone opening the application they came to open.
+ * longer holding its own colours (#15) and, since #16, none of its own sizes
+ * either. It sits at the top of the shell rather than over it: an update offer
+ * is information, not an interruption, and a modal would stop someone opening
+ * the application they came to open.
  */
 .update-banner {
   position: fixed;
@@ -113,11 +216,12 @@ body {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  padding: 0.625rem 1rem;
-  background: var(--surface-raised);
-  border-bottom: 1px solid var(--border);
-  font-size: 0.8125rem;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--elevation-2-background);
+  border-bottom: var(--border-width) solid var(--elevation-2-border);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
 }
 
 .update-banner__text,
@@ -133,17 +237,18 @@ body {
 
 .update-banner__actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .update-banner button {
-  padding: 0.3125rem 0.75rem;
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
+  padding: var(--space-1) var(--space-3);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-md);
   background: var(--surface-overlay);
   color: var(--text-primary);
   font: inherit;
   cursor: pointer;
+  transition: background-color var(--duration-fast) var(--easing-standard);
 }
 
 .update-banner button:hover:not(:disabled) {
