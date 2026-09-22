@@ -84,6 +84,13 @@ jobs:
       - name: That gate still catches one (tokens:check:test)
         run: pnpm tokens:check:test
 
+      # The icons are generated from two committed SVGs. This fails if the
+      # rasters were edited by hand or the mark changed without them being
+      # regenerated — #20 requires the generation to be reproducible, and a
+      # reproducibility claim nobody checks is a claim.
+      - name: Icons match the source artwork (#20)
+        run: pnpm icons:check
+
   typecheck:
     name: Typecheck (tsc)
     runs-on: windows-latest

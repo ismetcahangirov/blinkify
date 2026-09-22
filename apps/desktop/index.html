@@ -4,6 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Blinkify</title>
+    <!--
+      The application background, inline, before anything else loads (#20).
+
+      Three things have to agree or the window flashes white on every launch,
+      and they are separated by a process boundary so none of them can read
+      the others:
+
+        tauri.conf.json  backgroundColor   the native window, before the WebView
+        this element     background        the document, before the stylesheet
+        tokens.css       --background      the interface, once React mounts
+
+      A literal here is unavoidable — the document must be dark before any CSS
+      file has been fetched, which is exactly the moment a token is not
+      available. `icons.test.ts` asserts all three are the same colour, so the
+      duplication is checked rather than remembered.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #0a0c10;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

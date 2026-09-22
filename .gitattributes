@@ -5,6 +5,7 @@
 # Binary, never normalised.
 *.png binary
 *.ico binary
+*.bmp binary
 *.jpg binary
 *.mp4 binary
 *.mov binary
