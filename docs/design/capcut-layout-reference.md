@@ -119,6 +119,15 @@ honoured, which means a splitter always has somewhere to stop — and **stopping
 the required behaviour**. A splitter that collapses a zone to nothing has
 deleted a zone the user then has to work out how to get back.
 
+**One consequence at the very bottom of the range.** At the 1280px minimum the
+inspector's 20% default is 256px, four pixels under its own 260px minimum, so on
+the smallest supported window it opens at its floor rather than at its default
+and gives the difference back to the player. That is the right way round — the
+player is what the window is for — and it is asserted in `layout.test.ts` rather
+than left to be discovered. The library has room to spare at that width and is
+not clamped, which is what makes this a property of the inspector rather than of
+the window.
+
 **Splitter geometry.** A 1px visual line using `--border`, with an 8px pointer
 hit area centred on it. The visual line is thin because it is chrome; the hit
 area is wide because it is a control, and a 1px drag target is a usability bug
@@ -155,6 +164,32 @@ Full width, 48px, fixed. Left to right:
 6. **Window controls** — minimise, maximise, close. Custom chrome means these
    are ours to draw, and double-click-to-maximise and snap behaviour are ours to
    implement rather than to inherit (#19).
+
+### What the custom chrome costs
+
+Blinkify draws its own window controls, which means `decorations: false`, which
+means **Windows 11 Snap Layouts do not work** — neither the flyout when the
+pointer rests on the maximise button nor dragging the window to a screen edge.
+
+That is upstream rather than ours: `tauri-apps/tauri#4531` has been open since
+2022 and is labelled `status: upstream`. It was checked rather than assumed,
+because #19 asks for snapping by name.
+
+It is a real loss. People put an editor beside a browser, and snapping is how
+they do it. The three ways out, in the order they should be considered:
+
+1. **Accept it.** Maximise, restore and the keyboard all still work; only the
+   snap gestures are gone.
+2. **Native decorations.** One line of `tauri.conf.json`. Windows 11 honours the
+   dark theme, so the title bar is dark — but it sits above the application bar,
+   repeating the project name, and the top 32 pixels stop being Blinkify's.
+3. **Subclass the window procedure.** Handling `WM_NCHITTEST` and
+   `WM_NCCALCSIZE` restores Snap Layouts under custom chrome. It is how the
+   editors that have both do it, and it is a block of `unsafe` Win32 plus a new
+   crate.
+
+The first is what ships today, and the decision is recorded here rather than
+discovered by somebody wondering why snapping stopped working.
 
 ## Zone 1 — library
 

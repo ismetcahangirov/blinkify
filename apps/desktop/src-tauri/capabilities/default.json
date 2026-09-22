@@ -1,7 +1,13 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "The narrowest capability set the application actually uses. CLAUDE.md section 11: the allowlist grants the narrowest scope that works, and it is easier to keep narrow than to make narrow.",
+  "description": "The narrowest capability set the application actually uses. CLAUDE.md section 11: the allowlist grants the narrowest scope that works, and it is easier to keep narrow than to make narrow. The window permissions below are the exact set the custom chrome in #19 calls, one per button, rather than core:window:default plus a hope.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-close"
+  ]
 }

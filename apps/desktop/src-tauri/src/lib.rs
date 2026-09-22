@@ -10,8 +10,10 @@
 //! waiting to be written.
 
 pub mod updater;
+pub mod window_state;
 
 use blinkify_engine::ExportTier;
+use tauri::{Manager, WindowEvent};
 
 use updater::PendingUpdate;
 
@@ -50,7 +52,31 @@ pub fn run() {
             // must appear whether or not the network answers, and it applies
             // nothing on its own — see `updater`.
             updater::check_on_launch(app.handle());
+
+            // Put the window back where the user left it, if that is still
+            // somewhere they can see it. `window_state::restore` validates the
+            // saved rectangle against the monitors attached right now, because
+            // a window restored onto a display that has been unplugged is
+            // running, invisible, and unreachable.
+            if let Some(window) = app.get_webview_window("main") {
+                window_state::restore(app.handle(), &window);
+            }
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Saved on the way out rather than on every move and resize. A
+            // drag emits hundreds of events and writing the file on each one
+            // would put a disk write in the middle of a window drag; the only
+            // geometry that matters is the one the window had when it closed.
+            //
+            // The cost is that a crash loses the position. That is the right
+            // trade for a preference: the recovery is that the window opens
+            // where it opened last time, which is where it would have opened
+            // anyway.
+            if matches!(event, WindowEvent::CloseRequested { .. }) {
+                window_state::save(window.app_handle(), window);
+            }
         })
         .run(tauri::generate_context!())
         .expect("the Blinkify window could not be created");

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@blinkify/ui/styles.css";
+@import "./shell/shell.css";
 
 /*
  * The renderer's stylesheet.
