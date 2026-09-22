@@ -16,11 +16,12 @@
         "title": "Blinkify",
         "width": 1440,
         "height": 900,
-        "minWidth": 1024,
-        "minHeight": 640,
+        "minWidth": 1280,
+        "minHeight": 800,
         "resizable": true,
         "theme": "Dark",
-        "backgroundColor": "#0B0D0F"
+        "decorations": false,
+        "backgroundColor": "#0a0c10"
       }
     ],
     "security": {

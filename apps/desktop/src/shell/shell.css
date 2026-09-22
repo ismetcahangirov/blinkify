@@ -1,0 +1,305 @@
+/*
+ * The four-zone grid (#19), built to `docs/design/capcut-layout-reference.md`.
+ *
+ * ── Where the numbers are ───────────────────────────────────────────────────
+ *
+ * The fractions are written by the splitters onto `.shell__body` as
+ * `--layout-<zone>-fraction`. The pixel minimums and the fractional maximums
+ * are below, and they are the same numbers as `layout.ts` — which is checked,
+ * not trusted: `layout.test.ts` parses the reference document and asserts both
+ * agree with it.
+ *
+ * ── Why the sizes go through `clamp()` ─────────────────────────────────────
+ *
+ * The drag handler clamps too, so the value that gets persisted is sane. This
+ * clamp is for the other case: the window itself shrinking. 22% of a 1280px
+ * window is 282px and fine; 22% of a narrower one is not, and no amount of
+ * clamping in a pointer handler catches a resize nobody dragged.
+ *
+ * `clamp(min, preferred, max)` with a percentage preferred value resolves
+ * against the grid container's inline size, which is exactly the container the
+ * fraction was measured against.
+ */
+
+/*
+ * The shell's own measurements.
+ *
+ * Every one of them is in `docs/design/capcut-layout-reference.md` and in
+ * `layout.ts`, and `layout.test.ts` asserts all three agree. Two copies of a
+ * number are one copy too many unless something checks them, which is why the
+ * test exists rather than a comment asking people to remember.
+ *
+ * Where a design-system token already says the thing, it is used instead of a
+ * new number: the splitter's line is the system's one border width, and its hit
+ * area is a spacing step.
+ */
+:root {
+  --shell-bar-height: 48px;
+
+  --zone-library-min: 240px;
+  --zone-library-max: 40%;
+  --zone-inspector-min: 260px;
+  --zone-inspector-max: 40%;
+  --zone-timeline-min: 180px;
+  --zone-timeline-max: 70%;
+  --zone-player-min: 480px;
+
+  --splitter-line: var(--border-width);
+  --splitter-hit-area: var(--space-2);
+
+  /* Uppercase at caption size needs more tracking than sentence case does, or
+     the letters read as one run. Not a scale step — one label style, here. */
+  --zone-title-tracking: 0.06em;
+}
+
+.shell {
+  display: grid;
+  grid-template-rows: var(--shell-bar-height) 1fr;
+  height: 100%;
+  background: var(--background);
+  color: var(--text-primary);
+  /* The shell owns the window. Nothing inside it may scroll the window itself;
+     a zone that needs to scroll uses ScrollArea, which scrolls its own box. */
+  overflow: hidden;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * THE APPLICATION BAR
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.shell__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-inline: var(--space-2);
+
+  background: var(--elevation-2-background);
+  border-bottom: var(--border-width) solid var(--elevation-2-border);
+
+  /* The bar is a drag handle. Selecting the project name by accident while
+     dragging the window is the small annoyance this prevents. */
+  user-select: none;
+}
+
+.shell__menus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.shell__project {
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  font-weight: var(--type-label-weight);
+  color: var(--text-primary);
+  /* Takes the slack, so the controls on either side stay at the two ends of the
+     bar however long the project name is. */
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell__history {
+  display: flex;
+  gap: var(--space-1);
+}
+
+/*
+ * The lossless indicator.
+ *
+ * `unknown` is the only state that exists today and it is styled as secondary
+ * text rather than in the lossless colour. That is deliberate: `--lossless` is
+ * reserved for a statement about whether pixels were preserved, and "nothing
+ * has computed that yet" is not one. Using the colour here would spend the
+ * signal before the product has anything to say with it.
+ */
+.shell__lossless {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-sm);
+
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.shell__lossless[data-state="lossless"] {
+  border-color: var(--lossless);
+  color: var(--lossless);
+}
+
+.shell__window-controls {
+  display: flex;
+  gap: var(--space-1);
+  /* Hard against the right edge, where Windows puts them and where the hand
+     already goes. */
+  margin-right: calc(var(--space-2) * -1);
+}
+
+/*
+ * No `-webkit-app-region` anywhere. That is Electron's mechanism and Tauri
+ * ignores it; writing it would be a rule that looks like it protects the
+ * buttons on the bar and does nothing.
+ *
+ * Tauri reads `data-tauri-drag-region` from the event's target, so a button
+ * inside the bar — which does not carry the attribute — is a button and not a
+ * handle. The bar is draggable and its controls are not, with no help from CSS.
+ */
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * THE BODY: THREE ROWS
+ *
+ * The upper row, the horizontal splitter, and the timeline. The fraction is a
+ * fraction of THIS element's height, which is the height below the bar — which
+ * is what the reference document's "38% of height below the bar" means.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.shell__body {
+  /* Seeded by AppShell from the stored preference before first paint. The
+     values here are the documented defaults and are what a first launch, or a
+     cleared preference, renders. */
+  --layout-library-fraction: 0.22;
+  --layout-inspector-fraction: 0.2;
+  --layout-timeline-fraction: 0.38;
+
+  display: grid;
+  grid-template-rows:
+    minmax(0, 1fr)
+    auto
+    clamp(
+      var(--zone-timeline-min),
+      calc(var(--layout-timeline-fraction) * 100%),
+      var(--zone-timeline-max)
+    );
+  min-height: 0;
+}
+
+.shell__upper {
+  display: grid;
+  grid-template-columns:
+    clamp(
+      var(--zone-library-min),
+      calc(var(--layout-library-fraction) * 100%),
+      var(--zone-library-max)
+    )
+    auto
+    minmax(var(--zone-player-min), 1fr)
+    auto
+    clamp(
+      var(--zone-inspector-min),
+      calc(var(--layout-inspector-fraction) * 100%),
+      var(--zone-inspector-max)
+    );
+  min-height: 0;
+}
+
+.shell__zone {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--elevation-1-background);
+}
+
+/*
+ * The player sits on the application background rather than a panel surface.
+ *
+ * The reference's load-bearing principle: the chrome is low-contrast so the
+ * preview dominates. A panel surface behind the frame would put a lighter
+ * rectangle around the one thing the user is judging by eye.
+ */
+.shell__zone--player {
+  background: var(--background);
+}
+
+.shell__zone--timeline {
+  background: var(--surface-sunken);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * SPLITTERS
+ *
+ * A 1px line with an 8px hit area. The line is thin because it is chrome; the
+ * target is wide because it is a control, and a 1px drag target reads as the
+ * application being unresponsive rather than as a design choice.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.shell__splitter {
+  position: relative;
+  background: var(--border);
+  flex-shrink: 0;
+  /* Not `transition`: the splitter follows the pointer, and an eased splitter
+     lags behind the hand by exactly the transition duration. */
+  z-index: 1;
+}
+
+.shell__splitter[data-orientation="vertical"] {
+  width: var(--splitter-line);
+  cursor: col-resize;
+}
+
+.shell__splitter[data-orientation="horizontal"] {
+  height: var(--splitter-line);
+  cursor: row-resize;
+}
+
+/*
+ * The hit area, grown around the line without moving it. A pseudo-element so
+ * the grid track stays 1px — widening the element itself would mean the
+ * splitter took eight pixels out of the layout.
+ */
+.shell__splitter::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.shell__splitter[data-orientation="vertical"]::before {
+  inset-inline: calc(var(--splitter-hit-area) / -2);
+}
+
+.shell__splitter[data-orientation="horizontal"]::before {
+  inset-block: calc(var(--splitter-hit-area) / -2);
+}
+
+.shell__splitter:hover,
+.shell__splitter:focus-visible {
+  background: var(--accent);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * ZONE PLACEHOLDERS
+ *
+ * What an empty zone looks like until its epic fills it.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  height: 100%;
+  padding: var(--space-4);
+}
+
+.zone__title {
+  margin: 0;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  font-weight: var(--type-label-weight);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--zone-title-tracking);
+}
+
+.zone__placeholder {
+  margin: 0;
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  color: var(--text-disabled);
+}

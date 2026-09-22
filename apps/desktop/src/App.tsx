@@ -1,38 +1,33 @@
+import { AppShell } from "./shell/AppShell.js";
+import { InspectorZone } from "./shell/zones/InspectorZone.js";
+import { LibraryZone } from "./shell/zones/LibraryZone.js";
+import { PlayerZone } from "./shell/zones/PlayerZone.js";
+import { TimelineZone } from "./shell/zones/TimelineZone.js";
 import { UpdateBanner } from "./UpdateBanner.js";
-import { useShellStore } from "./shell.store.js";
 
 /**
- * The application shell.
+ * The application.
  *
- * Deliberately almost empty. The CapCut-structured layout — media library,
- * preview, inspector, timeline — is Epic #2 (#18, #19), and building it before
- * the design system exists would mean building it twice.
+ * Almost nothing: it composes the shell out of the four zones and gets out of
+ * the way. The shell (#19) is a layout and knows nothing about what is in a
+ * zone; each zone is filled by its own epic — the library by #53, the player by
+ * Epic #4, the inspector by #49 and #56, the timeline by Epic #5.
  *
- * The classes are Tailwind utilities reading the token theme declared in
- * `styles.css` (#15, #16). `text-text-secondary` is the semantic token
- * `--text-secondary`, not a colour: the repetition is the price of the
- * utility name matching the token name exactly. `text-display` and
- * `text-caption` are type roles from the scale, each carrying its own size,
- * line height, weight and tracking — Tailwind's own `text-4xl` and `text-sm`
- * were cleared in `styles.css`, so an off-scale size is now a class that does
- * not exist rather than one nobody notices.
+ * Every zone element is created here, once, and this component has no state, so
+ * those elements keep their identity for the life of the application. That is
+ * half of why a splitter drag re-renders nothing; the other half is in
+ * `AppShell`, which never subscribes to the value a drag changes.
  */
 export function App() {
-  const engineStatus = useShellStore((state) => state.engineStatus);
-
   return (
-    <main className="flex h-full flex-col items-center justify-center gap-1">
+    <>
       <UpdateBanner />
-      <h1 className="text-display">Blinkify</h1>
-      <p className="text-body text-text-secondary">
-        Edit video without degrading it.
-      </p>
-      <p
-        className="text-caption text-text-secondary"
-        data-testid="engine-status"
-      >
-        Engine: {engineStatus}
-      </p>
-    </main>
+      <AppShell
+        library={<LibraryZone />}
+        player={<PlayerZone />}
+        inspector={<InspectorZone />}
+        timeline={<TimelineZone />}
+      />
+    </>
   );
 }
