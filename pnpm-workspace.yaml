@@ -25,4 +25,14 @@ strictPeerDependencies: false
 # Its script selects the platform binding; without it the import boundary rules
 # in #11 cannot resolve a path alias, so the gate would pass by not looking.
 allowBuilds:
+  # esbuild — Storybook's Vite builder (#17) depends on it, and its install
+  # script selects the platform binary. Without it Storybook does not start, so
+  # the primitives stop being reviewable in isolation. esbuild is a first-party
+  # build tool with a published, readable install script rather than a
+  # transitive unknown, which is what makes this a decision rather than a
+  # default somebody accepted.
+  esbuild: true
+  # unrs-resolver — the native resolver behind eslint-import-resolver-typescript.
+  # Its script selects the platform binding; without it the import boundary rules
+  # in #11 cannot resolve a path alias, so the gate would pass by not looking.
   unrs-resolver: true

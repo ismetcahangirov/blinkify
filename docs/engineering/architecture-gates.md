@@ -1,6 +1,6 @@
 # Architecture gates
 
-Six checks stand between a change and `main`. Each one enforces a boundary
+Seven checks stand between a change and `main`. Each one enforces a boundary
 that [`../../CLAUDE.md`](../../CLAUDE.md) states as a rule. This document says
 how they work, what each one does **not** cover, and how to prove one still
 works after you touch it.
@@ -15,8 +15,9 @@ works after you touch it.
 | `pnpm deny:licenses`   | No GPL, AGPL or LGPL Rust crate                           | section 10 |
 | `pnpm colours:check`   | No colour value outside the design token file             | #15        |
 | `pnpm offline:check`   | No remote asset the interface needs in order to appear    | #16        |
+| `pnpm tokens:check`    | No hard-coded length, duration or weight in `packages/ui` | #17        |
 
-All six run in `pnpm verify`, and all six block a merge — see
+All seven run in `pnpm verify`, and all seven block a merge — see
 [`ci.md`](./ci.md) for how they are wired into the pipeline and in what order.
 
 ## Two languages, two tools — and why that is not pedantry
@@ -115,6 +116,37 @@ What it does **not** catch and cannot:
   parses the WOFF2 that actually ships and asserts the timecode digits are all
   one width.
 
+## The design-token gate
+
+`tools/design-token-gate.mjs` is the colour gate's other half. Colour has its
+own scanner; this one covers every measurement a component can make — lengths,
+durations and font weights — inside `packages/ui`.
+
+The failure it prevents has the same shape and is just as quiet. A component
+with `padding: 10px` looks perfectly fine, sits two pixels off the grid every
+other control is on, and nobody sees it until two panels end up side by side in
+a screenshot.
+
+It scans `packages/ui/src` minus the files whose job is to hold values: the
+three token layers in `tokens/`, `fonts/fonts.css` (whose `unicode-range` is a
+character range, not a measurement), and test files, which have to be able to
+write a number in order to assert on one. **Story files are not exempt** — a
+story laid out with `gap: 12px` shows the component in a spacing the product
+does not have.
+
+What it accepts, and why each is safe rather than an oversight: zero, which is
+zero in every unit; percentages and viewport-relative values inside a token,
+because `width: 100%` is a relationship to a parent rather than a size; angles,
+because one turn is one turn; and unitless numbers like `flex: 1`.
+
+What it does **not** catch:
+
+- A value assembled at runtime — `` `${n}px` ``. Review catches that one.
+- A **wrong** token. `--space-16` where `--space-2` was meant passes every gate.
+- The renderer. `apps/desktop` is Tailwind's, and Tailwind's own off-scale steps
+  are cleared in `styles.css` so that a utility either maps to a Blinkify token
+  or does not exist.
+
 ## What no gate covers: the IPC edge
 
 The most important coupling in this codebase is invisible to static analysis in
@@ -158,14 +190,15 @@ So CLAUDE.md section 14 requires an injection test for any change under
 pnpm gates:prove
 ```
 
-| Script                      | Proves                                                                                                                                                                          |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm graph:injection`      | Each of the seven rules fires on its own violation, **by name**                                                                                                                 |
-| `pnpm graph:determinism`    | Two generator runs over an unchanged tree are byte-identical                                                                                                                    |
-| `pnpm boundaries:rust:test` | The Tauri check catches a direct **and** a transitive dependency                                                                                                                |
-| `pnpm deny:test`            | The licence gate rejects GPL, AGPL and LGPL, and accepts MIT                                                                                                                    |
-| `pnpm colours:check:test`   | The colour gate catches a hex, an `rgb()` and a named colour, and does not catch a `var()` reference or a comment                                                               |
-| `pnpm offline:check:test`   | The offline gate catches a font-service `<link>`, a remote `url()`, a remote `@import` and a remote `src`, and does not catch a URL in a comment or an `<a href>` a user clicks |
+| Script                      | Proves                                                                                                                                                                                                                                   |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm graph:injection`      | Each of the seven rules fires on its own violation, **by name**                                                                                                                                                                          |
+| `pnpm graph:determinism`    | Two generator runs over an unchanged tree are byte-identical                                                                                                                                                                             |
+| `pnpm boundaries:rust:test` | The Tauri check catches a direct **and** a transitive dependency                                                                                                                                                                         |
+| `pnpm deny:test`            | The licence gate rejects GPL, AGPL and LGPL, and accepts MIT                                                                                                                                                                             |
+| `pnpm colours:check:test`   | The colour gate catches a hex, an `rgb()` and a named colour, and does not catch a `var()` reference or a comment                                                                                                                        |
+| `pnpm offline:check:test`   | The offline gate catches a font-service `<link>`, a remote `url()`, a remote `@import` and a remote `src`, and does not catch a URL in a comment or an `<a href>` a user clicks                                                          |
+| `pnpm tokens:check:test`    | The design-token gate catches a pixel padding, a rem radius, a millisecond duration, a numeric font weight and a length in an inline style, and does not catch a percentage, a `calc()` over tokens, zero, or the token files themselves |
 
 Asserting on the rule _name_ rather than on a non-zero exit code is the point.
 Exit 1 could come from any rule, or from the tool failing to start. Only the

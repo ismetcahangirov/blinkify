@@ -74,6 +74,16 @@ jobs:
       - name: That gate still catches one (offline:check:test)
         run: pnpm offline:check:test
 
+      # And the third scanner: no hard-coded length, duration or font weight
+      # inside the design system. Epic #2's acceptance criterion is that no
+      # component contains a hard-coded colour, radius, duration or spacing
+      # value; the colour gate covers the first, this covers the rest.
+      - name: No hard-coded value in packages/ui (#17)
+        run: pnpm tokens:check
+
+      - name: That gate still catches one (tokens:check:test)
+        run: pnpm tokens:check:test
+
   typecheck:
     name: Typecheck (tsc)
     runs-on: windows-latest

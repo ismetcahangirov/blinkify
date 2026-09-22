@@ -5,8 +5,8 @@
     "tools"
   ],
   "totals": {
-    "files": 39,
-    "tests": 5,
+    "files": 73,
+    "tests": 8,
     "violations": 0
   },
   "byWorkspace": {
@@ -33,14 +33,32 @@
       ]
     },
     "packages/ui": {
-      "files": 7,
-      "tests": 3,
+      "files": 39,
+      "tests": 6,
       "untested": [
+        "packages/ui/.storybook/main.ts",
+        "packages/ui/.storybook/preview.tsx",
+        "packages/ui/src/components/Button.stories.tsx",
+        "packages/ui/src/components/Dialog.stories.tsx",
+        "packages/ui/src/components/IconButton.stories.tsx",
+        "packages/ui/src/components/Menu.stories.tsx",
+        "packages/ui/src/components/NumberInput.stories.tsx",
+        "packages/ui/src/components/Popover.stories.tsx",
+        "packages/ui/src/components/ScrollArea.stories.tsx",
+        "packages/ui/src/components/ScrollArea.tsx",
+        "packages/ui/src/components/Select.stories.tsx",
+        "packages/ui/src/components/Slider.stories.tsx",
+        "packages/ui/src/components/StoryRow.tsx",
+        "packages/ui/src/components/Switch.stories.tsx",
+        "packages/ui/src/components/Tabs.stories.tsx",
+        "packages/ui/src/components/Tooltip.stories.tsx",
+        "packages/ui/src/components/classNames.ts",
+        "packages/ui/src/index.css",
         "packages/ui/src/index.ts"
       ]
     },
     "tools": {
-      "files": 17,
+      "files": 19,
       "tests": 0,
       "untested": [
         "tools/apply-labels.mjs",
@@ -49,6 +67,8 @@
         "tools/colour-gate.mjs",
         "tools/crate-boundaries-test.mjs",
         "tools/crate-boundaries.mjs",
+        "tools/design-token-gate-test.mjs",
+        "tools/design-token-gate.mjs",
         "tools/generate-types-index.mjs",
         "tools/licence-gate-test.mjs",
         "tools/offline-assets-gate-test.mjs",
@@ -110,7 +130,8 @@
       "layer": "renderer",
       "isTest": false,
       "dependsOn": [
-        "apps/desktop/src/update.store.ts"
+        "apps/desktop/src/update.store.ts",
+        "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
         "apps/desktop/src/App.tsx",
@@ -127,7 +148,8 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/App.tsx",
-        "apps/desktop/src/styles.css"
+        "apps/desktop/src/styles.css",
+        "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [],
       "coveredByTests": [],
@@ -258,6 +280,478 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/ui/.storybook/main.ts": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/.storybook/preview.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Tooltip.tsx",
+        "packages/ui/src/index.css"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/Button.stories.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Button.tsx",
+        "packages/ui/src/components/StoryRow.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/Button.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/classNames.ts"
+      ],
+      "dependedOnBy": [
+        "packages/ui/src/components/Button.stories.tsx",
+        "packages/ui/src/components/Dialog.stories.tsx",
+        "packages/ui/src/components/IconButton.tsx",
+        "packages/ui/src/components/Menu.stories.tsx",
+        "packages/ui/src/components/Popover.stories.tsx",
+        "packages/ui/src/components/Tooltip.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/components/components.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/ContextMenu.test.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": true,
+      "dependsOn": [
+        "packages/ui/src/components/Menu.tsx",
+        "packages/ui/src/components/Tooltip.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/Dialog.stories.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Button.tsx",
+        "packages/ui/src/components/Dialog.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/Dialog.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/classNames.ts"
+      ],
+      "dependedOnBy": [
+        "packages/ui/src/components/Dialog.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/components/components.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/IconButton.stories.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/IconButton.tsx",
+        "packages/ui/src/components/StoryRow.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/IconButton.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Button.tsx",
+        "packages/ui/src/components/Tooltip.tsx",
+        "packages/ui/src/components/classNames.ts"
+      ],
+      "dependedOnBy": [
+        "packages/ui/src/components/IconButton.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/components/components.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/Menu.stories.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Button.tsx",
+        "packages/ui/src/components/Menu.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/Menu.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Tooltip.tsx",
+        "packages/ui/src/components/classNames.ts"
+      ],
+      "dependedOnBy": [
+        "packages/ui/src/components/ContextMenu.test.tsx",
+        "packages/ui/src/components/Menu.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/components/ContextMenu.test.tsx",
+        "packages/ui/src/components/components.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/NumberInput.stories.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/NumberInput.tsx",
+        "packages/ui/src/components/StoryRow.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/NumberInput.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/classNames.ts"
+      ],
+      "dependedOnBy": [
+        "packages/ui/src/components/NumberInput.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/components/components.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/Popover.stories.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Button.tsx",
+        "packages/ui/src/components/Popover.tsx",
+        "packages/ui/src/components/Slider.tsx",
+        "packages/ui/src/components/StoryRow.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/Popover.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Tooltip.tsx",
+        "packages/ui/src/components/classNames.ts"
+      ],
+      "dependedOnBy": [
+        "packages/ui/src/components/Popover.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/components/components.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/ScrollArea.stories.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/ScrollArea.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/ScrollArea.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/classNames.ts"
+      ],
+      "dependedOnBy": [
+        "packages/ui/src/components/ScrollArea.stories.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/Select.stories.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Select.tsx",
+        "packages/ui/src/components/StoryRow.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/Select.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Tooltip.tsx",
+        "packages/ui/src/components/classNames.ts"
+      ],
+      "dependedOnBy": [
+        "packages/ui/src/components/Select.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/components/components.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/Slider.stories.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Slider.tsx",
+        "packages/ui/src/components/StoryRow.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/Slider.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/classNames.ts"
+      ],
+      "dependedOnBy": [
+        "packages/ui/src/components/Popover.stories.tsx",
+        "packages/ui/src/components/Slider.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/components/components.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/StoryRow.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/ui/src/components/Button.stories.tsx",
+        "packages/ui/src/components/IconButton.stories.tsx",
+        "packages/ui/src/components/NumberInput.stories.tsx",
+        "packages/ui/src/components/Popover.stories.tsx",
+        "packages/ui/src/components/Select.stories.tsx",
+        "packages/ui/src/components/Slider.stories.tsx",
+        "packages/ui/src/components/Switch.stories.tsx",
+        "packages/ui/src/components/Tooltip.stories.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/Switch.stories.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/StoryRow.tsx",
+        "packages/ui/src/components/Switch.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/Switch.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/classNames.ts"
+      ],
+      "dependedOnBy": [
+        "packages/ui/src/components/Switch.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/components/components.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/Tabs.stories.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Tabs.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/Tabs.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/classNames.ts"
+      ],
+      "dependedOnBy": [
+        "packages/ui/src/components/Tabs.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/components/components.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/Tooltip.stories.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/components/Button.tsx",
+        "packages/ui/src/components/StoryRow.tsx",
+        "packages/ui/src/components/Tooltip.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/Tooltip.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/ui/.storybook/preview.tsx",
+        "packages/ui/src/components/ContextMenu.test.tsx",
+        "packages/ui/src/components/IconButton.tsx",
+        "packages/ui/src/components/Menu.tsx",
+        "packages/ui/src/components/Popover.tsx",
+        "packages/ui/src/components/Select.tsx",
+        "packages/ui/src/components/Tooltip.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
+        "packages/ui/src/components/stories.test.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [
+        "packages/ui/src/components/ContextMenu.test.tsx",
+        "packages/ui/src/components/components.test.tsx",
+        "packages/ui/src/components/stories.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/classNames.ts": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/ui/src/components/Button.tsx",
+        "packages/ui/src/components/Dialog.tsx",
+        "packages/ui/src/components/IconButton.tsx",
+        "packages/ui/src/components/Menu.tsx",
+        "packages/ui/src/components/NumberInput.tsx",
+        "packages/ui/src/components/Popover.tsx",
+        "packages/ui/src/components/ScrollArea.tsx",
+        "packages/ui/src/components/Select.tsx",
+        "packages/ui/src/components/Slider.tsx",
+        "packages/ui/src/components/Switch.tsx",
+        "packages/ui/src/components/Tabs.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/ui/src/components/components.test.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": true,
+      "dependsOn": [
+        "packages/ui/src/components/Button.tsx",
+        "packages/ui/src/components/Dialog.tsx",
+        "packages/ui/src/components/IconButton.tsx",
+        "packages/ui/src/components/Menu.tsx",
+        "packages/ui/src/components/NumberInput.tsx",
+        "packages/ui/src/components/Popover.tsx",
+        "packages/ui/src/components/Select.tsx",
+        "packages/ui/src/components/Slider.tsx",
+        "packages/ui/src/components/Switch.tsx",
+        "packages/ui/src/components/Tabs.tsx",
+        "packages/ui/src/components/Tooltip.tsx",
+        "packages/ui/src/tokens/contrast.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "packages/ui/src/components/stories.test.tsx": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": true,
+      "dependsOn": [
+        "packages/ui/src/components/Tooltip.tsx"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
     "packages/ui/src/fonts/fontMetrics.ts": {
       "workspace": "packages/ui",
       "layer": "design-system",
@@ -282,17 +776,44 @@
       "coveredByTests": [],
       "hasNoDependents": true
     },
+    "packages/ui/src/index.css": {
+      "workspace": "packages/ui",
+      "layer": "design-system",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/ui/.storybook/preview.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/ui/src/index.ts": {
       "workspace": "packages/ui",
       "layer": "design-system",
       "isTest": false,
       "dependsOn": [
+        "packages/ui/src/components/Button.tsx",
+        "packages/ui/src/components/Dialog.tsx",
+        "packages/ui/src/components/IconButton.tsx",
+        "packages/ui/src/components/Menu.tsx",
+        "packages/ui/src/components/NumberInput.tsx",
+        "packages/ui/src/components/Popover.tsx",
+        "packages/ui/src/components/ScrollArea.tsx",
+        "packages/ui/src/components/Select.tsx",
+        "packages/ui/src/components/Slider.tsx",
+        "packages/ui/src/components/Switch.tsx",
+        "packages/ui/src/components/Tabs.tsx",
+        "packages/ui/src/components/Tooltip.tsx",
+        "packages/ui/src/components/classNames.ts",
         "packages/ui/src/tokens/contrast.ts",
         "packages/ui/src/tokens/contrastPairs.ts"
       ],
-      "dependedOnBy": [],
+      "dependedOnBy": [
+        "apps/desktop/src/UpdateBanner.tsx",
+        "apps/desktop/src/main.tsx"
+      ],
       "coveredByTests": [],
-      "hasNoDependents": true
+      "hasNoDependents": false
     },
     "packages/ui/src/tokens/contrast.ts": {
       "workspace": "packages/ui",
@@ -300,11 +821,13 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "packages/ui/src/components/components.test.tsx",
         "packages/ui/src/index.ts",
         "packages/ui/src/tokens/scales.test.ts",
         "packages/ui/src/tokens/tokens.test.ts"
       ],
       "coveredByTests": [
+        "packages/ui/src/components/components.test.tsx",
         "packages/ui/src/tokens/scales.test.ts",
         "packages/ui/src/tokens/tokens.test.ts"
       ],
@@ -393,6 +916,24 @@
       "hasNoDependents": true
     },
     "tools/crate-boundaries.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/design-token-gate-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/design-token-gate.mjs": {
       "workspace": "tools",
       "layer": "tooling",
       "isTest": false,

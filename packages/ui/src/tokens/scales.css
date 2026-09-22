@@ -157,6 +157,33 @@
   --border-width: 1px;
 
   /* ──────────────────────────────────────────────────────────────────────────
+   * LAYER 2 — CONTROL SIZING
+   *
+   * Added by #17, because the primitives need a height and "whatever padding
+   * happens to add up to" is not a height: two controls side by side in a
+   * toolbar have to agree to the pixel, and they only agree if they read the
+   * same token.
+   *
+   * On the 4px grid like everything else. The default is 28px, which is what a
+   * dense editing toolbar wants — 32px is a web form and puts four fewer
+   * controls in the same toolbar.
+   *
+   * `sm` at 24px is the floor, and it is the floor for a reason that is not
+   * taste: WCAG 2.2 §2.5.8 asks for a 24×24 pointer target. A control smaller
+   * than this needs a hit area larger than itself, which is a thing components
+   * get wrong silently.
+   * ────────────────────────────────────────────────────────────────────────── */
+
+  --control-height-sm: 1.5rem; /* 24px — inline with caption text */
+  --control-height-md: 1.75rem; /* 28px — the default */
+  --control-height-lg: 2rem; /* 32px — a primary action, a dialog button */
+
+  /* Glyph sizes inside a control. Two, because a third would be someone
+     nudging an icon rather than choosing one. */
+  --icon-size-sm: 1rem; /* 16px — inside sm and md controls */
+  --icon-size-md: 1.25rem; /* 20px — inside lg, and standalone */
+
+  /* ──────────────────────────────────────────────────────────────────────────
    * LAYER 2 — ELEVATION
    *
    * Depth by surface and border, never by shadow.

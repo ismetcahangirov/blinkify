@@ -1,0 +1,39 @@
+/*
+ * The base layer: the handful of rules that are true of every Blinkify surface,
+ * not of any one component.
+ *
+ * It lives in the design system rather than in the renderer because the
+ * primitives depend on it. A component whose focus ring is drawn by the
+ * application it happens to be mounted in is a component that is unreviewable in
+ * isolation — and #17 requires exactly that, in Storybook.
+ */
+
+/*
+ * One focus treatment for the whole application, defined once.
+ *
+ * The offset is not decoration. Azure on the accent fill measures 1.96:1, well
+ * under the 3:1 a focus indicator owes WCAG 2.2 §1.4.11; the offset puts the
+ * ring on the surface behind the control, where it measures 5.87:1 or better.
+ * See docs/design/colour-tokens.md.
+ *
+ * `:focus-visible` rather than `:focus`, so a pointer click does not leave a
+ * ring behind on a control the user has already finished with — while a
+ * keyboard user, who has no other way to know where they are, always sees one.
+ */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/*
+ * Radix moves focus into a menu, a dialog or a popover when it opens, and its
+ * content element is focusable purely so that it can receive that focus. Ringing
+ * the whole panel teaches the user that the panel is the thing selected, when
+ * the item inside it is.
+ */
+[data-radix-popper-content-wrapper] > *:focus-visible,
+[data-radix-menu-content]:focus-visible,
+[data-radix-popover-content]:focus-visible,
+[data-radix-dialog-content]:focus-visible {
+  outline: none;
+}

@@ -66,8 +66,7 @@ not an ADR.
 
 ## Renderer dependencies that ship in the bundle
 
-Direct dependencies only; the Radix primitives arrive with the design system in
-[#17](https://github.com/ismetcahangirov/blinkify/issues/17).
+Direct dependencies only.
 
 | Component         | Version | Licence           |
 | ----------------- | ------- | ----------------- |
@@ -75,6 +74,40 @@ Direct dependencies only; the Radix primitives arrive with the design system in
 | React DOM         | 19.3.0  | MIT               |
 | Zustand           | 5.0.15  | MIT               |
 | `@tauri-apps/api` | 2.11.1  | Apache-2.0 OR MIT |
+
+### Radix UI primitives
+
+The design system is built on them — [#17](https://github.com/ismetcahangirov/blinkify/issues/17).
+They supply focus management, escape handling, portal behaviour, roving focus
+and ARIA wiring, all of which are re-implemented badly by everyone who tries.
+Every package is MIT.
+
+| Component                       | Version |
+| ------------------------------- | ------- |
+| `@radix-ui/react-context-menu`  | 2.3.7   |
+| `@radix-ui/react-dialog`        | 1.1.23  |
+| `@radix-ui/react-dropdown-menu` | 2.1.24  |
+| `@radix-ui/react-popover`       | 1.1.23  |
+| `@radix-ui/react-scroll-area`   | 1.2.18  |
+| `@radix-ui/react-select`        | 2.3.7   |
+| `@radix-ui/react-slider`        | 1.4.7   |
+| `@radix-ui/react-slot`          | 1.3.3   |
+| `@radix-ui/react-switch`        | 1.3.7   |
+| `@radix-ui/react-tabs`          | 1.1.21  |
+| `@radix-ui/react-tooltip`       | 1.2.16  |
+
+They pull in a small set of their own — `react-remove-scroll`,
+`react-style-singleton`, `use-callback-ref`, `use-sidecar`, `aria-hidden` and
+`tslib` — all MIT or 0BSD, all shipped in the renderer bundle, and all covered
+by the generated attribution bundle tracked in
+[#73](https://github.com/ismetcahangirov/blinkify/issues/73).
+
+**Storybook, axe-core and the testing libraries are deliberately absent from
+this file.** They are development dependencies, they do not reach a user, and
+listing them here would make the file a dependency inventory rather than an
+attribution record. axe-core is worth naming in review for a different reason:
+it is MPL-2.0, a file-level copyleft that is neither of the two licences
+`CLAUDE.md` section 10 prohibits, and it is confined to the test run.
 
 ## Rust crates that ship in the binary
 

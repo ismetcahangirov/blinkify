@@ -66,6 +66,7 @@ const SEMANTIC_TOKENS = [
   "--accent-pressed",
   "--accent-foreground",
   "--focus-ring",
+  "--scrim",
   "--success",
   "--warning",
   "--danger",

@@ -42,10 +42,20 @@ module.exports = {
         "the installer carries.",
       from: {
         path: "^(apps|packages)",
-        // Tests and build/tooling config are tooling: they never reach the
-        // renderer bundle, so importing a devDependency from them is correct.
+        // Tests, stories and build/tooling config are tooling: they never reach
+        // the renderer bundle, so importing a devDependency from them is
+        // correct.
+        //
+        // Stories arrived with #17. A `*.stories.tsx` imports its types from
+        // `@storybook/react-vite` and is read only by Storybook and by the
+        // accessibility suite; it is never an entry point of the application,
+        // and `packages/ui/src/index.ts` exports no story. The same holds for
+        // the `.storybook` configuration directory. The exemption is by
+        // filename and directory rather than by package, so a component file
+        // that reached for a devDependency still fails — which is the case the
+        // rule exists for, and `pnpm graph:injection` still proves it fires.
         pathNot:
-          "\\.(test|spec)\\.(ts|tsx)$|/__tests__/|(^|/)(eslint|vite|vitest)\\.config\\.(ts|mts|mjs)$",
+          "\\.(test|spec)\\.(ts|tsx)$|\\.stories\\.tsx$|/__tests__/|/\\.storybook/|(^|/)(eslint|vite|vitest)\\.config\\.(ts|mts|mjs)$",
       },
       to: { dependencyTypes: ["npm-dev"] },
     },
