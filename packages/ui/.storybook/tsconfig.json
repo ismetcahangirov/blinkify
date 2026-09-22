@@ -1,0 +1,24 @@
+{
+  /*
+   * Storybook's own configuration is TypeScript and is linted like everything
+   * else, so it needs a project that covers it. It cannot go in the package's
+   * `tsconfig.json`: that one has `rootDir: "src"` and emits to `dist`, and
+   * adding a directory above `src` to it would rearrange the published output
+   * around two files that never ship.
+   *
+   * `noEmit` because nothing here is built — Storybook reads these at dev time.
+   */
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["node"],
+    "noEmit": true
+  },
+  /* Named explicitly rather than globbed. TypeScript's include patterns skip
+     any path segment beginning with a dot, and this project lives inside
+     `.storybook` — so `["."]` resolves to nothing, the files belong to no
+     project, and lint fails to parse them with a message about the project
+     service that does not mention the dot at all. */
+  "include": ["main.ts", "preview.tsx"]
+}

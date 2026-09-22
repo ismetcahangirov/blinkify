@@ -16,3 +16,4 @@ tools/project-graph/output
 # files unformatted, and the format gate fails on a tree nobody touched.
 # Machine output is read, not styled.
 packages/types/src/generated
+storybook-static

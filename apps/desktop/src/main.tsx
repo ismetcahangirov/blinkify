@@ -1,3 +1,4 @@
+import { TooltipProvider } from "@blinkify/ui";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -11,8 +12,18 @@ if (!container) {
   );
 }
 
+/*
+ * One tooltip provider around the whole application (#17).
+ *
+ * It is the group-delay clock, not a context for convenience. Tooltips mounted
+ * without it each run their own timer, and a toolbar of independent timers is
+ * the flickering row the delay exists to prevent — so it belongs at the root,
+ * once, rather than at each panel.
+ */
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <TooltipProvider>
+      <App />
+    </TooltipProvider>
   </StrictMode>,
 );

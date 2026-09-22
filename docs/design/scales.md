@@ -13,6 +13,7 @@ wrongly is worse than one not documented at all, because people believe it.
 - [Type scale](#type-scale)
 - [Spacing](#spacing)
 - [Radius](#radius)
+- [Control sizing](#control-sizing)
 - [Elevation](#elevation)
 - [Motion](#motion)
 - [Reduced motion](#reduced-motion)
@@ -148,6 +149,27 @@ default control is the single change that most makes an editor look like a toy.
 
 One border width in the system: `--border-width`, `1px`. A second width is how
 two panels end up looking like they came from different applications.
+
+## Control sizing
+
+Added by #17. The primitives need a height, and "whatever padding happens to add
+up to" is not a height: two controls side by side in a toolbar have to agree to
+the pixel, and they only agree if they read the same token.
+
+| Token                 | Value     | px  | Used for                             |
+| --------------------- | --------- | --- | ------------------------------------ |
+| `--control-height-sm` | `1.5rem`  | 24  | Inline with caption text. The floor. |
+| `--control-height-md` | `1.75rem` | 28  | The default.                         |
+| `--control-height-lg` | `2rem`    | 32  | A primary action, a dialog button.   |
+| `--icon-size-sm`      | `1rem`    | 16  | Inside `sm` and `md` controls.       |
+| `--icon-size-md`      | `1.25rem` | 20  | Inside `lg`, and standalone.         |
+
+28px as the default is what a dense editing toolbar wants. 32px is a web form,
+and it puts four fewer controls in the same toolbar.
+
+`sm` at 24px is the floor for a reason that is not taste: WCAG 2.2 §2.5.8 asks
+for a 24 × 24 pointer target. A control smaller than that needs a hit area
+larger than itself, which is a thing components get wrong silently.
 
 ## Elevation
 

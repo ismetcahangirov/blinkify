@@ -10,6 +10,10 @@
  *                roles that elevation is built out of.
  *   3. scales    declares type, spacing, radius, elevation and motion, and
  *                references (2).
+ *   4. component declares the measurements one component needs, derived from
+ *      tokens    (3), so that no component stylesheet holds a literal (#17).
+ *   5. base      the rules true of every surface — the focus treatment.
+ *   6. components the primitives themselves, consuming (1) through (4).
  *
  * Custom properties resolve at use time rather than at parse time, so (3) would
  * in fact survive being imported before (2). The order is kept anyway, because
@@ -20,3 +24,6 @@
 @import "./fonts/fonts.css";
 @import "./tokens/tokens.css";
 @import "./tokens/scales.css";
+@import "./tokens/component-tokens.css";
+@import "./base.css";
+@import "./components/components.css";

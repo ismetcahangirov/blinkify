@@ -1,0 +1,818 @@
+/*
+ * The primitive component styles (#17).
+ *
+ * ── The rule this file is under ─────────────────────────────────────────────
+ *
+ * Not one literal value. No colour, no length, no duration, no radius, no
+ * weight. Every declaration reads a token from `../tokens/tokens.css` or
+ * `../tokens/scales.css`, and `tools/design-token-gate.mjs` fails the build on
+ * anything else.
+ *
+ * The exceptions the gate allows are structural rather than aesthetic: `0`,
+ * `100%`, `auto`, `none`, `1` as a unitless line height or opacity. A number
+ * with a unit in this file is a decision that escaped the scale.
+ *
+ * ── Naming ──────────────────────────────────────────────────────────────────
+ *
+ * `bk-block__element--modifier`. The prefix exists because these classes are
+ * loaded into an application that also runs Tailwind: `.button` would be a
+ * name collision waiting for someone to add a `.button` utility, and a design
+ * system that can be overwritten by accident is a suggestion.
+ *
+ * ── Why plain CSS and not Tailwind ──────────────────────────────────────────
+ *
+ * `packages/ui` may not depend on the application (CLAUDE.md section 2), and
+ * Tailwind's theme is configured in the renderer. A primitive styled with
+ * utility classes would render unstyled in Storybook, which is where #17
+ * requires it to be reviewable.
+ */
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * BUTTON
+ *
+ * Four variants. The one worth reading about is `primary`.
+ *
+ * #17 asks for the primary variant to carry the brand gradient. It does not,
+ * and the reason is measured rather than aesthetic: no label colour clears
+ * WCAG AA across the gradient's whole sweep. White measures 2.72:1 on the azure
+ * stop; near-black measures 3.67:1 on the indigo stop. Both fail 4.5:1, and
+ * white fails even the 3:1 that large text owes.
+ *
+ * So the primary action uses the flat `--accent`, whose three states were
+ * measured for exactly this job in #15 — 5.33:1 resting, 4.71:1 hovered, 6.46:1
+ * pressed. `components.test.tsx` asserts the gradient finding, so if the brand
+ * ever moves far enough for a label to be legible on it, the decision is
+ * reopened by a failing test rather than by somebody remembering.
+ *
+ * The gradient keeps the surfaces where it carries no text: the logo, the
+ * playhead handle, selection accents. See docs/design/components.md.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+
+  height: var(--control-height-md);
+  padding-inline: var(--space-3);
+
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-md);
+
+  font-family: var(--type-family-sans);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  font-weight: var(--type-label-weight);
+  letter-spacing: var(--type-label-tracking);
+  white-space: nowrap;
+
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--easing-standard),
+    border-color var(--duration-fast) var(--easing-standard),
+    color var(--duration-fast) var(--easing-standard);
+}
+
+.bk-button--sm {
+  height: var(--control-height-sm);
+  padding-inline: var(--space-2);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+}
+
+.bk-button--lg {
+  height: var(--control-height-lg);
+  padding-inline: var(--space-4);
+}
+
+.bk-button--primary {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.bk-button--primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.bk-button--primary:active:not(:disabled) {
+  background: var(--accent-pressed);
+}
+
+.bk-button--secondary {
+  background: var(--surface-raised);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.bk-button--secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.bk-button--secondary:active:not(:disabled) {
+  background: var(--surface-active);
+}
+
+.bk-button--ghost {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.bk-button--ghost:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.bk-button--ghost:active:not(:disabled) {
+  background: var(--surface-active);
+}
+
+/*
+ * Danger is not simply a red primary. A destructive action sits quiet until the
+ * pointer is on it, because a red block in a toolbar draws the eye to the one
+ * control the user is least often reaching for — and an interface that shouts
+ * about deletion all day is one people stop reading.
+ */
+.bk-button--danger {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.bk-button--danger:hover:not(:disabled) {
+  background: var(--danger);
+  color: var(--accent-foreground);
+}
+
+.bk-button:disabled {
+  cursor: default;
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-disabled);
+}
+
+/*
+ * The loading state keeps the button's width.
+ *
+ * A button that shrinks when its label is replaced by a spinner moves every
+ * control beside it, and in a toolbar that means the thing the user was about
+ * to click has moved. The label stays in the layout and goes invisible; the
+ * spinner is drawn over it.
+ */
+.bk-button[data-loading="true"] {
+  cursor: default;
+  position: relative;
+}
+
+.bk-button[data-loading="true"] .bk-button__label {
+  visibility: hidden;
+}
+
+.bk-button__spinner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bk-button__spinner::after {
+  content: "";
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  border: var(--border-width) solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--radius-full);
+  animation: bk-spin var(--spinner-cycle) var(--easing-linear) infinite;
+}
+
+@keyframes bk-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * ICON BUTTON
+ *
+ * Square, and always inside a tooltip — see `IconButton.tsx` for why the
+ * accessible label is a required prop rather than an optional one.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-icon-button {
+  padding-inline: 0;
+  width: var(--control-height-md);
+}
+
+.bk-icon-button.bk-button--sm {
+  width: var(--control-height-sm);
+}
+
+.bk-icon-button.bk-button--lg {
+  width: var(--control-height-lg);
+}
+
+.bk-icon-button svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * TOOLTIP
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-tooltip {
+  max-width: var(--tooltip-max-width);
+  padding: var(--space-1) var(--space-2);
+
+  background: var(--elevation-3-background);
+  border: var(--border-width) solid var(--elevation-3-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+
+  font-family: var(--type-family-sans);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+
+  /* A tooltip is a label, not a target. Letting the pointer hit it means the
+     tooltip can cover the control it describes and take the hover with it. */
+  pointer-events: none;
+
+  animation: bk-fade-in var(--duration-fast) var(--easing-entrance);
+}
+
+/*
+ * The shortcut inside a tooltip, dimmer than the label it belongs to. A
+ * keyboard shortcut is a second-order fact: the user reading the tooltip wanted
+ * to know what the button does.
+ */
+.bk-tooltip__shortcut {
+  margin-left: var(--space-2);
+  color: var(--text-secondary);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * OVERLAY SURFACES — popover, menu, select, dialog
+ *
+ * One set of rules, because they are one thing: something that floats over the
+ * interface and must read as interrupting it. Styling them apart is how a menu
+ * and a popover end up looking like they came from different applications.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-surface {
+  background: var(--elevation-3-background);
+  border: var(--border-width) solid var(--elevation-3-border);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+
+  font-family: var(--type-family-sans);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+
+  animation: bk-scale-in var(--duration-normal) var(--easing-entrance);
+}
+
+.bk-popover {
+  padding: var(--space-3);
+  max-width: var(--popover-max-width);
+}
+
+.bk-menu {
+  min-width: var(--menu-min-width);
+  padding: var(--space-1);
+}
+
+.bk-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+
+  height: var(--control-height-md);
+  padding-inline: var(--space-2);
+
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  cursor: default;
+  outline: none;
+  user-select: none;
+}
+
+/*
+ * Radix drives menu highlight with `data-highlighted`, and it is set by both
+ * the pointer and the keyboard. Styling `:hover` instead would mean arrowing
+ * through a menu highlights nothing, which is the failure that makes people
+ * describe a menu as "not keyboard accessible" when every key works.
+ */
+.bk-menu__item[data-highlighted] {
+  background: var(--surface-hover);
+}
+
+.bk-menu__item[data-disabled] {
+  color: var(--text-disabled);
+}
+
+.bk-menu__item--danger {
+  color: var(--danger);
+}
+
+.bk-menu__item--danger[data-highlighted] {
+  background: var(--danger);
+  color: var(--accent-foreground);
+}
+
+.bk-menu__shortcut {
+  margin-left: auto;
+  padding-left: var(--space-4);
+  color: var(--text-secondary);
+  font-family: var(--type-family-mono);
+  font-size: var(--type-caption-size);
+}
+
+.bk-menu__item[data-highlighted] .bk-menu__shortcut {
+  color: inherit;
+}
+
+.bk-menu__label {
+  padding: var(--space-1) var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+}
+
+.bk-menu__separator {
+  height: var(--border-width);
+  margin: var(--space-1) 0;
+  background: var(--border);
+}
+
+.bk-menu__indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  flex-shrink: 0;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * DIALOG
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-dialog__overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  animation: bk-fade-in var(--duration-normal) var(--easing-entrance);
+}
+
+.bk-dialog__content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: var(--dialog-width);
+  max-width: var(--dialog-max-width);
+  max-height: var(--dialog-max-height);
+  overflow: auto;
+
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+
+  /* The one place `--duration-slow` is allowed: a surface taking over the
+     window, where the motion says where it came from. Using it on a hover is a
+     review failure — see docs/design/scales.md. */
+  animation: bk-dialog-in var(--duration-slow) var(--easing-entrance);
+}
+
+.bk-dialog__title {
+  margin: 0;
+  font-size: var(--type-title-size);
+  line-height: var(--type-title-line);
+  font-weight: var(--type-title-weight);
+  letter-spacing: var(--type-title-tracking);
+}
+
+.bk-dialog__description {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+}
+
+.bk-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * SELECT
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-select__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+
+  height: var(--control-height-md);
+  padding-inline: var(--space-2);
+  min-width: var(--select-min-width);
+
+  background: var(--surface-raised);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+
+  font-family: var(--type-family-sans);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  cursor: pointer;
+}
+
+.bk-select__trigger:hover:not([data-disabled]) {
+  background: var(--surface-hover);
+}
+
+.bk-select__trigger[data-disabled] {
+  color: var(--text-disabled);
+  border-color: var(--border);
+  cursor: default;
+}
+
+.bk-select__icon {
+  display: flex;
+  color: var(--text-secondary);
+}
+
+.bk-select__viewport {
+  padding: var(--space-1);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * TABS
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-tabs__list {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: var(--border-width) solid var(--border);
+}
+
+/*
+ * The selected tab is marked by a bar on the border it sits on, not by a filled
+ * background. A filled tab in a low-contrast interface competes with the panel
+ * it introduces, and the four zones already have enough edges.
+ */
+.bk-tabs__trigger {
+  position: relative;
+  height: var(--control-height-lg);
+  padding-inline: var(--space-3);
+
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+
+  font-family: var(--type-family-sans);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  font-weight: var(--type-label-weight);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--easing-standard);
+}
+
+.bk-tabs__trigger:hover {
+  color: var(--text-primary);
+}
+
+.bk-tabs__trigger[data-state="active"] {
+  color: var(--text-primary);
+}
+
+.bk-tabs__trigger[data-state="active"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--border-width) * -1);
+  height: var(--tab-indicator-height);
+  background: var(--accent);
+}
+
+.bk-tabs__content {
+  padding-top: var(--space-3);
+}
+
+.bk-tabs__content:focus-visible {
+  outline: none;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * SWITCH
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-switch {
+  position: relative;
+  width: var(--switch-width);
+  height: var(--switch-height);
+  flex-shrink: 0;
+
+  background: var(--surface-active);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--easing-standard);
+}
+
+.bk-switch[data-state="checked"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.bk-switch[data-disabled] {
+  cursor: default;
+  background: transparent;
+  border-color: var(--border);
+}
+
+.bk-switch__thumb {
+  display: block;
+  width: var(--switch-thumb-size);
+  height: var(--switch-thumb-size);
+  background: var(--text-primary);
+  border-radius: var(--radius-full);
+  transition: transform var(--duration-fast) var(--easing-standard);
+  will-change: transform;
+}
+
+.bk-switch__thumb[data-state="checked"] {
+  transform: translateX(var(--switch-travel));
+  background: var(--accent-foreground);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * SLIDER
+ *
+ * One component for volume, denoise strength, speed and zoom. The ranges differ
+ * by an order of magnitude and the component knows nothing about any of them —
+ * see `Slider.tsx`.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-slider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.bk-slider__root {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  height: var(--control-height-md);
+  touch-action: none;
+  user-select: none;
+  cursor: pointer;
+}
+
+.bk-slider__track {
+  position: relative;
+  flex-grow: 1;
+  height: var(--slider-track-height);
+  background: var(--surface-active);
+  border-radius: var(--radius-full);
+}
+
+.bk-slider__range {
+  position: absolute;
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-full);
+}
+
+.bk-slider__thumb {
+  display: block;
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
+  background: var(--text-primary);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-full);
+  cursor: grab;
+}
+
+.bk-slider__thumb:active {
+  cursor: grabbing;
+}
+
+.bk-slider__root[data-disabled] .bk-slider__range {
+  background: var(--surface-active);
+}
+
+.bk-slider__root[data-disabled] .bk-slider__thumb {
+  background: var(--text-disabled);
+  cursor: default;
+}
+
+/*
+ * The readout is monospaced and has a reserved width. A value that changes
+ * width as it is dragged moves everything to its right, and the user is dragging
+ * precisely because they are watching that number.
+ */
+.bk-slider__value {
+  min-width: var(--numeric-readout-width);
+  text-align: right;
+  font-family: var(--type-family-mono);
+  font-size: var(--type-timecode-size);
+  line-height: var(--type-timecode-line);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * NUMBER INPUT
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-number-input {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/*
+ * The label is a drag handle, which is expected behaviour in this class of tool
+ * and invisible unless the cursor says so. `ew-resize` is the convention every
+ * editor uses for a scrubbable value.
+ */
+.bk-number-input__label {
+  color: var(--text-secondary);
+  font-family: var(--type-family-sans);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  cursor: ew-resize;
+  user-select: none;
+  touch-action: none;
+}
+
+.bk-number-input__label[data-disabled="true"] {
+  color: var(--text-disabled);
+  cursor: default;
+}
+
+.bk-number-input__field {
+  width: var(--numeric-field-width);
+  height: var(--control-height-md);
+  padding-inline: var(--space-2);
+
+  background: var(--surface-raised);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+
+  font-family: var(--type-family-mono);
+  font-size: var(--type-timecode-size);
+  line-height: var(--type-timecode-line);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.bk-number-input__field:disabled {
+  color: var(--text-disabled);
+  border-color: var(--border);
+}
+
+.bk-number-input__unit {
+  color: var(--text-secondary);
+  font-family: var(--type-family-sans);
+  font-size: var(--type-caption-size);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * SCROLL AREA
+ *
+ * A thin scrollbar that matches the dark chrome. Windows' own is 17px wide and
+ * light, and in a 240px panel that is seven per cent of the width spent on a
+ * control nobody looks at.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-scroll-area {
+  overflow: hidden;
+}
+
+.bk-scroll-area__viewport {
+  width: 100%;
+  height: 100%;
+}
+
+.bk-scroll-area__scrollbar {
+  display: flex;
+  padding: var(--scrollbar-padding);
+  background: transparent;
+  touch-action: none;
+  user-select: none;
+  transition: background-color var(--duration-normal) var(--easing-standard);
+}
+
+.bk-scroll-area__scrollbar:hover {
+  background: var(--surface-hover);
+}
+
+.bk-scroll-area__scrollbar[data-orientation="vertical"] {
+  width: var(--scrollbar-size);
+}
+
+.bk-scroll-area__scrollbar[data-orientation="horizontal"] {
+  flex-direction: column;
+  height: var(--scrollbar-size);
+}
+
+.bk-scroll-area__thumb {
+  flex: 1;
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+  position: relative;
+}
+
+/*
+ * The thumb's hit area is grown to the WCAG 2.2 §2.5.8 minimum without growing
+ * the thumb itself. A 6px scrollbar is right to look at and wrong to grab.
+ */
+.bk-scroll-area__thumb::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  min-width: 100%;
+  min-height: 100%;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * FIELD
+ *
+ * A control and the words naming it, on one row. The label is wired by
+ * `htmlFor`, so the words are part of the target — a 20px switch beside twelve
+ * characters of inert text is a control that looks bigger than it is.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bk-field__label {
+  color: var(--text-primary);
+  font-family: var(--type-family-sans);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  font-weight: var(--type-label-weight);
+  user-select: none;
+  cursor: pointer;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * GLYPHS
+ *
+ * Sized here rather than by a `width` attribute on each `<svg>`, so an icon is
+ * one token change away from being resized everywhere and so the component
+ * files hold no measurements of their own.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+.bk-select__icon svg,
+.bk-menu__indicator svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * ANIMATIONS
+ *
+ * Every one reads a duration token, so every one is already zero under
+ * `prefers-reduced-motion` — see the foot of ../tokens/scales.css.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+@keyframes bk-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes bk-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--overlay-enter-scale));
+  }
+}
+
+@keyframes bk-dialog-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(var(--overlay-enter-scale));
+  }
+}

@@ -201,11 +201,16 @@ body {
 }
 
 /*
- * The update banner. Still plain — #17 rebuilds it on the primitives — but no
- * longer holding its own colours (#15) and, since #16, none of its own sizes
- * either. It sits at the top of the shell rather than over it: an update offer
- * is information, not an interruption, and a modal would stop someone opening
- * the application they came to open.
+ * The update banner's own layout, and nothing else.
+ *
+ * Its buttons are `Button` from the design system since #17, so the bespoke
+ * button styling that used to live here is gone — which is the point of a
+ * design system and also the only way the banner's controls can be guaranteed
+ * to look like every other control in the application.
+ *
+ * It sits at the top of the shell rather than over it: an update offer is
+ * information, not an interruption, and a modal would stop someone opening the
+ * application they came to open.
  */
 .update-banner {
   position: fixed;
@@ -238,24 +243,4 @@ body {
 .update-banner__actions {
   display: flex;
   gap: var(--space-2);
-}
-
-.update-banner button {
-  padding: var(--space-1) var(--space-3);
-  border: var(--border-width) solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--surface-overlay);
-  color: var(--text-primary);
-  font: inherit;
-  cursor: pointer;
-  transition: background-color var(--duration-fast) var(--easing-standard);
-}
-
-.update-banner button:hover:not(:disabled) {
-  background: var(--surface-hover);
-}
-
-.update-banner button:disabled {
-  cursor: default;
-  color: var(--text-disabled);
 }

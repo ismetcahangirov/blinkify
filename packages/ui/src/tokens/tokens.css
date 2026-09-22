@@ -180,6 +180,15 @@
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
 
+  /* The dimming layer behind a dialog (#17).
+     Deliberately the application background rather than pure black: a dialog on
+     Windows 11 sits over a window that is already near-black, and a black scrim
+     over near-black reads as the application having switched off rather than as
+     one surface having come forward. Its translucency is the overlay's own
+     opacity — a token here stays a resolvable colour, which is what lets the
+     contrast machinery read the whole file. */
+  --scrim: var(--neutral-1);
+
   /* State roles. */
   --success: var(--hue-success);
   --warning: var(--hue-warning);
