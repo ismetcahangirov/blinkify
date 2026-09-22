@@ -8,6 +8,9 @@ The visual language of Blinkify and the structure of its interface.
   token, and the measured contrast of every pair a user reads
 - [`scales.md`](./scales.md) — type, spacing, radius, elevation and motion: the
   non-colour half of the system, and the typefaces it is set in
+- [`capcut-layout-reference.md`](./capcut-layout-reference.md) — the four-zone
+  structure the shell is built to, zone by zone, with the default and minimum
+  size of every one and an explicit list of what Blinkify does not copy
 
 ## What belongs here
 

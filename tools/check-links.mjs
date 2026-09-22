@@ -39,7 +39,17 @@ function markdownFiles(dir) {
   return found.sort();
 }
 
-/** GitHub's heading-to-anchor slug, close enough for our own documents. */
+/**
+ * GitHub's heading-to-anchor slug.
+ *
+ * The last step replaces each whitespace character individually rather than
+ * each run of them. That looks like a detail and is not: GitHub does the same,
+ * so a heading whose punctuation was stripped from between two spaces — "Zone 4
+ * — timeline" — anchors as `zone-4--timeline` with two hyphens. Collapsing the
+ * run produces `zone-4-timeline`, which this checker would then accept and
+ * GitHub would render as a dead link. A gate that insists on the wrong answer
+ * is worse than no gate, because the document gets changed to satisfy it.
+ */
 function slugify(heading) {
   return heading
     .trim()
@@ -47,7 +57,7 @@ function slugify(heading) {
     .replace(/`([^`]*)`/g, "$1")
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
     .replace(/[^\p{L}\p{N}\s-]/gu, "")
-    .replace(/\s+/g, "-");
+    .replace(/\s/g, "-");
 }
 
 /** Anchors a Markdown file exposes, from its ATX headings. */
