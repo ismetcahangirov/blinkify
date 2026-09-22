@@ -243,6 +243,13 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/icons.test.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/main.tsx",
       "dependencies": [
         {
@@ -2695,6 +2702,13 @@
       "valid": true
     },
     {
+      "source": "tools/generate-icons.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "tools/generate-types-index.mjs",
       "dependencies": [],
       "dependents": [],
@@ -2779,7 +2793,7 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 85,
+    "totalCruised": 87,
     "totalDependenciesCruised": 115,
     "optionsUsed": {
       "combinedDependencies": false,

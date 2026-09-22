@@ -10,6 +10,8 @@ The visual language of Blinkify and the structure of its interface.
   for, how each is operated by keyboard, and what the gates around them cover
 - [`scales.md`](./scales.md) — type, spacing, radius, elevation and motion: the
   non-colour half of the system, and the typefaces it is set in
+- [`../../packages/ui/src/brand/README.md`](../../packages/ui/src/brand/README.md)
+  — the mark, how the vectors were traced from it, and why there are two
 - [`capcut-layout-reference.md`](./capcut-layout-reference.md) — the four-zone
   structure the shell is built to, zone by zone, with the default and minimum
   size of every one and an explicit list of what Blinkify does not copy

@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 85,
-    "tests": 10,
+    "files": 87,
+    "tests": 11,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 21,
-      "tests": 4,
+      "files": 22,
+      "tests": 5,
       "untested": [
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/shell.store.ts",
@@ -64,7 +64,7 @@
       ]
     },
     "tools": {
-      "files": 19,
+      "files": 20,
       "tests": 0,
       "untested": [
         "tools/apply-labels.mjs",
@@ -75,6 +75,7 @@
         "tools/crate-boundaries.mjs",
         "tools/design-token-gate-test.mjs",
         "tools/design-token-gate.mjs",
+        "tools/generate-icons.mjs",
         "tools/generate-types-index.mjs",
         "tools/licence-gate-test.mjs",
         "tools/offline-assets-gate-test.mjs",
@@ -152,6 +153,15 @@
         "apps/desktop/src/UpdateBanner.test.tsx"
       ],
       "hasNoDependents": false
+    },
+    "apps/desktop/src/icons.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
     },
     "apps/desktop/src/main.tsx": {
       "workspace": "apps/desktop",
@@ -1115,6 +1125,15 @@
       "hasNoDependents": true
     },
     "tools/design-token-gate.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/generate-icons.mjs": {
       "workspace": "tools",
       "layer": "tooling",
       "isTest": false,
