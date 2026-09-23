@@ -16,6 +16,8 @@ How Blinkify is put together and why the structure holds under change.
 
 - [`keyframe-index.md`](./keyframe-index.md) — what the keyframe index stores,
   how open GOPs are told apart, and how it fills lazily and persists (#24)
+- [`waveform-peaks.md`](./waveform-peaks.md) — min/max peaks per channel, the
+  zoom pyramid, the cache format (#25)
 
 ## What does not belong here
 

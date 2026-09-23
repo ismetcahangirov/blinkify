@@ -41,3 +41,5 @@ export * from "./StreamKind";
 export * from "./UpdateOffer";
 export * from "./VideoCodec";
 export * from "./VideoInfo";
+export * from "./WaveformStatus";
+export * from "./WaveformUpdate";

@@ -5,7 +5,7 @@
     "tools"
   ],
   "totals": {
-    "files": 123,
+    "files": 125,
     "tests": 11,
     "violations": 0
   },
@@ -28,7 +28,7 @@
       ]
     },
     "packages/types": {
-      "files": 38,
+      "files": 40,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/AudioInfo.ts",
@@ -67,6 +67,8 @@
         "packages/types/src/generated/UpdateOffer.ts",
         "packages/types/src/generated/VideoCodec.ts",
         "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/WaveformStatus.ts",
+        "packages/types/src/generated/WaveformUpdate.ts",
         "packages/types/src/generated/index.ts",
         "packages/types/src/index.ts"
       ]
@@ -896,6 +898,31 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/WaveformStatus.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/WaveformUpdate.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/WaveformUpdate.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/WaveformStatus.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/index.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -936,7 +963,9 @@
         "packages/types/src/generated/StreamKind.ts",
         "packages/types/src/generated/UpdateOffer.ts",
         "packages/types/src/generated/VideoCodec.ts",
-        "packages/types/src/generated/VideoInfo.ts"
+        "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/WaveformStatus.ts",
+        "packages/types/src/generated/WaveformUpdate.ts"
       ],
       "dependedOnBy": [
         "packages/types/src/index.ts"

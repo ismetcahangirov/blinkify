@@ -1672,6 +1672,44 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/WaveformStatus.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/WaveformUpdate.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/WaveformUpdate.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./WaveformStatus",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/WaveformStatus.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/index.ts",
       "dependencies": [
         {
@@ -2279,6 +2317,40 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/VideoInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./WaveformStatus",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/WaveformStatus.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./WaveformUpdate",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/WaveformUpdate.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4257,8 +4329,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 123,
-    "totalDependenciesCruised": 178,
+    "totalCruised": 125,
+    "totalDependenciesCruised": 181,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,
