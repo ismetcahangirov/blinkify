@@ -7,7 +7,8 @@ mod common;
 use std::process::Command;
 
 use blinkify_engine::VideoCodec;
-use blinkify_engine::capability::{self, EncoderSource, SidecarTrial};
+use blinkify_engine::capability::{self, EncoderSource};
+use blinkify_engine::orchestrator::{Limits, Orchestrator};
 
 fn version_line(program: &std::path::Path, path_env: Option<&std::ffi::OsStr>) -> String {
     let mut command = Command::new(program);
@@ -63,7 +64,8 @@ fn a_different_ffmpeg_first_on_path_is_ignored() {
 
 #[test]
 fn the_capability_probe_finds_the_software_encoders_on_any_machine() {
-    let capabilities = capability::probe(&SidecarTrial::new(common::sidecar()));
+    let orchestrator = Orchestrator::new(common::sidecar(), Limits::for_this_machine());
+    let capabilities = capability::probe(&orchestrator);
 
     // These are inside the sidecar and need no GPU, so every machine has them.
     let av1: Vec<_> = capabilities
