@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 158,
-    "tests": 18,
+    "files": 160,
+    "tests": 19,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 40,
-      "tests": 12,
+      "files": 42,
+      "tests": 13,
       "untested": [
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
@@ -258,6 +258,37 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "apps/desktop/src/player/ScrubBar.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/player/ScrubBar.tsx",
+        "apps/desktop/src/player/preview.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/player/ScrubBar.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/player/timecode.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/player/ScrubBar.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/player/ScrubBar.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/player/TransportBar.test.tsx": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -397,6 +428,8 @@
       "dependedOnBy": [
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
+        "apps/desktop/src/player/ScrubBar.test.tsx",
+        "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
@@ -404,6 +437,7 @@
         "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
       "coveredByTests": [
+        "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx"
@@ -429,6 +463,7 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/player/timecode.test.ts"
       ],
@@ -651,6 +686,7 @@
       "dependsOn": [
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
+        "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/player/useFileDrop.ts",
@@ -1476,6 +1512,7 @@
         "packages/types/src/generated/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
@@ -1487,6 +1524,7 @@
         "apps/desktop/src/update.store.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx"
@@ -2025,6 +2063,7 @@
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
         "apps/desktop/src/main.tsx",
+        "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/shell/AppBar.tsx",

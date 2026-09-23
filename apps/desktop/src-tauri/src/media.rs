@@ -626,7 +626,17 @@ pub fn open_preview(
 ) -> Result<PreviewOpened, String> {
     let info = engine.prober()?.probe(&path).map_err(|e| e.to_string())?;
     let index = engine.index(&path, &info)?;
-    let source = SourceMedia::new(&path, info, index).map_err(|e| e.to_string())?;
+    // A proxy already made for this file is used for the pictures; one is
+    // never made here (`proxy_reasons` offers, the user decides).
+    let proxy = engine.proxy_cache.clone().and_then(|cache| {
+        Proxies::new(engine.orchestrator().ok()?.clone(), cache)
+            .find(&path)
+            .ok()
+            .flatten()
+    });
+    let source = SourceMedia::new(&path, info, index)
+        .map_err(|e| e.to_string())?
+        .with_proxy(proxy);
     let plan = PlaybackPlan::whole(Arc::new(source)).map_err(|e| e.to_string())?;
     let player = Player::new(
         engine.orchestrator()?.clone(),

@@ -5,4 +5,4 @@ import type { PreviewSpeed } from "./PreviewSpeed";
 /**
  * A transport action.
  */
-export type TransportCommand = { "type": "play" } | { "type": "pause" } | { "type": "toggle" } | { "type": "stop" } | { "type": "step", frames: number, } | { "type": "jump-to-start" } | { "type": "jump-to-end" } | { "type": "seek", position: number, } | { "type": "set-speed", speed: PreviewSpeed, } | { "type": "set-loop", range: LoopRange | null, };
+export type TransportCommand = { "type": "play" } | { "type": "pause" } | { "type": "toggle" } | { "type": "stop" } | { "type": "step", frames: number, } | { "type": "jump-to-start" } | { "type": "jump-to-end" } | { "type": "seek", position: number, } | { "type": "scrub", position: number, } | { "type": "set-speed", speed: PreviewSpeed, } | { "type": "set-loop", range: LoopRange | null, };

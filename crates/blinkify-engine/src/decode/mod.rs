@@ -166,6 +166,9 @@ pub struct DecodeRequest {
     pub size: FrameSize,
     /// Stop after this many frames, or run to the end of the stream.
     pub max_frames: Option<u32>,
+    /// `source` is an FFmpeg concat list — a proxy's segments — rather than
+    /// a media file.
+    pub concat: bool,
 }
 
 impl DecodeRequest {
@@ -184,6 +187,9 @@ impl DecodeRequest {
             .flag("-nostats")
             .flag("-copyts")
             .flag("-noautorotate");
+        if self.concat {
+            command = command.option("-f", "concat");
+        }
         if let Some(seek) = self.seek_to {
             command = command
                 .option("-seek_timestamp", "1")
@@ -299,8 +305,13 @@ impl Timestamps {
     }
 }
 
+/// Turns a decoded frame's timestamp into the one delivered — for a proxy,
+/// the timestamp of the source frame it is a picture of.
+pub type PtsMap = Arc<dyn Fn(i64) -> i64 + Send + Sync>;
+
 /// Splits standard output into frames and hands each to the ring.
 struct FrameAssembler {
+    map: Option<PtsMap>,
     size: FrameSize,
     frame_bytes: usize,
     partial: Vec<u8>,
@@ -326,7 +337,7 @@ impl FrameAssembler {
             }
             let pixels = std::mem::replace(&mut self.partial, Vec::with_capacity(self.frame_bytes));
             let pts = match self.timestamps.next(&self.cancel) {
-                Ok(pts) => pts,
+                Ok(pts) => self.map.as_ref().map_or(pts, |map| map(pts)),
                 Err(reason) => return Flow::Fail(reason),
             };
             let frame = VideoFrame {
@@ -379,11 +390,24 @@ impl VideoDecoder {
         request: &DecodeRequest,
         ring: Arc<FrameRing>,
     ) -> Self {
+        Self::start_mapped(orchestrator, request, ring, None)
+    }
+
+    /// As [`VideoDecoder::start`], delivering each frame under the timestamp
+    /// `map` gives it.
+    #[must_use]
+    pub fn start_mapped(
+        orchestrator: &Orchestrator,
+        request: &DecodeRequest,
+        ring: Arc<FrameRing>,
+        map: Option<PtsMap>,
+    ) -> Self {
         let cancel = CancelToken::default();
         let timestamps = Arc::new(Timestamps::default());
         let head = Arc::new(AtomicI64::new(i64::MIN));
         let frames = Arc::new(AtomicU64::new(0));
         let mut assembler = FrameAssembler {
+            map,
             size: request.size,
             frame_bytes: request.size.bytes().max(1),
             partial: Vec::with_capacity(request.size.bytes()),
@@ -611,6 +635,7 @@ mod tests {
                 height: 36,
             },
             max_frames: Some(1),
+            concat: false,
         };
         let command = request.command().to_string();
         assert!(command.contains("-ss 0.700000"), "{command}");

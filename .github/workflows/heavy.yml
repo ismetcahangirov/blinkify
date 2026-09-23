@@ -133,3 +133,9 @@ jobs:
       # within a frame of the audio actually consumed.
       - name: A/V drift under a frame over ten minutes (#28)
         run: cargo test -p blinkify-engine --test playback -- --ignored av_drift_stays_under_a_frame_over_ten_minutes --nocapture
+
+      # #29: the median seek on an all-intra 1080p source under 250 ms, and on
+      # a 300-frame-GOP source under 5 s — imperceptible where keyframes are
+      # dense, bounded (and indicated) where they are not.
+      - name: Seek latency on dense and sparse keyframes (#29)
+        run: cargo test -p blinkify-engine --test seek -- --ignored seek_latency_is_imperceptible_on_dense_keyframes_and_bounded_on_sparse --nocapture

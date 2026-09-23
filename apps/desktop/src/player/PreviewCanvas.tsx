@@ -44,7 +44,7 @@ export function PreviewCanvas({ session }: PreviewCanvasProps) {
           canvas.width = width;
           canvas.height = height;
         }
-        usePreviewStore.getState().showFrame(frame.frameNumber);
+        usePreviewStore.getState().showFrame(frame.frameNumber, frame.position);
         if (frame.black) {
           context.clearRect(0, 0, width, height);
           return;

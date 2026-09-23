@@ -23,6 +23,7 @@ mod clock;
 mod feeder;
 mod lanes;
 pub mod plan;
+mod scrub;
 pub mod timecode;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -43,7 +44,8 @@ use crate::decode::VideoFrame;
 use crate::orchestrator::Orchestrator;
 use clock::PlaybackClock;
 use feeder::{Feeder, FeederConfig, LoopRange as FeederLoop};
-use lanes::Lanes;
+use lanes::{LANE_BUDGET_BYTES, Lanes};
+use scrub::{FrameCache, Picture, ScrubSlot, Worker};
 
 /// How far ahead of a boundary the next segment's video is started.
 const PREFETCH: ProgramTime = 1_500_000;
@@ -129,8 +131,16 @@ pub enum TransportCommand {
     },
     JumpToStart,
     JumpToEnd,
-    /// Move to a timeline position, in microseconds.
+    /// Move to a timeline position, in microseconds, and show exactly the
+    /// frame there.
     Seek {
+        #[ts(type = "number")]
+        position: ProgramTime,
+    },
+    /// Follow a dragged playhead: pause, and show the frame at the latest of
+    /// a stream of positions as fast as it can be decoded, skipping any that
+    /// a newer one overtakes. End a drag with `Seek`.
+    Scrub {
         #[ts(type = "number")]
         position: ProgramTime,
     },
@@ -162,6 +172,13 @@ pub struct PlaybackStatus {
     pub speed: PreviewSpeed,
     pub loop_range: Option<LoopRange>,
     pub audio: AudioOutputState,
+    /// A seek or a scrub has not yet put its frame on screen. On a source
+    /// with far-apart keyframes that takes a moment, and the interface says
+    /// so rather than showing a frozen frame as if it were the answer.
+    pub resolving: bool,
+    /// The picture at `position` comes from a preview proxy, not the file.
+    /// The interface must say so, persistently, whenever it does (#26).
+    pub proxy: bool,
 }
 
 /// Decode statistics, for diagnosis.
@@ -301,6 +318,12 @@ struct Inner {
     shown: Mutex<Shown>,
     listener: Mutex<Option<Listener>>,
     closed: AtomicBool,
+    /// Scrubbing: the worker, not the lanes, decides what is on screen.
+    scrubbing: AtomicBool,
+    scrub: Arc<ScrubSlot>,
+    cache: Arc<Mutex<FrameCache>>,
+    /// The position whose frame a seek or a scrub is still waiting for.
+    pending: Mutex<Option<ProgramTime>>,
 }
 
 fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -311,6 +334,7 @@ fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
 pub struct Player {
     inner: Arc<Inner>,
     monitor: Mutex<Option<JoinHandle<()>>>,
+    scrubber: Mutex<Option<JoinHandle<()>>>,
 }
 
 impl std::fmt::Debug for Player {
@@ -352,8 +376,19 @@ impl Player {
             shown: Mutex::new(Shown::default()),
             listener: Mutex::new(None),
             closed: AtomicBool::new(false),
+            scrubbing: AtomicBool::new(false),
+            scrub: Arc::new(ScrubSlot::default()),
+            cache: Arc::new(Mutex::new(FrameCache::new(LANE_BUDGET_BYTES * 2))),
+            pending: Mutex::new(None),
         });
         inner.prepare(1, start);
+        let scrubber = {
+            let inner = Arc::clone(&inner);
+            thread::Builder::new()
+                .name("playback-scrub".to_owned())
+                .spawn(move || inner.scrub_worker())
+                .ok()
+        };
         let monitor = {
             let inner = Arc::clone(&inner);
             thread::Builder::new()
@@ -364,6 +399,7 @@ impl Player {
         Self {
             inner,
             monitor: Mutex::new(monitor),
+            scrubber: Mutex::new(scrubber),
         }
     }
 
@@ -421,6 +457,20 @@ impl Player {
         lock(&self.inner.lanes).pids()
     }
 
+    /// Scrub positions asked for, and windows decoded to serve them. The
+    /// second is the smaller when positions were coalesced.
+    #[must_use]
+    pub fn scrub_counts(&self) -> (u64, u64) {
+        self.inner.scrub.counts()
+    }
+
+    /// Bytes held by the scrub cache, and its bound.
+    #[must_use]
+    pub fn scrub_cache_bytes(&self) -> (usize, usize) {
+        let cache = lock(&self.inner.cache);
+        (cache.bytes(), cache.budget())
+    }
+
     /// Stop everything. Returns once every decoder process has exited.
     pub fn close(&self) {
         if self.inner.closed.swap(true, Ordering::SeqCst) {
@@ -428,6 +478,10 @@ impl Player {
         }
         if let Some(feeder) = lock(&self.inner.control).feeder.take() {
             feeder.stop();
+        }
+        self.inner.scrub.stop();
+        if let Some(scrubber) = lock(&self.scrubber).take() {
+            let _ = scrubber.join();
         }
         lock(&self.inner.lanes).clear();
         *lock(&self.inner.sink) = None;
@@ -491,6 +545,17 @@ impl Inner {
     fn command(&self, command: TransportCommand) {
         let mut control = lock(&self.control);
         match command {
+            TransportCommand::Scrub { .. }
+            | TransportCommand::SetSpeed { .. }
+            | TransportCommand::SetLoop { .. } => {}
+            // These start from wherever the scrub left the clock.
+            TransportCommand::Play | TransportCommand::Pause | TransportCommand::Toggle => {
+                self.end_scrub(&mut control, true);
+            }
+            // These go somewhere of their own.
+            _ => self.end_scrub(&mut control, false),
+        }
+        match command {
             TransportCommand::Play => self.play(&mut control),
             TransportCommand::Pause => self.pause(&mut control),
             TransportCommand::Toggle => {
@@ -511,6 +576,18 @@ impl Inner {
                 self.seek(&mut control, last);
             }
             TransportCommand::Seek { position } => self.seek(&mut control, position),
+            TransportCommand::Scrub { position } => {
+                self.pause(&mut control);
+                if control.state == PlaybackState::Ended {
+                    control.state = PlaybackState::Paused;
+                }
+                let t = position.clamp(0, self.end().saturating_sub(1).max(0));
+                let (generation, _) = self.position();
+                self.scrubbing.store(true, Ordering::SeqCst);
+                self.clock.pause(t, generation);
+                *lock(&self.pending) = Some(t);
+                self.scrub.request(t);
+            }
             TransportCommand::SetSpeed { speed } => {
                 control.speed = speed;
                 if control.state == PlaybackState::Playing {
@@ -622,8 +699,18 @@ impl Inner {
         self.buffer().clear();
     }
 
+    /// Leave scrubbing: the lanes take over what is on screen again —
+    /// restarted exactly where the scrub left the clock, if `at_clock`.
+    fn end_scrub(&self, control: &mut Control, at_clock: bool) {
+        if self.scrubbing.swap(false, Ordering::SeqCst) && at_clock {
+            let (_, t) = self.position();
+            self.seek(control, t);
+        }
+    }
+
     fn seek(&self, control: &mut Control, t: ProgramTime) {
         let t = t.clamp(0, self.end().saturating_sub(1).max(0));
+        *lock(&self.pending) = Some(t);
         let playing = control.state == PlaybackState::Playing;
         if playing {
             self.stop_feeder(control);
@@ -665,15 +752,18 @@ impl Inner {
         let Some(target) = self.plan.segment(segment).map(|s| s.program_at(pts)) else {
             return;
         };
-        // Forwards within what the lane has decoded: just move the clock.
+        // A frame the lane already holds: just move the clock to it.
         let reusable = {
             let mut lanes = lock(&self.lanes);
             lanes
                 .lane(&self.plan, segment, generation, pts)
-                .and_then(|lane| lane.ring.earliest_pts())
-                .is_some_and(|earliest| earliest <= pts)
+                .is_some_and(|lane| {
+                    lane.ring.earliest_pts().is_some_and(|first| first <= pts)
+                        && lane.ring.latest_pts().is_some_and(|last| last >= pts)
+                })
         };
         if reusable {
+            *lock(&self.pending) = Some(target);
             self.clock.pause(target, generation);
         } else {
             self.seek(control, target);
@@ -778,6 +868,10 @@ impl Inner {
 
     /// Put the frame due at `t` on screen, and start what plays next.
     fn present(&self, generation: u64, t: ProgramTime) {
+        if self.scrubbing.load(Ordering::SeqCst) {
+            // The scrub worker owns the screen.
+            return;
+        }
         if t >= self.end() {
             // Past the end the last frame stays up.
             return;
@@ -786,10 +880,10 @@ impl Inner {
             self.show_black(t);
             return;
         };
-        let Some(video) = segment.source.video.as_ref() else {
+        if segment.source.video.is_none() {
             self.show_black(t);
             return;
-        };
+        }
         // Never a frame from past the out point, even though the decoder
         // runs on beyond it.
         let pts = segment
@@ -817,18 +911,73 @@ impl Inner {
         drop(lanes);
 
         if let Some(frame) = frame {
-            let position = segment.program_at(frame.pts);
-            let mut shown = lock(&self.shown);
-            shown.seq += 1;
-            shown.frame = Some(Arc::new(ShownFrame {
-                seq: shown.seq,
-                rotation: video.info.rotation,
-                position,
-                chosen_at: t,
-                frame_number: timecode::frame_number(position, self.plan.frame_rate),
-                picture: Some(Arc::new(frame)),
-            }));
+            self.show_picture(i, Arc::new(frame), lanes::rotation_of(segment), t);
+            // Any frame a lane presents answers the seek that started it.
+            self.resolve(None);
         }
+    }
+
+    /// Put `frame` of segment `i` on screen, chosen at clock position `t`.
+    fn show_picture(&self, i: usize, frame: Arc<VideoFrame>, rotation: u32, t: ProgramTime) {
+        let Some(segment) = self.plan.segment(i) else {
+            return;
+        };
+        let position = segment.program_at(frame.pts);
+        let mut shown = lock(&self.shown);
+        shown.seq += 1;
+        shown.frame = Some(Arc::new(ShownFrame {
+            seq: shown.seq,
+            rotation,
+            position,
+            chosen_at: t,
+            frame_number: timecode::frame_number(position, self.plan.frame_rate),
+            picture: Some(frame),
+        }));
+    }
+
+    /// The frame for a pending seek or scrub is up: `for_target` is the
+    /// position it was asked for, or `None` for "whatever was pending".
+    fn resolve(&self, for_target: Option<ProgramTime>) {
+        let mut pending = lock(&self.pending);
+        let answered = match (*pending, for_target) {
+            (None, _) => false,
+            (Some(_), None) => true,
+            (Some(waiting), Some(target)) => waiting == target,
+        };
+        if answered {
+            *pending = None;
+            drop(pending);
+            let status = self.status();
+            self.notify(&status);
+        }
+    }
+
+    /// Serve scrub positions until the player closes.
+    fn scrub_worker(self: Arc<Self>) {
+        let bound = lock(&self.lanes).bound;
+        let worker = Worker {
+            slot: Arc::clone(&self.scrub),
+            orchestrator: self.orchestrator.clone(),
+            plan: Arc::clone(&self.plan),
+            bound,
+            cache: Arc::clone(&self.cache),
+        };
+        worker.run(&|picture, target| {
+            if !self.scrubbing.load(Ordering::SeqCst) {
+                return;
+            }
+            match picture {
+                Picture::Frame {
+                    segment,
+                    frame,
+                    rotation,
+                } => self.show_picture(segment, frame, rotation, target),
+                Picture::Black => self.show_black(target),
+            }
+            if self.scrub.latest() == Some(target) {
+                self.resolve(Some(target));
+            }
+        });
     }
 
     fn show_black(&self, t: ProgramTime) {
@@ -868,6 +1017,11 @@ impl Inner {
             ),
             speed: control.speed,
             loop_range: lock(&self.loop_range).map(|(start, end)| LoopRange { start, end }),
+            resolving: lock(&self.pending).is_some(),
+            proxy: self
+                .plan
+                .segment_at(position.min(self.end().saturating_sub(1)))
+                .is_some_and(|(_, segment)| segment.source.proxy.is_some()),
             audio: lock(&self.sink).as_ref().map_or(
                 AudioOutputState::Silent {
                     reason: "closed".to_owned(),

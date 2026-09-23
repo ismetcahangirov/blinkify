@@ -168,8 +168,14 @@ fn reference_frame(orchestrator: &Orchestrator, path: &Path, pts: i64) -> Vec<u8
     bytes.lock().expect("bytes").clone()
 }
 
-/// The newest frame shown, waiting until nothing newer arrives for a moment.
+/// The newest frame shown, once the player has stopped resolving a seek or a
+/// step and nothing newer arrives for a moment.
 fn settle(player: &Player) -> Arc<ShownFrame> {
+    let deadline = Instant::now() + Duration::from_secs(20);
+    while player.status().resolving {
+        assert!(Instant::now() < deadline, "the frame never arrived");
+        let _ = player.next_frame(u64::MAX, Duration::from_millis(10));
+    }
     let mut last = player
         .next_frame(0, Duration::from_secs(5))
         .expect("a frame");

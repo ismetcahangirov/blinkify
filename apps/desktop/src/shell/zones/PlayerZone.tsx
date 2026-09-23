@@ -6,9 +6,13 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { DecodeStatsOverlay } from "../../player/DecodeStatsOverlay.js";
 import { PreviewCanvas } from "../../player/PreviewCanvas.js";
 import { usePreviewStore } from "../../player/preview.store.js";
+import { ScrubBar } from "../../player/ScrubBar.js";
 import { TransportBar } from "../../player/TransportBar.js";
 import { useFileDrop } from "../../player/useFileDrop.js";
-import { useTransportShortcuts } from "../../player/useTransportShortcuts.js";
+import {
+  framesPerSecond,
+  useTransportShortcuts,
+} from "../../player/useTransportShortcuts.js";
 import { useShellStore } from "../../shell.store.js";
 
 /** The engine's transport event: see `media::PLAYBACK_EVENT` in the shell. */
@@ -20,8 +24,9 @@ const PLAYBACK_EVENT = "media://playback";
  * #27 filled it with the video surface: drop a file on it and the engine
  * decodes it into raw frames this zone draws. #28 added the transport — play,
  * pause, stop, frame steps, jumps, speed, loop, and the keys that drive them.
- * Seek and scrub arrive with #29, and the edit graph with #30; until then a
- * dropped file is the whole timeline.
+ * #29 added the playhead to drag, the indication that a seek is still on its
+ * way, and the badge that says the picture comes from a proxy. The edit graph
+ * arrives with #30; until then a dropped file is the whole timeline.
  *
  * `memo` is not an optimisation guess here — it is the boundary the shell asks
  * for: "each zone is an independent React subtree, so a re-render in one does
@@ -41,6 +46,10 @@ export const PlayerZone = memo(function PlayerZone() {
   const error = usePreviewStore((state) => state.error);
   const open = usePreviewStore((state) => state.open);
   const transport = usePreviewStore((state) => state.transport);
+  const resolving = usePreviewStore(
+    (state) => state.playback?.resolving ?? false,
+  );
+  const proxy = usePreviewStore((state) => state.playback?.proxy ?? false);
   const [showStats, setShowStats] = useState(false);
   const surface = useRef<HTMLDivElement>(null);
 
@@ -66,7 +75,14 @@ export const PlayerZone = memo(function PlayerZone() {
     },
     [transport],
   );
-  useTransportShortcuts(session !== null, sendTransport);
+  const keyContext = useCallback(() => {
+    const playback = usePreviewStore.getState().playback;
+    return {
+      playing: playback?.state === "playing",
+      secondInFrames: playback ? framesPerSecond(playback.frameRate) : 30,
+    };
+  }, []);
+  useTransportShortcuts(session !== null, sendTransport, keyContext);
 
   // What the engine changes on its own — reaching the end, a new audio
   // device — arrives as an event rather than as an answer.
@@ -98,6 +114,14 @@ export const PlayerZone = memo(function PlayerZone() {
     <div className="zone player">
       <div className="player__header">
         <h2 className="zone__title">Player</h2>
+        {/* #26: whenever the picture comes from a proxy, say so — a proxy
+            is a 540-line copy, and nobody should judge detail on it
+            believing it is the file. */}
+        {proxy && (
+          <span className="player__badge" data-testid="proxy-badge">
+            Proxy
+          </span>
+        )}
         {session !== null && (
           <Button
             size="sm"
@@ -126,7 +150,17 @@ export const PlayerZone = memo(function PlayerZone() {
           </p>
         )}
         {session !== null && showStats && <DecodeStatsOverlay />}
+        {resolving && (
+          <p
+            className="player__resolving"
+            role="status"
+            data-testid="resolving"
+          >
+            Finding the frame…
+          </p>
+        )}
       </div>
+      {session !== null && <ScrubBar />}
       {session !== null && <TransportBar />}
       {status === "failed" && error !== null && (
         <p className="player__error" role="alert">

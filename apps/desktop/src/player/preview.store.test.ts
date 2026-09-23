@@ -19,6 +19,8 @@ const PAUSED: PlaybackStatus = {
   speed: "normal",
   loopRange: null,
   audio: { kind: "device", name: "Speakers" },
+  resolving: false,
+  proxy: false,
 };
 
 const opened = (session: number) => ({ session, status: PAUSED });

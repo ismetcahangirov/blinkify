@@ -22,6 +22,21 @@ whenever a preview is open.
 | Home  | Jump to the start      | —      |
 | End   | Jump to the last frame | —      |
 
+## Shuttle
+
+From [#29](https://github.com/ismetcahangirov/blinkify/issues/29). The J/K/L
+keys every editor shares, less reverse play, which v1 does not have.
+
+| Key | Action                                             | CapCut |
+| --- | -------------------------------------------------- | ------ |
+| L   | Play; pressed again while playing, double speed    | —      |
+| K   | Pause                                              | —      |
+| J   | Back one second, by real frames; held, keeps going | —      |
+
+The player's **playhead** under the video is a slider: dragging it scrubs, and
+with it focused, ← and → move it one frame and Home and End to either end —
+the slider's own keys, which the transport does not take from it.
+
 Rules:
 
 - **Space plays even from a focused button.** In an editor Space means play,

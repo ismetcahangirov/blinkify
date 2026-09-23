@@ -25,6 +25,8 @@ interface PreviewState {
   playback: PlaybackStatus | null;
   /** The timeline frame number of the frame on screen. */
   frameNumber: number | null;
+  /** Where the frame on screen starts on the timeline, in microseconds. */
+  framePosition: number | null;
   /** The file being previewed, as the user gave it. */
   path: string | null;
   error: string | null;
@@ -38,7 +40,7 @@ interface PreviewState {
   /** A status the engine pushed. */
   applyUpdate: (update: PlaybackUpdate) => void;
   /** The canvas drew a frame. */
-  showFrame: (frameNumber: number) => void;
+  showFrame: (frameNumber: number, position: number) => void;
   refreshStats: () => Promise<void>;
   /** The frame stream stopped working. */
   fail: (message: string) => void;
@@ -53,6 +55,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
   session: null,
   playback: null,
   frameNumber: null,
+  framePosition: null,
   path: null,
   error: null,
   stats: null,
@@ -77,6 +80,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         session: opened.session,
         playback: opened.status,
         frameNumber: null,
+        framePosition: null,
       });
     } catch (error) {
       if (mine !== generation) return;
@@ -92,6 +96,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
       session: null,
       playback: null,
       frameNumber: null,
+      framePosition: null,
       path: null,
       stats: null,
     });
@@ -118,8 +123,10 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
     if (update.session === get().session) set({ playback: update.status });
   },
 
-  showFrame: (frameNumber) => {
-    if (get().frameNumber !== frameNumber) set({ frameNumber });
+  showFrame: (frameNumber, framePosition) => {
+    if (get().framePosition !== framePosition) {
+      set({ frameNumber, framePosition });
+    }
   },
 
   refreshStats: async () => {

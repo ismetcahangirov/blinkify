@@ -21,4 +21,15 @@ frameRate: Rational,
 /**
  * The frame at `position`, `HH:MM:SS:FF`.
  */
-timecode: string, durationTimecode: string, speed: PreviewSpeed, loopRange: LoopRange | null, audio: AudioOutputState, };
+timecode: string, durationTimecode: string, speed: PreviewSpeed, loopRange: LoopRange | null, audio: AudioOutputState, 
+/**
+ * A seek or a scrub has not yet put its frame on screen. On a source
+ * with far-apart keyframes that takes a moment, and the interface says
+ * so rather than showing a frozen frame as if it were the answer.
+ */
+resolving: boolean, 
+/**
+ * The picture at `position` comes from a preview proxy, not the file.
+ * The interface must say so, persistently, whenever it does (#26).
+ */
+proxy: boolean, };

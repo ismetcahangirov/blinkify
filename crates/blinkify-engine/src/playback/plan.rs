@@ -20,6 +20,7 @@ use thiserror::Error;
 
 use crate::keyframes::KeyframeIndex;
 use crate::probe::{MediaInfo, Rational, StreamInfo, VideoInfo};
+use crate::proxy::Proxy;
 use crate::time::{self, MICROSECONDS, Rounding};
 
 /// A position on the playback timeline, in microseconds from its start.
@@ -36,6 +37,9 @@ pub struct SourceMedia {
     pub index: Arc<KeyframeIndex>,
     pub video: Option<VideoStream>,
     pub audio: Option<AudioStream>,
+    /// A preview proxy to decode pictures from instead of the file. Preview
+    /// only: an export takes an `ExportSource`, which cannot hold one.
+    pub proxy: Option<Proxy>,
 }
 
 /// The video stream a preview shows.
@@ -43,6 +47,8 @@ pub struct SourceMedia {
 pub struct VideoStream {
     pub index: u32,
     pub time_base: Rational,
+    /// Where its first frame is, in seconds of the file's timeline.
+    pub start_seconds: f64,
     pub info: VideoInfo,
 }
 
@@ -85,6 +91,7 @@ impl SourceMedia {
                 VideoStream {
                     index: stream.index,
                     time_base: valid(stream.time_base),
+                    start_seconds: stream.start_seconds.unwrap_or(0.0),
                     info: video.clone(),
                 }
             });
@@ -102,7 +109,16 @@ impl SourceMedia {
             index,
             video,
             audio,
+            proxy: None,
         })
+    }
+
+    /// Preview pictures from `proxy`. Sound, timing and every frame decision
+    /// still come from the file; the proxy only supplies the pixels.
+    #[must_use]
+    pub fn with_proxy(mut self, proxy: Option<Proxy>) -> Self {
+        self.proxy = proxy;
+        self
     }
 
     /// The time base a segment of this source is measured in: the video's,
