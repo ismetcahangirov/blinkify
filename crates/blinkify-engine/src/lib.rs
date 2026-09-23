@@ -16,9 +16,11 @@
 
 pub mod cache;
 pub mod capability;
+pub mod decode;
 pub mod filmstrip;
 pub mod keyframes;
 pub mod orchestrator;
+pub mod preview;
 pub mod probe;
 pub mod proxy;
 pub mod sidecar;

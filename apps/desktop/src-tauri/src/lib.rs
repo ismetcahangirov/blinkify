@@ -43,6 +43,16 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(PendingUpdate::default())
+        // Preview frames are fetched, not invoked: see `media::FRAME_SCHEME`.
+        // Each request may wait for its frame to fall due, so it is answered
+        // on its own thread and never on the webview's.
+        .register_asynchronous_uri_scheme_protocol(media::FRAME_SCHEME, |ctx, request, responder| {
+            let app = ctx.app_handle().clone();
+            let path = request.uri().path().to_owned();
+            std::thread::spawn(move || {
+                responder.respond(media::serve_frame(&app.state::<MediaEngine>(), &path));
+            });
+        })
         .invoke_handler(tauri::generate_handler![
             tier_is_lossless,
             media::encoder_capabilities,
@@ -54,6 +64,10 @@ pub fn run() {
             media::proxy_reasons,
             media::generate_proxy,
             media::cancel_proxy,
+            media::open_preview,
+            media::close_preview,
+            media::close_all_previews,
+            media::preview_stats,
             updater::pending_update,
             updater::install_update
         ])

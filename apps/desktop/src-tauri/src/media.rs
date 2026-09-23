@@ -5,23 +5,27 @@
 //! through, forwards job progress to the renderer as events, and hands the
 //! renderer what the engine concluded. It decides nothing itself.
 
-use std::collections::HashMap;
-use std::path::PathBuf;
+use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::thread;
 use std::time::Duration;
 
 use blinkify_engine::cache::Cache;
 use blinkify_engine::capability;
+use blinkify_engine::decode::wire_frame;
 use blinkify_engine::filmstrip::{Filmstrip, Filmstrips};
 use blinkify_engine::keyframes::{self, IndexProgress, KeyframeIndex};
 use blinkify_engine::orchestrator::CancelToken;
 use blinkify_engine::orchestrator::{JobProgress, Limits, Orchestrator};
+use blinkify_engine::preview::{DecodeStats, PreviewInfo, PreviewSession};
 use blinkify_engine::probe::{MediaInfo, Prober};
 use blinkify_engine::proxy::{Proxies, Proxy, ProxyReason, proxy_advice};
 use blinkify_engine::waveform::{Peaks, WaveformStatus, Waveforms};
 use blinkify_engine::{EncoderCapabilities, Sidecar};
 use serde::Serialize;
+use tauri::http::{Response, StatusCode, header};
 use tauri::{AppHandle, Emitter};
 use ts_rs::TS;
 
@@ -53,6 +57,19 @@ const PROXY_BUDGET_BYTES: u64 = 50 * 1024 * 1024 * 1024;
 /// together. Evicted least-recently-used beyond this.
 const CACHE_BUDGET_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
+/// The URI scheme preview frames are served on: `frame://localhost/<session>/<after>`,
+/// which `WebView2` reaches as `http://frame.localhost/<session>/<after>`.
+///
+/// A scheme rather than a command or an event, because a frame is megabytes of
+/// raw bytes: a command result or an event payload is serialised, and a
+/// `fetch` of a custom scheme is not. See `docs/architecture/preview-pipeline.md`.
+pub const FRAME_SCHEME: &str = "frame";
+
+/// How long a frame request waits for a newer frame before answering "none
+/// yet". Long enough that an idle preview is not a busy loop, short enough
+/// that a closed session is noticed promptly.
+const FRAME_WAIT: Duration = Duration::from_millis(50);
+
 /// How long shutdown waits for sidecar processes to exit before the window
 /// closes anyway. The job object guarantees they die with the process even if
 /// this runs out.
@@ -68,7 +85,11 @@ pub struct MediaEngine {
     capabilities: Arc<Mutex<Option<EncoderCapabilities>>>,
     proxies_running: Mutex<HashMap<PathBuf, CancelToken>>,
     indices: Mutex<HashMap<PathBuf, Arc<KeyframeIndex>>>,
+    /// Files whose index is being completed in the background.
+    indexing: Mutex<HashSet<PathBuf>>,
     waveforms: Arc<Mutex<HashMap<(PathBuf, u32), Waveform>>>,
+    previews: Mutex<HashMap<u32, Arc<PreviewSession>>>,
+    next_preview: AtomicU32,
 }
 
 /// A waveform being generated, or ready to draw.
@@ -121,7 +142,10 @@ impl MediaEngine {
             proxies_running: Mutex::new(HashMap::new()),
             capabilities: Arc::new(Mutex::new(None)),
             indices: Mutex::new(HashMap::new()),
+            indexing: Mutex::new(HashSet::new()),
             waveforms: Arc::new(Mutex::new(HashMap::new())),
+            previews: Mutex::new(HashMap::new()),
+            next_preview: AtomicU32::new(1),
         }
     }
 
@@ -151,6 +175,8 @@ impl MediaEngine {
     /// Cancel every job and wait for its process to exit. Called as the
     /// application closes.
     pub fn shutdown(&self) {
+        // Previews first: each close waits for its decoder process to exit.
+        self.close_all_previews();
         // Stop background indexing first and keep what it had, so the next
         // launch starts from there rather than from nothing.
         for index in self
@@ -173,6 +199,44 @@ impl MediaEngine {
         if let Ok(orchestrator) = &self.orchestrator {
             orchestrator.shutdown(SHUTDOWN_TIMEOUT);
         }
+    }
+
+    /// Close every preview session and wait for each decoder to exit. What
+    /// closing a project does, and what the application does on its way out.
+    pub fn close_all_previews(&self) {
+        let sessions: Vec<_> = self
+            .previews
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .drain()
+            .map(|(_, session)| session)
+            .collect();
+        for session in sessions {
+            session.close();
+        }
+    }
+
+    fn preview(&self, session: u32) -> Option<Arc<PreviewSession>> {
+        self.previews
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .get(&session)
+            .cloned()
+    }
+
+    /// The keyframe index of `path`, opened once and shared by background
+    /// indexing and by every preview of the file.
+    fn index(&self, path: &Path, info: &MediaInfo) -> Result<Arc<KeyframeIndex>, String> {
+        let mut indices = self.indices.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(index) = indices.get(path) {
+            return Ok(Arc::clone(index));
+        }
+        let index = Arc::new(
+            KeyframeIndex::open(path, info, self.orchestrator()?.clone(), self.cache.clone())
+                .map_err(|e| e.to_string())?,
+        );
+        indices.insert(path.to_path_buf(), Arc::clone(&index));
+        Ok(index)
     }
 
     fn prober(&self) -> Result<&Prober, String> {
@@ -261,31 +325,17 @@ pub fn index_keyframes(
     engine: tauri::State<'_, MediaEngine>,
     path: PathBuf,
 ) -> Result<f64, String> {
-    if let Some(index) = engine
-        .indices
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner)
-        .get(&path)
-    {
-        return Ok(index.fraction());
-    }
     let info = engine.prober()?.probe(&path).map_err(|e| e.to_string())?;
-    let index = Arc::new(
-        KeyframeIndex::open(
-            &path,
-            &info,
-            engine.orchestrator()?.clone(),
-            engine.cache.clone(),
-        )
-        .map_err(|e| e.to_string())?,
-    );
+    let index = engine.index(&path, &info)?;
     let fraction = index.fraction();
-    engine
-        .indices
+    // A preview opens the same index without completing it in the background;
+    // the first call here starts that, once per file.
+    let first_request = engine
+        .indexing
         .lock()
         .unwrap_or_else(PoisonError::into_inner)
-        .insert(path, Arc::clone(&index));
-    if !index.is_complete() {
+        .insert(path);
+    if first_request && !index.is_complete() {
         let _ = keyframes::spawn_background(index, move |progress: IndexProgress| {
             let _ = app.emit(INDEX_PROGRESS_EVENT, progress);
         });
@@ -528,5 +578,166 @@ pub fn cancel_proxy(engine: tauri::State<'_, MediaEngine>, path: PathBuf) {
 fn forward_to(app: AppHandle, event: &'static str) -> impl FnMut(JobProgress) + Send + 'static {
     move |update| {
         let _ = app.emit(event, update);
+    }
+}
+
+/// A preview session, as the renderer receives it when one opens.
+#[derive(Debug, Clone, Copy, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PreviewOpened {
+    pub session: u32,
+    pub info: PreviewInfo,
+}
+
+/// Open a preview of `path` sized for a `max_width` by `max_height` canvas,
+/// and start it playing from the beginning. Frames are then fetched from
+/// [`FRAME_SCHEME`], never returned through IPC.
+///
+/// # Errors
+///
+/// The sidecar is missing, or the file cannot be probed, indexed or played.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn open_preview(
+    engine: tauri::State<'_, MediaEngine>,
+    path: PathBuf,
+    max_width: u32,
+    max_height: u32,
+) -> Result<PreviewOpened, String> {
+    let info = engine.prober()?.probe(&path).map_err(|e| e.to_string())?;
+    let index = engine.index(&path, &info)?;
+    let session = PreviewSession::open(
+        engine.orchestrator()?.clone(),
+        &path,
+        &info,
+        index,
+        max_width,
+        max_height,
+    )
+    .map_err(|e| e.to_string())?;
+    session.play_from_start().map_err(|e| e.to_string())?;
+    let opened = PreviewOpened {
+        session: engine.next_preview.fetch_add(1, Ordering::Relaxed),
+        info: session.info(),
+    };
+    engine
+        .previews
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .insert(opened.session, Arc::new(session));
+    Ok(opened)
+}
+
+/// Close a preview session. Returns once its decoder process has exited.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn close_preview(engine: tauri::State<'_, MediaEngine>, session: u32) {
+    let removed = engine
+        .previews
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .remove(&session);
+    if let Some(removed) = removed {
+        removed.close();
+    }
+}
+
+/// Close every preview session: what closing a project does.
+#[tauri::command(async)]
+// Tauri injects managed state by value; see `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn close_all_previews(engine: tauri::State<'_, MediaEngine>) {
+    engine.close_all_previews();
+}
+
+/// Decode statistics for a preview session, for the diagnostic overlay.
+///
+/// # Errors
+///
+/// No such session.
+#[tauri::command]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn preview_stats(
+    engine: tauri::State<'_, MediaEngine>,
+    session: u32,
+) -> Result<DecodeStats, String> {
+    engine
+        .preview(session)
+        .map(|session| session.stats())
+        .ok_or_else(|| format!("no preview session {session}"))
+}
+
+/// Parse a frame request path, `/<session>/<after>`.
+fn frame_request(path: &str) -> Option<(u32, u64)> {
+    let mut parts = path.trim_matches('/').split('/');
+    let session = parts.next()?.parse().ok()?;
+    let after = parts.next()?.parse().ok()?;
+    parts.next().is_none().then_some((session, after))
+}
+
+/// Answer one request on [`FRAME_SCHEME`]: `200` with the frame to show now,
+/// in the wire format of `blinkify_engine::decode::wire_frame`; `204` when no
+/// newer frame became due within [`FRAME_WAIT`]; `404` for an unknown or
+/// closed session. Blocks for up to [`FRAME_WAIT`], so it is called off the
+/// webview's thread.
+///
+/// Backpressure is in the shape of the exchange: the renderer holds at most
+/// one request open, so a renderer that falls behind is shown fewer, newer
+/// frames, and nothing queues for it.
+#[must_use]
+pub fn serve_frame(engine: &MediaEngine, path: &str) -> Response<Vec<u8>> {
+    let respond = |status: StatusCode, body: Vec<u8>| {
+        Response::builder()
+            .status(status)
+            .header(header::CONTENT_TYPE, "application/octet-stream")
+            .header(header::CACHE_CONTROL, "no-store")
+            // The page is served from a different origin than the scheme.
+            .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+            .body(body)
+            .unwrap_or_default()
+    };
+    let Some((session, after)) = frame_request(path) else {
+        return respond(StatusCode::BAD_REQUEST, Vec::new());
+    };
+    let Some(preview) = engine.preview(session) else {
+        return respond(StatusCode::NOT_FOUND, Vec::new());
+    };
+    match preview.next_frame(after, FRAME_WAIT) {
+        Some((seq, frame)) => respond(StatusCode::OK, wire_frame(seq, &frame)),
+        None => respond(StatusCode::NO_CONTENT, Vec::new()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_frame_request_names_a_session_and_the_last_frame_seen() {
+        assert_eq!(frame_request("/3/41"), Some((3, 41)));
+        assert_eq!(frame_request("3/0"), Some((3, 0)));
+        assert_eq!(frame_request("/3"), None);
+        assert_eq!(frame_request("/3/41/extra"), None);
+        assert_eq!(frame_request("/x/1"), None);
+    }
+
+    #[test]
+    fn an_unknown_session_is_not_found_rather_than_a_hang() {
+        let engine = MediaEngine::locate(None);
+        assert_eq!(
+            serve_frame(&engine, "/99/0").status(),
+            StatusCode::NOT_FOUND
+        );
+        assert_eq!(
+            serve_frame(&engine, "/nonsense").status(),
+            StatusCode::BAD_REQUEST
+        );
     }
 }
