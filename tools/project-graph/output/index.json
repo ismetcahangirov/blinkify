@@ -5,7 +5,7 @@
     "tools"
   ],
   "totals": {
-    "files": 100,
+    "files": 119,
     "tests": 11,
     "violations": 0
   },
@@ -28,23 +28,41 @@
       ]
     },
     "packages/types": {
-      "files": 16,
+      "files": 34,
       "tests": 0,
       "untested": [
+        "packages/types/src/generated/AudioInfo.ts",
+        "packages/types/src/generated/Chapter.ts",
         "packages/types/src/generated/Chroma.ts",
+        "packages/types/src/generated/ChromaSubsampling.ts",
         "packages/types/src/generated/CodecCapability.ts",
+        "packages/types/src/generated/Color.ts",
+        "packages/types/src/generated/ContainerInfo.ts",
+        "packages/types/src/generated/ContentLight.ts",
+        "packages/types/src/generated/EditList.ts",
+        "packages/types/src/generated/EditListEntry.ts",
         "packages/types/src/generated/EncoderCapabilities.ts",
         "packages/types/src/generated/EncoderCapability.ts",
         "packages/types/src/generated/EncoderSource.ts",
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/FrameRate.ts",
+        "packages/types/src/generated/FrameRateMode.ts",
+        "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/HdrTransfer.ts",
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/JobProgress.ts",
+        "packages/types/src/generated/MasteringDisplay.ts",
+        "packages/types/src/generated/MediaInfo.ts",
         "packages/types/src/generated/ProfileCapability.ts",
         "packages/types/src/generated/Progress.ts",
+        "packages/types/src/generated/Rational.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
         "packages/types/src/generated/SeamReason.ts",
+        "packages/types/src/generated/StreamInfo.ts",
+        "packages/types/src/generated/StreamKind.ts",
         "packages/types/src/generated/UpdateOffer.ts",
         "packages/types/src/generated/VideoCodec.ts",
+        "packages/types/src/generated/VideoInfo.ts",
         "packages/types/src/generated/index.ts",
         "packages/types/src/index.ts"
       ]
@@ -74,13 +92,14 @@
       ]
     },
     "tools": {
-      "files": 23,
+      "files": 24,
       "tests": 0,
       "untested": [
         "tools/apply-labels.mjs",
         "tools/check-links.mjs",
         "tools/colour-gate-test.mjs",
         "tools/colour-gate.mjs",
+        "tools/corpus/generate.mjs",
         "tools/crate-boundaries-test.mjs",
         "tools/crate-boundaries.mjs",
         "tools/design-token-gate-test.mjs",
@@ -400,6 +419,30 @@
       "coveredByTests": [],
       "hasNoDependents": true
     },
+    "packages/types/src/generated/AudioInfo.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/StreamKind.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/Chapter.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/ContainerInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/Chroma.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -407,6 +450,18 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/ProfileCapability.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/ChromaSubsampling.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/VideoInfo.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -422,6 +477,71 @@
       ],
       "dependedOnBy": [
         "packages/types/src/generated/EncoderCapabilities.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/Color.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/ContainerInfo.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Chapter.ts",
+        "packages/types/src/generated/EditList.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/MediaInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/ContentLight.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/EditList.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/EditListEntry.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/ContainerInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/EditListEntry.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/EditList.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -481,6 +601,61 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/FrameRate.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/FrameRateMode.ts",
+        "packages/types/src/generated/Rational.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/FrameRateMode.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/FrameRate.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/Hdr.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/ContentLight.ts",
+        "packages/types/src/generated/HdrTransfer.ts",
+        "packages/types/src/generated/MasteringDisplay.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/HdrTransfer.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/JobId.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -500,6 +675,32 @@
       "dependsOn": [
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/Progress.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/MasteringDisplay.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/MediaInfo.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/ContainerInfo.ts",
+        "packages/types/src/generated/StreamInfo.ts"
       ],
       "dependedOnBy": [
         "packages/types/src/generated/index.ts"
@@ -533,6 +734,20 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Rational.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/FrameRate.ts",
+        "packages/types/src/generated/StreamInfo.ts",
+        "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/ReEncodeReason.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -552,6 +767,36 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/StreamInfo.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Rational.ts",
+        "packages/types/src/generated/StreamKind.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/MediaInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/StreamKind.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/AudioInfo.ts",
+        "packages/types/src/generated/VideoInfo.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -580,25 +825,61 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/VideoInfo.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/ChromaSubsampling.ts",
+        "packages/types/src/generated/Color.ts",
+        "packages/types/src/generated/FrameRate.ts",
+        "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/Rational.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/StreamKind.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/index.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
+        "packages/types/src/generated/AudioInfo.ts",
+        "packages/types/src/generated/Chapter.ts",
         "packages/types/src/generated/Chroma.ts",
+        "packages/types/src/generated/ChromaSubsampling.ts",
         "packages/types/src/generated/CodecCapability.ts",
+        "packages/types/src/generated/Color.ts",
+        "packages/types/src/generated/ContainerInfo.ts",
+        "packages/types/src/generated/ContentLight.ts",
+        "packages/types/src/generated/EditList.ts",
+        "packages/types/src/generated/EditListEntry.ts",
         "packages/types/src/generated/EncoderCapabilities.ts",
         "packages/types/src/generated/EncoderCapability.ts",
         "packages/types/src/generated/EncoderSource.ts",
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/FrameRate.ts",
+        "packages/types/src/generated/FrameRateMode.ts",
+        "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/HdrTransfer.ts",
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/JobProgress.ts",
+        "packages/types/src/generated/MasteringDisplay.ts",
+        "packages/types/src/generated/MediaInfo.ts",
         "packages/types/src/generated/ProfileCapability.ts",
         "packages/types/src/generated/Progress.ts",
+        "packages/types/src/generated/Rational.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
         "packages/types/src/generated/SeamReason.ts",
+        "packages/types/src/generated/StreamInfo.ts",
+        "packages/types/src/generated/StreamKind.ts",
         "packages/types/src/generated/UpdateOffer.ts",
-        "packages/types/src/generated/VideoCodec.ts"
+        "packages/types/src/generated/VideoCodec.ts",
+        "packages/types/src/generated/VideoInfo.ts"
       ],
       "dependedOnBy": [
         "packages/types/src/index.ts"
@@ -1243,6 +1524,15 @@
       "hasNoDependents": true
     },
     "tools/colour-gate.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/corpus/generate.mjs": {
       "workspace": "tools",
       "layer": "tooling",
       "isTest": false,

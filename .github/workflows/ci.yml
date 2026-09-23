@@ -165,6 +165,9 @@ jobs:
       # Tauri will not compile the shell crate without its externalBins, and
       # the engine's integration tests run the real sidecar.
       - uses: ./.github/actions/fetch-sidecar
+      # The engine's integration tests read real media, generated from
+      # committed recipes rather than committed as binaries.
+      - uses: ./.github/actions/corpus
 
       - name: Format (cargo fmt)
         run: cargo fmt --all --check

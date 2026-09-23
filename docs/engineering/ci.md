@@ -73,6 +73,7 @@ causes, in order of likelihood:
 5. **No FFmpeg sidecar.** `pnpm sidecar:fetch`. Tauri will not compile the
    shell without it, and the engine's integration tests run it — see
    [`ffmpeg-sidecar.md`](./ffmpeg-sidecar.md).
+6. **No test corpus.** `pnpm corpus` — see [`test-corpus.md`](./test-corpus.md).
 
 ## Caching
 
@@ -86,6 +87,7 @@ Without it, a Rust build on a Windows runner runs past the 15-minute budget in
 | `target/`                              | `Cargo.lock` + `rust-toolchain.toml`, per profile |
 | `cargo-deny` binary                    | `CARGO_DENY_VERSION` in `ci.yml`                  |
 | FFmpeg sidecar                         | `tools/ffmpeg-sidecar/sidecar.lock.json`          |
+| Media test corpus and corpus tool      | everything under `tools/corpus/`                  |
 
 Two things there are load-bearing:
 
