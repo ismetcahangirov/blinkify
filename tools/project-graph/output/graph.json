@@ -1068,6 +1068,15 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Filmstrip.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/FrameRate.ts",
       "dependencies": [
         {
@@ -1426,6 +1435,53 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Proxy.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ProxySegment",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ProxySegment.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/ProxyReason.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/ProxySegment.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Proxy.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/Rational.ts",
       "dependencies": [],
       "dependents": [
@@ -1452,6 +1508,15 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/SheetReady.ts",
+      "dependencies": [],
+      "dependents": [
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -1952,6 +2017,23 @@
         },
         {
           "dynamic": false,
+          "module": "./Filmstrip",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Filmstrip.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./FrameRate",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2190,6 +2272,57 @@
         },
         {
           "dynamic": false,
+          "module": "./Proxy",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Proxy.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ProxyReason",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ProxyReason.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ProxySegment",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ProxySegment.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Rational",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2232,6 +2365,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/SeamReason.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SheetReady",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/SheetReady.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4329,8 +4479,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 125,
-    "totalDependenciesCruised": 181,
+    "totalCruised": 130,
+    "totalDependenciesCruised": 187,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

@@ -18,6 +18,9 @@ How Blinkify is put together and why the structure holds under change.
   how open GOPs are told apart, and how it fills lazily and persists (#24)
 - [`waveform-peaks.md`](./waveform-peaks.md) — min/max peaks per channel, the
   zoom pyramid, the cache format (#25)
+- [`filmstrips-and-proxies.md`](./filmstrips-and-proxies.md) — sprite-sheet
+  thumbnails, preview proxies, and the type that keeps proxies out of export
+  (#26)
 
 ## What does not belong here
 

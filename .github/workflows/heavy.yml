@@ -115,3 +115,9 @@ jobs:
       # slots are queued against a two-hour file.
       - name: Background work yields to interactive decode (#22)
         run: cargo test -p blinkify-engine --test orchestrator -- --ignored background_work_yields_to_interactive_decode --nocapture
+
+      # #26: a 4K long-GOP source with a proxy scrubs smoothly, and without one
+      # does not — median seek-and-decode of five scattered frames, proxy at
+      # least 3x faster. Measured locally at 1.12 s versus 47 ms.
+      - name: A proxy makes 4K scrubbable (#26)
+        run: cargo test -p blinkify-engine --test proxy -- --ignored a_proxy_makes_a_4k_source_scrubbable --nocapture
