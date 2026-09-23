@@ -2974,13 +2974,6 @@
       "valid": true
     },
     {
-      "source": "tools/corpus/generate.mjs",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "tools/crate-boundaries-test.mjs",
       "dependencies": [],
       "dependents": [],
@@ -3160,7 +3153,7 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 98,
+    "totalCruised": 97,
     "totalDependenciesCruised": 130,
     "optionsUsed": {
       "combinedDependencies": false,
