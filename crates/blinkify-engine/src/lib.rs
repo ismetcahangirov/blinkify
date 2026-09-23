@@ -21,6 +21,7 @@ pub mod orchestrator;
 pub mod probe;
 pub mod sidecar;
 pub mod tier;
+pub mod waveform;
 
 pub use capability::{EncoderCapabilities, VideoCodec};
 pub use sidecar::{Sidecar, SidecarError};

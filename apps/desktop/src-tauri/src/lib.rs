@@ -48,6 +48,8 @@ pub fn run() {
             media::encoder_capabilities,
             media::probe_media,
             media::index_keyframes,
+            media::generate_waveform,
+            media::waveform_peaks,
             updater::pending_update,
             updater::install_update
         ])

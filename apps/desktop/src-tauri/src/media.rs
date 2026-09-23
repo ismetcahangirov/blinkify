@@ -16,8 +16,11 @@ use blinkify_engine::capability;
 use blinkify_engine::keyframes::{self, IndexProgress, KeyframeIndex};
 use blinkify_engine::orchestrator::{JobProgress, Limits, Orchestrator};
 use blinkify_engine::probe::{MediaInfo, Prober};
+use blinkify_engine::waveform::{Peaks, WaveformStatus, Waveforms};
 use blinkify_engine::{EncoderCapabilities, Sidecar};
+use serde::Serialize;
 use tauri::{AppHandle, Emitter};
+use ts_rs::TS;
 
 /// The event every job's progress arrives on, with a [`JobProgress`] payload.
 ///
@@ -28,6 +31,10 @@ pub const PROGRESS_EVENT: &str = "media://progress";
 
 /// Background keyframe indexing progress, with an [`IndexProgress`] payload.
 pub const INDEX_PROGRESS_EVENT: &str = "media://keyframe-index";
+
+/// Waveform generation progress and completion, with a [`WaveformUpdate`]
+/// payload.
+pub const WAVEFORM_EVENT: &str = "media://waveform";
 
 /// The on-disk cache budget: keyframe indices, waveform peaks and filmstrips
 /// together. Evicted least-recently-used beyond this.
@@ -46,6 +53,35 @@ pub struct MediaEngine {
     cache: Option<Cache>,
     capabilities: Arc<Mutex<Option<EncoderCapabilities>>>,
     indices: Mutex<HashMap<PathBuf, Arc<KeyframeIndex>>>,
+    waveforms: Arc<Mutex<HashMap<(PathBuf, u32), Waveform>>>,
+}
+
+/// A waveform being generated, or ready to draw.
+#[derive(Debug, Clone)]
+enum Waveform {
+    Pending(f64),
+    Ready(Arc<Peaks>),
+}
+
+impl Waveform {
+    fn status(&self) -> WaveformStatus {
+        match self {
+            Self::Pending(fraction) => WaveformStatus::Pending {
+                fraction: *fraction,
+            },
+            Self::Ready(_) => WaveformStatus::Ready,
+        }
+    }
+}
+
+/// The payload of [`WAVEFORM_EVENT`].
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct WaveformUpdate {
+    pub path: String,
+    pub stream: u32,
+    pub status: WaveformStatus,
 }
 
 impl MediaEngine {
@@ -66,6 +102,7 @@ impl MediaEngine {
             cache: cache_dir.map(|dir| Cache::new(dir, CACHE_BUDGET_BYTES)),
             capabilities: Arc::new(Mutex::new(None)),
             indices: Mutex::new(HashMap::new()),
+            waveforms: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -227,4 +264,127 @@ pub fn index_keyframes(
         });
     }
     Ok(fraction)
+}
+
+/// Start generating the waveform of audio `stream` of `path`, and say where it
+/// stands. Returns at once: `pending` means the timeline draws a placeholder
+/// until [`WAVEFORM_EVENT`] reports `ready`.
+///
+/// # Errors
+///
+/// The sidecar is missing, or the file cannot be probed.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn generate_waveform(
+    app: AppHandle,
+    engine: tauri::State<'_, MediaEngine>,
+    path: PathBuf,
+    stream: u32,
+) -> Result<WaveformStatus, String> {
+    let key = (path.clone(), stream);
+    {
+        let mut waveforms = engine
+            .waveforms
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        if let Some(existing) = waveforms.get(&key) {
+            return Ok(existing.status());
+        }
+        waveforms.insert(key.clone(), Waveform::Pending(0.0));
+    }
+    let info = engine.prober()?.probe(&path).map_err(|e| e.to_string())?;
+    let generator = Waveforms::new(engine.orchestrator()?.clone(), engine.cache.clone());
+    let waveforms = Arc::clone(&engine.waveforms);
+    thread::spawn(move || {
+        let emit = |status: WaveformStatus| {
+            let _ = app.emit(
+                WAVEFORM_EVENT,
+                WaveformUpdate {
+                    path: path.display().to_string(),
+                    stream,
+                    status,
+                },
+            );
+        };
+        let progress_app = app.clone();
+        let progress_path = path.display().to_string();
+        let progress_slots = Arc::clone(&waveforms);
+        let progress_key = key.clone();
+        let result = generator.peaks(&path, &info, stream, move |fraction| {
+            progress_slots
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .insert(progress_key.clone(), Waveform::Pending(fraction));
+            let _ = progress_app.emit(
+                WAVEFORM_EVENT,
+                WaveformUpdate {
+                    path: progress_path.clone(),
+                    stream,
+                    status: WaveformStatus::Pending { fraction },
+                },
+            );
+        });
+        let mut slots = waveforms.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Ok((peaks, _)) = result {
+            slots.insert(key, Waveform::Ready(peaks));
+            drop(slots);
+            emit(WaveformStatus::Ready);
+        } else {
+            // Forget it, so asking again retries rather than waiting forever.
+            slots.remove(&key);
+        }
+    });
+    Ok(WaveformStatus::Pending { fraction: 0.0 })
+}
+
+/// The summed `(min, max)` peaks for `pixels` columns starting at
+/// `start_seconds`, at `samples_per_pixel`, as little-endian `i16` pairs.
+///
+/// Binary rather than JSON: a screen of peaks is thousands of numbers per
+/// repaint-window change, and the timeline draws them straight into a canvas.
+/// Read from the pyramid level for the zoom, so this never decimates the base.
+///
+/// # Errors
+///
+/// The waveform has not been generated yet.
+#[tauri::command]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn waveform_peaks(
+    engine: tauri::State<'_, MediaEngine>,
+    path: PathBuf,
+    stream: u32,
+    samples_per_pixel: f64,
+    start_seconds: f64,
+    pixels: u32,
+) -> Result<tauri::ipc::Response, String> {
+    let peaks = match engine
+        .waveforms
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .get(&(path, stream))
+    {
+        Some(Waveform::Ready(peaks)) => Arc::clone(peaks),
+        _ => return Err("the waveform is not ready".to_owned()),
+    };
+    let level = peaks
+        .level_for(samples_per_pixel)
+        .ok_or_else(|| "the waveform is empty".to_owned())?;
+    let seconds_per_bucket =
+        f64::from(level.samples_per_bucket) / f64::from(peaks.sample_rate.max(1));
+    let buckets_per_pixel = (samples_per_pixel / f64::from(level.samples_per_bucket)).max(1.0);
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let first = (start_seconds.max(0.0) / seconds_per_bucket) as u64;
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let span = (f64::from(pixels) * buckets_per_pixel).ceil() as u64;
+    let last = first.saturating_add(span).min(level.buckets);
+    let bytes: Vec<u8> = peaks
+        .summed(level, first..last)
+        .flat_map(|(min, max)| [min.to_le_bytes(), max.to_le_bytes()])
+        .flatten()
+        .collect();
+    Ok(tauri::ipc::Response::new(bytes))
 }
