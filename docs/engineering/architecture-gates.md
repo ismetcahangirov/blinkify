@@ -7,18 +7,20 @@ works after you touch it.
 
 ## The gates
 
-| Command                | Enforces                                                  | Rule       |
-| ---------------------- | --------------------------------------------------------- | ---------- |
-| `pnpm graph:validate`  | TypeScript import boundaries                              | section 2  |
-| `pnpm graph:check`     | The committed project graph matches the source tree       | section 14 |
-| `pnpm boundaries:rust` | No engine crate reaches `tauri`, directly or transitively | section 2  |
-| `pnpm deny:licenses`   | No GPL, AGPL or LGPL Rust crate                           | section 10 |
-| `pnpm colours:check`   | No colour value outside the design token file             | #15        |
-| `pnpm offline:check`   | No remote asset the interface needs in order to appear    | #16        |
-| `pnpm tokens:check`    | No hard-coded length, duration or weight in `packages/ui` | #17        |
-| `pnpm sidecar:check`   | The bundled FFmpeg is LGPL-only, ours, and complete       | #21        |
+| Command                | Enforces                                                   | Rule       |
+| ---------------------- | ---------------------------------------------------------- | ---------- |
+| `pnpm graph:validate`  | TypeScript import boundaries                               | section 2  |
+| `pnpm graph:check`     | The committed project graph matches the source tree        | section 14 |
+| `pnpm boundaries:rust` | No engine crate reaches `tauri`, directly or transitively  | section 2  |
+| `pnpm deny:licenses`   | No GPL, AGPL or LGPL Rust crate                            | section 10 |
+| `pnpm colours:check`   | No colour value outside the design token file              | #15        |
+| `pnpm offline:check`   | No remote asset the interface needs in order to appear     | #16        |
+| `pnpm tokens:check`    | No hard-coded length, duration or weight in `packages/ui`  | #17        |
+| `pnpm sidecar:check`   | The bundled FFmpeg is LGPL-only, ours, and complete        | #21        |
+| `pnpm types:check`     | The committed IPC contract is what the Rust types generate | #32        |
+| `pnpm evaluator:check` | Only the shared evaluator interprets the edit graph        | #30        |
 
-All eight run in `pnpm verify`, and all eight block a merge — see
+All ten run in `pnpm verify`, and all ten block a merge — see
 [`ci.md`](./ci.md) for how they are wired into the pipeline and in what order.
 
 ## Two languages, two tools — and why that is not pedantry
@@ -203,6 +205,7 @@ pnpm gates:prove
 | `pnpm colours:check:test`   | The colour gate catches a hex, an `rgb()` and a named colour, and does not catch a `var()` reference or a comment                                                                                                                                                            |
 | `pnpm offline:check:test`   | The offline gate catches a font-service `<link>`, a remote `url()`, a remote `@import` and a remote `src`, and does not catch a URL in a comment or an `<a href>` a user clicks                                                                                              |
 | `pnpm sidecar:check:test`   | The sidecar gate rejects a GPL build, a non-free build, a distributor's "LGPL" build carrying `openh264`, a build missing `arnndn` or `hevc_nvenc`, a binary whose hash differs from the lock, and a committed `ffmpeg.exe` — see [`ffmpeg-sidecar.md`](./ffmpeg-sidecar.md) |
+| `pnpm evaluator:check:test` | The evaluator boundary catches an `Operation::` taken apart in the shell or the player, and a renderer or design-system file reading `.operations`; it lets through the evaluator itself, tests, `AudioOperation::` and renderer test fixtures                               |
 | `pnpm types:check:test`     | The IPC contract gate catches a type changed without regenerating, a new type not committed, and a removed type still committed                                                                                                                                              |
 | `pnpm tokens:check:test`    | The design-token gate catches a pixel padding, a rem radius, a millisecond duration, a numeric font weight and a length in an inline style, and does not catch a percentage, a `calc()` over tokens, zero, or the token files themselves                                     |
 

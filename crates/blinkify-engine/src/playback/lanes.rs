@@ -13,7 +13,7 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use super::plan::{PlaybackPlan, Segment, VideoStream};
+use super::plan::{PlaybackPlan, Segment, VideoStream, same_segment};
 use crate::decode::{
     DecodeEnd, DecodeError, DecodeRequest, FrameRing, FrameSize, PtsMap, RingStats, VideoDecoder,
 };
@@ -261,6 +261,30 @@ impl Lanes {
         self.live = keep;
         for lane in retire {
             self.retire(lane);
+        }
+    }
+
+    /// Carry the lanes of `generation` over to a new plan: a lane whose
+    /// segment is unchanged in `new` keeps its decoder under its new index;
+    /// every other lane is dropped.
+    pub(crate) fn remap(&mut self, old: &PlaybackPlan, new: &PlaybackPlan, generation: u64) {
+        let lanes = std::mem::take(&mut self.live);
+        for mut lane in lanes {
+            let moved = (lane.generation == generation)
+                .then(|| old.segment(lane.segment))
+                .flatten()
+                .and_then(|before| {
+                    new.segments()
+                        .iter()
+                        .position(|after| same_segment(before, after))
+                });
+            match moved {
+                Some(index) => {
+                    lane.segment = index;
+                    self.live.push(lane);
+                }
+                None => self.retire(lane),
+            }
         }
     }
 

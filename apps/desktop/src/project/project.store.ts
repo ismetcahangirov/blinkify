@@ -1,4 +1,4 @@
-import type { ProjectView } from "@blinkify/types";
+import type { Project, ProjectView } from "@blinkify/types";
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 
@@ -20,6 +20,12 @@ interface ProjectState {
   /** Open the project Blinkify was started with, if any. */
   loadLaunch: () => Promise<void>;
   relink: (source: number, path: string) => Promise<void>;
+  /**
+   * Replace the graph — how the timeline's edits (#33 onward) reach the
+   * engine. The preview follows at once; nothing is saved (#54). Resolves
+   * with the engine's refusal, if it refused.
+   */
+  update: (project: Project) => Promise<string | null>;
 }
 
 const message = (cause: unknown) =>
@@ -36,6 +42,16 @@ export const useProjectStore = create<ProjectState>((set) => ({
       set({ view, error: null });
     } catch (cause) {
       set({ view: null, error: message(cause) });
+    }
+  },
+
+  update: async (project) => {
+    try {
+      const view = await invoke<ProjectView>("update_project", { project });
+      set({ view });
+      return null;
+    } catch (cause) {
+      return message(cause);
     }
   },
 

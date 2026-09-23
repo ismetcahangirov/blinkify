@@ -224,7 +224,7 @@ impl MediaEngine {
         }
     }
 
-    fn preview(&self, session: u32) -> Option<Arc<Player>> {
+    pub(crate) fn preview(&self, session: u32) -> Option<Arc<Player>> {
         self.previews
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
@@ -625,44 +625,71 @@ pub fn open_preview(
     max_width: u32,
     max_height: u32,
 ) -> Result<PreviewOpened, String> {
-    let info = engine.prober()?.probe(&path).map_err(|e| e.to_string())?;
-    let index = engine.index(&path, &info)?;
-    // A proxy already made for this file is used for the pictures; one is
-    // never made here (`proxy_reasons` offers, the user decides).
-    let proxy = engine.proxy_cache.clone().and_then(|cache| {
-        Proxies::new(engine.orchestrator().ok()?.clone(), cache)
-            .find(&path)
-            .ok()
-            .flatten()
-    });
-    let source = SourceMedia::new(&path, info, index)
-        .map_err(|e| e.to_string())?
-        .with_proxy(proxy);
+    let source = engine.source_media(&path)?;
     let plan = PlaybackPlan::whole(Arc::new(source)).map_err(|e| e.to_string())?;
-    let player = Player::new(
-        engine.orchestrator()?.clone(),
-        plan,
-        &PlayerOptions {
-            audio: AudioChoice::Device,
-            max_width,
-            max_height,
-            default_device: DefaultDevice::System,
-        },
-    );
-    let session = engine.next_preview.fetch_add(1, Ordering::Relaxed);
-    player.set_listener(move |status| {
-        let _ = app.emit(PLAYBACK_EVENT, PlaybackUpdate { session, status });
-    });
-    let opened = PreviewOpened {
-        session,
-        status: player.status(),
-    };
-    engine
-        .previews
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner)
-        .insert(session, Arc::new(player));
-    Ok(opened)
+    engine.start_preview(app, plan, max_width, max_height)
+}
+
+impl MediaEngine {
+    /// A file ready to preview: probed, indexed, and with the proxy already
+    /// made for it, if there is one — one is never made here
+    /// (`proxy_reasons` offers, the user decides).
+    ///
+    /// # Errors
+    ///
+    /// The sidecar is missing, or the file cannot be probed or indexed.
+    pub(crate) fn source_media(&self, path: &Path) -> Result<SourceMedia, String> {
+        let info = self.prober()?.probe(path).map_err(|e| e.to_string())?;
+        let index = self.index(path, &info)?;
+        let proxy = self.proxy_cache.clone().and_then(|cache| {
+            Proxies::new(self.orchestrator().ok()?.clone(), cache)
+                .find(path)
+                .ok()
+                .flatten()
+        });
+        Ok(SourceMedia::new(path, info, index)
+            .map_err(|e| e.to_string())?
+            .with_proxy(proxy))
+    }
+
+    /// A preview session playing `plan`, reporting on [`PLAYBACK_EVENT`].
+    ///
+    /// # Errors
+    ///
+    /// The sidecar is missing.
+    pub(crate) fn start_preview(
+        &self,
+        app: AppHandle,
+        plan: PlaybackPlan,
+        max_width: u32,
+        max_height: u32,
+    ) -> Result<PreviewOpened, String> {
+        let engine = self;
+        let player = Player::new(
+            engine.orchestrator()?.clone(),
+            plan,
+            &PlayerOptions {
+                audio: AudioChoice::Device,
+                max_width,
+                max_height,
+                default_device: DefaultDevice::System,
+            },
+        );
+        let session = engine.next_preview.fetch_add(1, Ordering::Relaxed);
+        player.set_listener(move |status| {
+            let _ = app.emit(PLAYBACK_EVENT, PlaybackUpdate { session, status });
+        });
+        let opened = PreviewOpened {
+            session,
+            status: player.status(),
+        };
+        engine
+            .previews
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .insert(session, Arc::new(player));
+        Ok(opened)
+    }
 }
 
 /// Play, pause, step, seek, change speed or loop a preview session, and

@@ -23,6 +23,8 @@
     "types:generate": "cargo test --workspace export_bindings && node tools/generate-types-index.mjs",
     "types:check": "node tools/types-gate.mjs",
     "types:check:test": "node tools/types-gate-test.mjs",
+    "evaluator:check": "node tools/evaluator-gate.mjs",
+    "evaluator:check:test": "node tools/evaluator-gate-test.mjs",
     "lint:rust": "cargo clippy --workspace --all-targets -- -D warnings",
     "format:rust:check": "cargo fmt --all --check",
     "check:links": "node tools/check-links.mjs",
@@ -52,8 +54,8 @@
     "sidecar:check": "node tools/sidecar-gate.mjs",
     "sidecar:check:test": "node tools/sidecar-gate-test.mjs",
     "deny:test": "node tools/licence-gate-test.mjs",
-    "gates:prove": "pnpm run graph:injection && pnpm run graph:determinism && pnpm run boundaries:rust:test && pnpm run deny:test && pnpm run sidecar:check:test && pnpm run colours:check:test && pnpm run offline:check:test && pnpm run tokens:check:test && pnpm run types:check:test",
-    "verify": "pnpm run sidecar:fetch && pnpm run corpus && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run format:rust:check && pnpm run lint:rust && pnpm run test && pnpm run types:check && pnpm run build && pnpm run check:links && pnpm run version:check && pnpm run graph:validate && pnpm run boundaries:rust && pnpm run colours:check && pnpm run offline:check && pnpm run tokens:check && pnpm run icons:check && pnpm run deny:licenses && pnpm run sidecar:check && pnpm run gates:prove && pnpm run graph:check"
+    "gates:prove": "pnpm run graph:injection && pnpm run graph:determinism && pnpm run boundaries:rust:test && pnpm run deny:test && pnpm run sidecar:check:test && pnpm run colours:check:test && pnpm run offline:check:test && pnpm run tokens:check:test && pnpm run types:check:test && pnpm run evaluator:check:test",
+    "verify": "pnpm run sidecar:fetch && pnpm run corpus && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run format:rust:check && pnpm run lint:rust && pnpm run test && pnpm run types:check && pnpm run build && pnpm run check:links && pnpm run version:check && pnpm run graph:validate && pnpm run evaluator:check && pnpm run boundaries:rust && pnpm run colours:check && pnpm run offline:check && pnpm run tokens:check && pnpm run icons:check && pnpm run deny:licenses && pnpm run sidecar:check && pnpm run gates:prove && pnpm run graph:check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -112,6 +112,23 @@ describe("the project store", () => {
     });
   });
 
+  it("sends a changed graph to the engine and reports a refusal", async () => {
+    useProjectStore.setState({ view: VIEW });
+    const changed = { ...VIEW.project, name: "Trip 2" };
+    invoked.mockResolvedValueOnce({ ...VIEW, project: changed });
+    expect(await useProjectStore.getState().update(changed)).toBeNull();
+    expect(invoked).toHaveBeenCalledWith("update_project", {
+      project: changed,
+    });
+    expect(useProjectStore.getState().view?.project.name).toBe("Trip 2");
+
+    invoked.mockRejectedValueOnce("clips 1 and 2 overlap on track 1");
+    expect(await useProjectStore.getState().update(VIEW.project)).toBe(
+      "clips 1 and 2 overlap on track 1",
+    );
+    expect(useProjectStore.getState().view?.project.name).toBe("Trip 2");
+  });
+
   it("names the project, or says it has none", () => {
     expect(projectName(null)).toBe("Untitled project");
     expect(projectName(VIEW)).toBe("Trip");

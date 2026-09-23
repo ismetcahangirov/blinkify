@@ -33,6 +33,7 @@ beforeEach(() => {
     playback: null,
     frameNumber: null,
     path: null,
+    kind: null,
     error: null,
     stats: null,
   });

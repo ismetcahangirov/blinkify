@@ -493,6 +493,78 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/player/OperationsPanel.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./OperationsPanel.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/OperationsPanel.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/player/OperationsPanel.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/player/OperationsPanel.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/player/PreviewCanvas.tsx",
       "dependencies": [
         {
@@ -1357,7 +1429,9 @@
       "dependents": [
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
-        "apps/desktop/src/shell/AppBar.tsx"
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -1747,6 +1821,23 @@
         },
         {
           "dynamic": false,
+          "module": "../../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./PlayerZone.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1832,6 +1923,23 @@
             "import"
           ],
           "resolved": "apps/desktop/src/player/MonitorControls.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../player/OperationsPanel.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/OperationsPanel.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1934,6 +2042,23 @@
             "import"
           ],
           "resolved": "apps/desktop/src/player/useTransportShortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2064,10 +2189,67 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/AppliedClip.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Operation",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Operation.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./TrackKind",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/TrackKind.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/OperationsAt.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/AudioInfo.ts",
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/StreamKind.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/AudioOperation.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -2294,6 +2476,92 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/DiagnosticClip.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./DiagnosticOperation",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/DiagnosticOperation.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/Diagnostics.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/DiagnosticOperation.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Operation",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Operation.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/DiagnosticClip.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Diagnostics.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./DiagnosticClip",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/DiagnosticClip.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/EditList.ts",
       "dependencies": [
         {
@@ -2412,6 +2680,53 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/EncoderCapability.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/EvaluatedTrack.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Placement",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Placement.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./TrackKind",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/TrackKind.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/Timeline.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -2862,7 +3177,37 @@
         }
       ],
       "dependents": [
+        "packages/types/src/generated/AppliedClip.ts",
         "packages/types/src/generated/Clip.ts",
+        "packages/types/src/generated/DiagnosticOperation.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/OperationsAt.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AppliedClip",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/AppliedClip.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -2873,6 +3218,71 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/Keyframe.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Placement.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AudioOperation",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/AudioOperation.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./TrackKind",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/TrackKind.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/EvaluatedTrack.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -3243,9 +3653,11 @@
         "packages/types/src/generated/Clip.ts",
         "packages/types/src/generated/FrameRate.ts",
         "packages/types/src/generated/Operation.ts",
+        "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/StreamInfo.ts",
+        "packages/types/src/generated/Timeline.ts",
         "packages/types/src/generated/VideoInfo.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -3528,6 +3940,52 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Timeline.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./EvaluatedTrack",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/EvaluatedTrack.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/Track.ts",
       "dependencies": [
         {
@@ -3578,6 +4036,9 @@
       "source": "packages/types/src/generated/TrackKind.ts",
       "dependencies": [],
       "dependents": [
+        "packages/types/src/generated/AppliedClip.ts",
+        "packages/types/src/generated/EvaluatedTrack.ts",
+        "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/Track.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -3793,6 +4254,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./AppliedClip",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/AppliedClip.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./AudioInfo",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3801,6 +4279,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/AudioInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./AudioOperation",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/AudioOperation.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3997,6 +4492,57 @@
         },
         {
           "dynamic": false,
+          "module": "./DiagnosticClip",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/DiagnosticClip.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./DiagnosticOperation",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/DiagnosticOperation.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Diagnostics",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Diagnostics.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./EditList",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4073,6 +4619,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/EncoderSource.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./EvaluatedTrack",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/EvaluatedTrack.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4422,6 +4985,23 @@
         },
         {
           "dynamic": false,
+          "module": "./OperationsAt",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/OperationsAt.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./PictureKind",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4430,6 +5010,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/PictureKind.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Placement",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Placement.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4813,6 +5410,23 @@
         },
         {
           "dynamic": false,
+          "module": "./Timeline",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Timeline.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Track",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4978,6 +5592,8 @@
       "dependents": [
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
+        "apps/desktop/src/player/OperationsPanel.test.tsx",
+        "apps/desktop/src/player/OperationsPanel.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
@@ -6787,6 +7403,40 @@
       "valid": true
     },
     {
+      "source": "tools/evaluator-gate-test.mjs",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./evaluator-gate.mjs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "tools/evaluator-gate.mjs",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/evaluator-gate.mjs",
+      "dependencies": [],
+      "dependents": [
+        "tools/evaluator-gate-test.mjs"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "tools/fetch-sidecar.mjs",
       "dependencies": [
         {
@@ -6972,8 +7622,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 182,
-    "totalDependenciesCruised": 299,
+    "totalCruised": 195,
+    "totalDependenciesCruised": 328,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

@@ -14,6 +14,7 @@ use std::path::{Path, PathBuf};
 use blinkify_engine::keyframes::KeyframeIndex;
 use blinkify_engine::orchestrator::{Limits, Orchestrator};
 use blinkify_engine::probe::{Prober, Rational};
+use blinkify_engine::project::evaluate::evaluate;
 use blinkify_engine::project::{
     Clip, Operation, Project, ProjectError, RelinkError, SCHEMA_VERSION, SequenceSettings,
     SourceStatus, Track, TrackKind,
@@ -42,20 +43,20 @@ fn project_of(path: &Path) -> Project {
     project.sequence.tracks.push(Track {
         id: 1,
         kind: TrackKind::Video,
-        clips: vec![Clip {
-            id: 7,
+        clips: vec![Clip::new(
+            7,
             source,
-            stream: 0,
-            time_base: Rational {
+            0,
+            Rational {
                 num: 1,
                 den: 90_000,
             },
-            start: 0,
-            operations: vec![Operation::Trim {
+            0,
+            vec![Operation::Trim {
                 from: 0,
                 to: 90_000,
             }],
-        }],
+        )],
     });
     project
 }
@@ -236,17 +237,18 @@ fn clip_timing_lands_on_the_real_frames_of_a_vfr_source() {
 
     // From the keyframe at 2.5 s to the one at 3.2 s: across the file's
     // 30 → 10 fps change, where every frame is 9000 ticks long.
-    let clip = Clip {
-        id: 1,
-        source: 1,
+    let mut project = project_of(&path);
+    project.sequence.tracks[0].clips = vec![Clip::new(
+        1,
+        1,
         stream,
         time_base,
-        start: 100,
-        operations: vec![Operation::Trim {
+        100,
+        vec![Operation::Trim {
             from: 225_000,
             to: 288_000,
         }],
-    };
+    )];
     for (rate, frames) in [
         (Rational { num: 30, den: 1 }, 21),
         (
@@ -259,18 +261,16 @@ fn clip_timing_lands_on_the_real_frames_of_a_vfr_source() {
         (Rational { num: 25, den: 1 }, 18),
         (Rational { num: 60, den: 1 }, 42),
     ] {
-        let sequence = SequenceSettings {
-            frame_rate: rate,
-            ..SequenceSettings::default()
-        }
-        .time_base();
-        assert_eq!(clip.length(sequence), Some(frames), "{rate:?}");
+        project.sequence.settings.frame_rate = rate;
+        let timeline = evaluate(&project).expect("evaluate");
+        let clip = &timeline.tracks[0].placements[0];
+        assert_eq!(clip.length, frames, "{rate:?}");
 
         // Every timeline frame shows a source frame inside the trim, in
         // order, and the first shows exactly the first.
         let mut shown = Vec::new();
         for at in 100..100 + frames {
-            let tick = clip.source_at(at, sequence).expect("covered");
+            let tick = clip.source_at(at).expect("covered");
             let frame = index
                 .frame_at_or_before(stream, tick)
                 .expect("table")
@@ -283,6 +283,6 @@ fn clip_timing_lands_on_the_real_frames_of_a_vfr_source() {
         }
         assert_eq!(shown.first(), Some(&225_000), "{rate:?}");
         assert!(shown.windows(2).all(|pair| pair[0] <= pair[1]), "{rate:?}");
-        assert_eq!(clip.source_at(100 + frames, sequence), None, "{rate:?}");
+        assert_eq!(clip.source_at(100 + frames), None, "{rate:?}");
     }
 }

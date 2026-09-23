@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 182,
-    "tests": 21,
+    "files": 195,
+    "tests": 22,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 47,
-      "tests": 15,
+      "files": 49,
+      "tests": 16,
       "untested": [
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
@@ -30,10 +30,12 @@
       ]
     },
     "packages/types": {
-      "files": 70,
+      "files": 79,
       "tests": 0,
       "untested": [
+        "packages/types/src/generated/AppliedClip.ts",
         "packages/types/src/generated/AudioInfo.ts",
+        "packages/types/src/generated/AudioOperation.ts",
         "packages/types/src/generated/AudioOutputState.ts",
         "packages/types/src/generated/Chapter.ts",
         "packages/types/src/generated/Chroma.ts",
@@ -45,11 +47,15 @@
         "packages/types/src/generated/ContainerInfo.ts",
         "packages/types/src/generated/ContentLight.ts",
         "packages/types/src/generated/DecodeStats.ts",
+        "packages/types/src/generated/DiagnosticClip.ts",
+        "packages/types/src/generated/DiagnosticOperation.ts",
+        "packages/types/src/generated/Diagnostics.ts",
         "packages/types/src/generated/EditList.ts",
         "packages/types/src/generated/EditListEntry.ts",
         "packages/types/src/generated/EncoderCapabilities.ts",
         "packages/types/src/generated/EncoderCapability.ts",
         "packages/types/src/generated/EncoderSource.ts",
+        "packages/types/src/generated/EvaluatedTrack.ts",
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/Filmstrip.ts",
         "packages/types/src/generated/Fingerprint.ts",
@@ -70,7 +76,9 @@
         "packages/types/src/generated/MonitorLevels.ts",
         "packages/types/src/generated/MonitorStatus.ts",
         "packages/types/src/generated/Operation.ts",
+        "packages/types/src/generated/OperationsAt.ts",
         "packages/types/src/generated/PictureKind.ts",
+        "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/PlaybackState.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/PlaybackUpdate.ts",
@@ -93,6 +101,7 @@
         "packages/types/src/generated/SourceStatus.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/StreamKind.ts",
+        "packages/types/src/generated/Timeline.ts",
         "packages/types/src/generated/Track.ts",
         "packages/types/src/generated/TrackKind.ts",
         "packages/types/src/generated/TransportCommand.ts",
@@ -129,7 +138,7 @@
       ]
     },
     "tools": {
-      "files": 26,
+      "files": 28,
       "tests": 0,
       "untested": [
         "tools/apply-labels.mjs",
@@ -141,6 +150,8 @@
         "tools/crate-boundaries.mjs",
         "tools/design-token-gate-test.mjs",
         "tools/design-token-gate.mjs",
+        "tools/evaluator-gate-test.mjs",
+        "tools/evaluator-gate.mjs",
         "tools/fetch-sidecar.mjs",
         "tools/generate-icons.mjs",
         "tools/generate-types-index.mjs",
@@ -290,6 +301,34 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/player/MonitorControls.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/player/OperationsPanel.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/player/OperationsPanel.tsx",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/player/OperationsPanel.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/player/OperationsPanel.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/player/OperationsPanel.test.tsx"
       ],
       "hasNoDependents": false
     },
@@ -608,10 +647,13 @@
       "dependedOnBy": [
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
-        "apps/desktop/src/shell/AppBar.tsx"
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
       "coveredByTests": [
-        "apps/desktop/src/project/SourcesBanner.test.tsx"
+        "apps/desktop/src/project/SourcesBanner.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.test.tsx"
       ],
       "hasNoDependents": false
     },
@@ -773,6 +815,7 @@
       "isTest": true,
       "dependsOn": [
         "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "packages/types/src/index.ts",
         "packages/ui/src/index.ts"
@@ -788,12 +831,14 @@
       "dependsOn": [
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
+        "apps/desktop/src/player/OperationsPanel.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
         "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/player/useFileDrop.ts",
         "apps/desktop/src/player/useTransportShortcuts.ts",
+        "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell.store.ts",
         "packages/types/src/index.ts",
         "packages/ui/src/index.ts"
@@ -854,6 +899,21 @@
       "coveredByTests": [],
       "hasNoDependents": true
     },
+    "packages/types/src/generated/AppliedClip.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Operation.ts",
+        "packages/types/src/generated/TrackKind.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/OperationsAt.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/AudioInfo.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -861,6 +921,18 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/StreamKind.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/AudioOperation.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -1006,6 +1078,47 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/DiagnosticClip.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/DiagnosticOperation.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/Diagnostics.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/DiagnosticOperation.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Operation.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/DiagnosticClip.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/Diagnostics.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/DiagnosticClip.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/EditList.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -1067,6 +1180,21 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/EncoderCapability.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/EvaluatedTrack.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/TrackKind.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/Timeline.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -1319,7 +1447,22 @@
         "packages/types/src/generated/Rational.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/AppliedClip.ts",
         "packages/types/src/generated/Clip.ts",
+        "packages/types/src/generated/DiagnosticOperation.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/OperationsAt.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/AppliedClip.ts"
+      ],
+      "dependedOnBy": [
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -1332,6 +1475,22 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/Keyframe.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/Placement.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/AudioOperation.ts",
+        "packages/types/src/generated/Rational.ts",
+        "packages/types/src/generated/TrackKind.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/EvaluatedTrack.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -1507,9 +1666,11 @@
         "packages/types/src/generated/Clip.ts",
         "packages/types/src/generated/FrameRate.ts",
         "packages/types/src/generated/Operation.ts",
+        "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/StreamInfo.ts",
+        "packages/types/src/generated/Timeline.ts",
         "packages/types/src/generated/VideoInfo.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -1639,6 +1800,20 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Timeline.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/EvaluatedTrack.ts",
+        "packages/types/src/generated/Rational.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/Track.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -1660,6 +1835,9 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "packages/types/src/generated/AppliedClip.ts",
+        "packages/types/src/generated/EvaluatedTrack.ts",
+        "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/Track.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -1751,7 +1929,9 @@
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
+        "packages/types/src/generated/AppliedClip.ts",
         "packages/types/src/generated/AudioInfo.ts",
+        "packages/types/src/generated/AudioOperation.ts",
         "packages/types/src/generated/AudioOutputState.ts",
         "packages/types/src/generated/Chapter.ts",
         "packages/types/src/generated/Chroma.ts",
@@ -1763,11 +1943,15 @@
         "packages/types/src/generated/ContainerInfo.ts",
         "packages/types/src/generated/ContentLight.ts",
         "packages/types/src/generated/DecodeStats.ts",
+        "packages/types/src/generated/DiagnosticClip.ts",
+        "packages/types/src/generated/DiagnosticOperation.ts",
+        "packages/types/src/generated/Diagnostics.ts",
         "packages/types/src/generated/EditList.ts",
         "packages/types/src/generated/EditListEntry.ts",
         "packages/types/src/generated/EncoderCapabilities.ts",
         "packages/types/src/generated/EncoderCapability.ts",
         "packages/types/src/generated/EncoderSource.ts",
+        "packages/types/src/generated/EvaluatedTrack.ts",
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/Filmstrip.ts",
         "packages/types/src/generated/Fingerprint.ts",
@@ -1788,7 +1972,9 @@
         "packages/types/src/generated/MonitorLevels.ts",
         "packages/types/src/generated/MonitorStatus.ts",
         "packages/types/src/generated/Operation.ts",
+        "packages/types/src/generated/OperationsAt.ts",
         "packages/types/src/generated/PictureKind.ts",
+        "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/PlaybackState.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/PlaybackUpdate.ts",
@@ -1811,6 +1997,7 @@
         "packages/types/src/generated/SourceStatus.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/StreamKind.ts",
+        "packages/types/src/generated/Timeline.ts",
         "packages/types/src/generated/Track.ts",
         "packages/types/src/generated/TrackKind.ts",
         "packages/types/src/generated/TransportCommand.ts",
@@ -1836,6 +2023,8 @@
       "dependedOnBy": [
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
+        "apps/desktop/src/player/OperationsPanel.test.tsx",
+        "apps/desktop/src/player/OperationsPanel.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
@@ -1851,6 +2040,7 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/player/MonitorControls.test.tsx",
+        "apps/desktop/src/player/OperationsPanel.test.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
@@ -2545,6 +2735,28 @@
       "dependedOnBy": [],
       "coveredByTests": [],
       "hasNoDependents": true
+    },
+    "tools/evaluator-gate-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [
+        "tools/evaluator-gate.mjs"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/evaluator-gate.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "tools/evaluator-gate-test.mjs"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
     },
     "tools/fetch-sidecar.mjs": {
       "workspace": "tools",

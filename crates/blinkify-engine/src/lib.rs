@@ -18,6 +18,7 @@ pub mod audio;
 pub mod cache;
 pub mod capability;
 pub mod decode;
+pub mod export;
 pub mod filmstrip;
 pub mod keyframes;
 pub mod orchestrator;

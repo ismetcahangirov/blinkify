@@ -74,12 +74,12 @@ fn capturing_player(orchestrator: &Orchestrator, plan: PlaybackPlan) -> (Player,
 /// timeline.
 fn segment(source: &Arc<SourceMedia>, from: f64, to: f64, at: f64) -> Segment {
     let tb = source.time_base();
-    Segment {
-        source: Arc::clone(source),
-        source_in: time::from_seconds(from, tb, Rounding::Nearest),
-        source_out: time::from_seconds(to, tb, Rounding::Nearest),
-        timeline_start: (at * 1_000_000.0).round() as i64,
-    }
+    Segment::new(
+        Arc::clone(source),
+        time::from_seconds(from, tb, Rounding::Nearest),
+        time::from_seconds(to, tb, Rounding::Nearest),
+        (at * 1_000_000.0).round() as i64,
+    )
 }
 
 /// The source's first audio stream, decoded from the start as interleaved
