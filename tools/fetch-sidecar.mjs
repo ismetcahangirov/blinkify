@@ -64,13 +64,29 @@ function alreadyPresent() {
   });
 }
 
+/**
+ * Download with retries. GitHub's release CDN answers the occasional 5xx, and
+ * a CI run that fails on one is a run somebody re-runs without reading — so
+ * transient failures are retried here, three times with a growing pause.
+ * Integrity does not depend on this: the bytes are checked against the lock.
+ */
 async function download(url) {
-  console.log(`sidecar: downloading ${url}`);
-  const response = await fetch(url, { redirect: "follow" });
-  if (!response.ok) {
-    throw new Error(`download failed: HTTP ${response.status} for ${url}`);
+  const attempts = 4;
+  for (let attempt = 1; ; attempt += 1) {
+    console.log(`sidecar: downloading ${url}`);
+    try {
+      const response = await fetch(url, { redirect: "follow" });
+      if (response.ok) return Buffer.from(await response.arrayBuffer());
+      if (response.status < 500 || attempt === attempts) {
+        throw new Error(`download failed: HTTP ${response.status} for ${url}`);
+      }
+      console.log(`sidecar: HTTP ${response.status}, retrying`);
+    } catch (error) {
+      if (attempt === attempts) throw error;
+      console.log(`sidecar: ${error.message}, retrying`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, attempt * 5000));
   }
-  return Buffer.from(await response.arrayBuffer());
 }
 
 async function main() {
