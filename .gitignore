@@ -16,6 +16,12 @@ apps/desktop/src-tauri/target/
 # Test output
 coverage/
 
+# The FFmpeg sidecar. ADR-0002 and #21: fetched and verified by
+# `pnpm sidecar:fetch` from a pinned release asset, never committed. The sidecar
+# gate fails if one is ever tracked.
+apps/desktop/src-tauri/binaries/
+tools/ffmpeg-sidecar/dist/
+
 # Media test corpus — CLAUDE.md forbidden behaviour 12. Binary blobs in git
 # history are permanent. The corpus is fetched or generated, never committed.
 corpus/

@@ -162,6 +162,9 @@ jobs:
       - uses: ./.github/actions/setup-rust
         with:
           target-cache: debug
+      # Tauri will not compile the shell crate without its externalBins, and
+      # the engine's integration tests run the real sidecar.
+      - uses: ./.github/actions/fetch-sidecar
 
       - name: Format (cargo fmt)
         run: cargo fmt --all --check
@@ -212,6 +215,17 @@ jobs:
       - name: That gate still rejects one (deny:test)
         run: pnpm deny:test
 
+      # ADR-0002's first gate, #21: the bundled binary is asked what it is.
+      # No GPL configuration, no software H.264 or HEVC encoder, the committed
+      # configure line exactly, every encoder and filter Epics #6 and #7 need,
+      # and hashes that match the recorded provenance.
+      - uses: ./.github/actions/fetch-sidecar
+      - name: The FFmpeg sidecar is LGPL-only and complete
+        run: pnpm sidecar:check
+
+      - name: That gate still rejects a GPL build (sidecar:check:test)
+        run: pnpm sidecar:check:test
+
   installer:
     name: Installer (tauri build)
     runs-on: windows-latest
@@ -221,9 +235,29 @@ jobs:
       - uses: ./.github/actions/setup-rust
         with:
           target-cache: release
+      - uses: ./.github/actions/fetch-sidecar
 
       - name: Build the NSIS installer
         run: pnpm tauri build
+
+      # #21: "the installer carries both binaries and they run from the
+      # installed location". Install silently, per-user as a user would, and
+      # run the installed copies — not the ones in the source tree. The runner
+      # has its own FFmpeg on PATH, which is the point: the one that answers
+      # must be ours.
+      - name: The installed sidecar runs
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem target/release/bundle/nsis/*.exe | Select-Object -First 1
+          Start-Process -FilePath $installer.FullName -ArgumentList '/S' -Wait
+          $dir = Join-Path $env:LOCALAPPDATA 'Blinkify'
+          foreach ($name in 'ffmpeg', 'ffprobe') {
+            $exe = Join-Path $dir "$name.exe"
+            if (-not (Test-Path $exe)) { throw "$exe was not installed" }
+            $version = & $exe -hide_banner -version | Select-Object -First 1
+            if ($version -notmatch 'blinkify') { throw "$exe is not the Blinkify build: $version" }
+            Write-Output "$name installed and runs: $version"
+          }
 
       # Uploaded on every run so a reviewer can install the pull request rather
       # than take a green tick on faith. The installer is unsigned — see #14 and

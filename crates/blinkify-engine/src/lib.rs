@@ -14,6 +14,10 @@
 //! stop being tested. `cargo test -p blinkify-engine` runs with no window, no
 //! `WebView2` and no renderer, and CI asserts the dependency is absent.
 
+pub mod capability;
+pub mod sidecar;
 pub mod tier;
 
+pub use capability::{EncoderCapabilities, VideoCodec};
+pub use sidecar::{Sidecar, SidecarError};
 pub use tier::{ExportTier, ReEncodeReason, SeamReason};
