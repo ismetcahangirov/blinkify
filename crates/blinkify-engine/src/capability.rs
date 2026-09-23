@@ -11,19 +11,19 @@
 //! So every candidate is **opened and made to encode a few synthetic frames**
 //! at each profile and bit depth Blinkify cares about, and only what succeeds is
 //! reported. Epics #6 and #7 read this profile and nothing may assume an
-//! encoder exists.
+//! encoder exists. Trials run through the [`Orchestrator`] at background
+//! priority, like every other sidecar process.
 //!
 //! The candidate table is deliberately explicit. A software H.264 or HEVC
 //! encoder does not appear in it and cannot: ADR-0003 ships none.
 
 use std::collections::BTreeSet;
-use std::process::{Command, Stdio};
 use std::thread;
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::sidecar::Sidecar;
+use crate::orchestrator::{Orchestrator, Priority, SidecarCommand};
 
 /// A video codec Blinkify may have to encode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, TS)]
@@ -309,55 +309,58 @@ const CANDIDATES: &[Candidate] = &[
     },
 ];
 
-/// Something that can run the sidecar and say whether it succeeded.
+/// One trial encode: a few frames of synthetic video from this encoder at
+/// this pixel format, profile and level.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Trial<'a> {
+    pub encoder: &'a str,
+    pub pixel_format: &'a str,
+    pub profile: Option<&'a str>,
+    pub level: Option<&'a str>,
+}
+
+/// Something that can run a trial encode and say whether it succeeded.
 ///
-/// A seam rather than a direct `Command` so the probe's logic — what is tried,
-/// in what order, and what counts as a capability — is testable without a GPU,
-/// and so the same probe runs through the orchestrator once it exists.
+/// A seam so that the probe's logic — what is tried, in what order, and what
+/// counts as a capability — is testable without a GPU.
 pub trait EncodeTrial: Sync {
     /// The encoder names the sidecar advertises.
     fn advertised(&self) -> BTreeSet<String>;
-    /// Whether `ffmpeg` exits successfully with these arguments.
-    fn succeeds(&self, args: &[String]) -> bool;
+    /// Whether the encoder opened and produced every frame.
+    fn succeeds(&self, trial: &Trial<'_>) -> bool;
 }
 
-/// Runs trials against the real sidecar.
-#[derive(Debug, Clone)]
-pub struct SidecarTrial {
-    sidecar: Sidecar,
-}
-
-impl SidecarTrial {
-    #[must_use]
-    pub fn new(sidecar: Sidecar) -> Self {
-        Self { sidecar }
-    }
-
-    fn command(&self) -> Command {
-        let mut command = Command::new(self.sidecar.ffmpeg());
-        command
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null());
-        hide_console_window(&mut command);
-        command
-    }
-}
-
-impl EncodeTrial for SidecarTrial {
+/// Trials run through the orchestrator, at background priority: nobody is
+/// waiting on the answer, and it must never delay playback.
+impl EncodeTrial for Orchestrator {
     fn advertised(&self) -> BTreeSet<String> {
-        let output = self.command().args(["-hide_banner", "-encoders"]).output();
-        match output {
-            Ok(output) => parse_encoder_listing(&String::from_utf8_lossy(&output.stdout)),
-            Err(_) => BTreeSet::new(),
-        }
+        self.run_to_end(
+            SidecarCommand::ffmpeg().flag("-encoders"),
+            Priority::Background,
+        )
+        .map(|output| parse_encoder_listing(&String::from_utf8_lossy(&output.stdout)))
+        .unwrap_or_default()
     }
 
-    fn succeeds(&self, args: &[String]) -> bool {
-        self.command()
-            .args(args)
-            .status()
-            .is_ok_and(|status| status.success())
+    fn succeeds(&self, trial: &Trial<'_>) -> bool {
+        // Nothing is written anywhere: the frames go to the null muxer.
+        let mut command = SidecarCommand::ffmpeg()
+            .option("-loglevel", "error")
+            // 1280x720 rather than a thumbnail: several hardware encoders
+            // refuse sizes below their minimum, which would read as "no
+            // encoder".
+            .lavfi_input("testsrc2=size=1280x720:rate=30")
+            .option("-frames:v", "5")
+            .option("-pix_fmt", trial.pixel_format)
+            .option("-c:v", trial.encoder);
+        if let Some(profile) = trial.profile {
+            command = command.option("-profile:v", profile);
+        }
+        if let Some(level) = trial.level {
+            command = command.option("-level:v", level);
+        }
+        self.run_to_end(command.output_null(), Priority::Background)
+            .is_ok()
     }
 }
 
@@ -374,45 +377,24 @@ pub fn parse_encoder_listing(listing: &str) -> BTreeSet<String> {
         .collect()
 }
 
-/// The arguments for one trial encode: a few frames of synthetic video, into
-/// the null muxer. Nothing is written anywhere.
-fn trial_args(encoder: &str, profile: &ProfileCandidate, level: Option<&str>) -> Vec<String> {
-    let mut args: Vec<String> = [
-        "-hide_banner",
-        "-nostdin",
-        "-loglevel",
-        "error",
-        "-f",
-        "lavfi",
-        "-i",
-        // 1280x720 rather than a thumbnail: several hardware encoders refuse
-        // sizes below their minimum, which would read as "no encoder".
-        "testsrc2=size=1280x720:rate=30",
-        "-frames:v",
-        "5",
-        "-pix_fmt",
-        profile.pixel_format,
-        "-c:v",
-        encoder,
-    ]
-    .into_iter()
-    .map(str::to_owned)
-    .collect();
-    if let Some(profile_arg) = profile.profile_arg {
-        args.extend(["-profile:v".to_owned(), profile_arg.to_owned()]);
+fn trial_for<'a>(
+    candidate: &'a Candidate,
+    profile: &'a ProfileCandidate,
+    level: Option<&'a str>,
+) -> Trial<'a> {
+    Trial {
+        encoder: candidate.encoder,
+        pixel_format: profile.pixel_format,
+        profile: profile.profile_arg,
+        level,
     }
-    if let Some(level) = level {
-        args.extend(["-level:v".to_owned(), level.to_owned()]);
-    }
-    args.extend(["-f".to_owned(), "null".to_owned(), "-".to_owned()]);
-    args
 }
 
 fn probe_candidate(trial: &dyn EncodeTrial, candidate: &Candidate) -> Option<EncoderCapability> {
     let profiles: Vec<ProfileCapability> = candidate
         .profiles
         .iter()
-        .filter(|profile| trial.succeeds(&trial_args(candidate.encoder, profile, None)))
+        .filter(|profile| trial.succeeds(&trial_for(candidate, profile, None)))
         .map(|profile| ProfileCapability {
             profile: profile.profile.to_owned(),
             pixel_format: profile.pixel_format.to_owned(),
@@ -421,9 +403,7 @@ fn probe_candidate(trial: &dyn EncodeTrial, candidate: &Candidate) -> Option<Enc
             max_level: candidate
                 .levels
                 .iter()
-                .find(|(_, value)| {
-                    trial.succeeds(&trial_args(candidate.encoder, profile, Some(value)))
-                })
+                .find(|(_, value)| trial.succeeds(&trial_for(candidate, profile, Some(value))))
                 .map(|(label, _)| (*label).to_owned()),
         })
         .collect();
@@ -479,19 +459,6 @@ pub fn probe(trial: &dyn EncodeTrial) -> EncoderCapabilities {
     EncoderCapabilities { codecs }
 }
 
-/// A GUI application that spawns a console program gets a console window
-/// flashed at the user unless it asks for none.
-fn hide_console_window(command: &mut Command) {
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
-    #[cfg(not(windows))]
-    let _ = command;
-}
-
 #[cfg(test)]
 // Indexing and `expect` are denied in engine code because a panic on hostile
 // input is a crash on a user's project. In a test they are the assertion.
@@ -510,18 +477,8 @@ mod tests {
         fn advertised(&self) -> BTreeSet<String> {
             self.advertised.clone()
         }
-        fn succeeds(&self, args: &[String]) -> bool {
-            let after = |flag: &str| {
-                args.iter()
-                    .position(|arg| arg == flag)
-                    .and_then(|index| args.get(index + 1))
-                    .map(String::as_str)
-            };
-            (self.works)(
-                after("-c:v").unwrap_or_default(),
-                after("-pix_fmt").unwrap_or_default(),
-                after("-level:v"),
-            )
+        fn succeeds(&self, trial: &Trial<'_>) -> bool {
+            (self.works)(trial.encoder, trial.pixel_format, trial.level)
         }
     }
 

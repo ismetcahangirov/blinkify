@@ -14,7 +14,7 @@ pub mod updater;
 pub mod window_state;
 
 use blinkify_engine::ExportTier;
-use tauri::{Manager, WindowEvent};
+use tauri::{Manager, RunEvent, WindowEvent};
 
 use media::MediaEngine;
 use updater::PendingUpdate;
@@ -86,6 +86,13 @@ pub fn run() {
                 window_state::save(window.app_handle(), window);
             }
         })
-        .run(tauri::generate_context!())
-        .expect("the Blinkify window could not be created");
+        .build(tauri::generate_context!())
+        .expect("the Blinkify window could not be created")
+        .run(|app, event| {
+            // No sidecar process outlives the window. This is the orderly
+            // path; the engine's job object covers the disorderly one.
+            if matches!(event, RunEvent::Exit) {
+                app.state::<MediaEngine>().shutdown();
+            }
+        });
 }

@@ -94,3 +94,24 @@ jobs:
           # #33 owns both the renderer and the measurement.
           Write-Output "::warning::The timeline benchmark does not exist yet (#33). This job proved nothing."
           Add-Content $env:GITHUB_STEP_SUMMARY "- Timeline benchmark: **NOT IMPLEMENTED** — owned by #33 (Epic #5). This run proved nothing about frame rate."
+
+  engine-benchmarks:
+    name: Engine timing benchmarks
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-rust
+        with:
+          target-cache: debug
+      - uses: ./.github/actions/fetch-sidecar
+
+      # Timing assertions do not belong in the pull-request gate: a shared
+      # runner under load makes them flaky, and a flaky gate gets bypassed.
+      # They run here, where a failure blocks a release and gets looked at.
+      #
+      # #22: background work yields to interactive work — an interactive 1080p
+      # decode does not queue behind, and stays within 35 percent of its idle
+      # time while, far more background packet-enumeration jobs than there are
+      # slots are queued against a two-hour file.
+      - name: Background work yields to interactive decode (#22)
+        run: cargo test -p blinkify-engine --test orchestrator -- --ignored background_work_yields_to_interactive_decode --nocapture

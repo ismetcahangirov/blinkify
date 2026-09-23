@@ -5,7 +5,7 @@
     "tools"
   ],
   "totals": {
-    "files": 98,
+    "files": 101,
     "tests": 11,
     "violations": 0
   },
@@ -28,7 +28,7 @@
       ]
     },
     "packages/types": {
-      "files": 13,
+      "files": 16,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Chroma.ts",
@@ -37,7 +37,10 @@
         "packages/types/src/generated/EncoderCapability.ts",
         "packages/types/src/generated/EncoderSource.ts",
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/JobId.ts",
+        "packages/types/src/generated/JobProgress.ts",
         "packages/types/src/generated/ProfileCapability.ts",
+        "packages/types/src/generated/Progress.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
         "packages/types/src/generated/SeamReason.ts",
         "packages/types/src/generated/UpdateOffer.ts",
@@ -479,6 +482,32 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/JobId.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/JobProgress.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/JobProgress.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/JobId.ts",
+        "packages/types/src/generated/Progress.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/ProfileCapability.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -488,6 +517,18 @@
       ],
       "dependedOnBy": [
         "packages/types/src/generated/EncoderCapability.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/Progress.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/JobProgress.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -551,7 +592,10 @@
         "packages/types/src/generated/EncoderCapability.ts",
         "packages/types/src/generated/EncoderSource.ts",
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/JobId.ts",
+        "packages/types/src/generated/JobProgress.ts",
         "packages/types/src/generated/ProfileCapability.ts",
+        "packages/types/src/generated/Progress.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
         "packages/types/src/generated/SeamReason.ts",
         "packages/types/src/generated/UpdateOffer.ts",

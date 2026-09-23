@@ -12,6 +12,14 @@ serde = { workspace = true }
 thiserror = { workspace = true }
 ts-rs = { workspace = true }
 
+# One Windows job object with kill-on-close, so no ffmpeg.exe survives
+# Blinkify — even an unclean exit (#22). A safe wrapper over a stable Win32
+# API; the workspace forbids `unsafe` in our own code, so the FFI lives here.
+# MIT OR Apache-2.0. Last commit 2025-06: the job-object API it wraps has not
+# changed since Windows 8, so it is finished rather than abandoned.
+[target.'cfg(windows)'.dependencies]
+win32job = "2.0.3"
+
 [dev-dependencies]
 serde_json = { workspace = true }
 

@@ -932,6 +932,62 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/JobId.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/JobProgress.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/JobProgress.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./JobId",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/JobId.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Progress",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Progress.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/ProfileCapability.ts",
       "dependencies": [
         {
@@ -955,6 +1011,16 @@
       ],
       "dependents": [
         "packages/types/src/generated/EncoderCapability.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Progress.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/JobProgress.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -1106,6 +1172,40 @@
         },
         {
           "dynamic": false,
+          "module": "./JobId",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/JobId.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./JobProgress",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/JobProgress.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./ProfileCapability",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1114,6 +1214,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/ProfileCapability.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Progress",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Progress.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3160,8 +3277,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 98,
-    "totalDependenciesCruised": 130,
+    "totalCruised": 101,
+    "totalDependenciesCruised": 135,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

@@ -15,6 +15,7 @@
 //! `WebView2` and no renderer, and CI asserts the dependency is absent.
 
 pub mod capability;
+pub mod orchestrator;
 pub mod sidecar;
 pub mod tier;
 
