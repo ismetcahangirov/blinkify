@@ -35,6 +35,7 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+pub use feeder::chain_rendered;
 pub use monitor::{AudioInsert, MonitorCommand, MonitorStatus, MonitorVolume, PassThrough};
 pub use plan::{
     AudioStream, AudioTrack, MAIN_TRACK, PlanError, PlaybackPlan, ProgramTime, Segment,
@@ -49,6 +50,7 @@ use clock::PlaybackClock;
 use feeder::{Feeder, FeederConfig, LoopRange as FeederLoop};
 use lanes::{LANE_BUDGET_BYTES, Lanes};
 use monitor::MonitorSettings;
+use plan::{PlanSlot, same_segment};
 use scrub::{FrameCache, Picture, ScrubSlot, Worker};
 
 /// How far ahead of a boundary the next segment's video is started.
@@ -334,7 +336,9 @@ struct Shown {
 
 struct Inner {
     orchestrator: Orchestrator,
-    plan: Arc<PlaybackPlan>,
+    /// What plays. Replaced whole when the edit graph changes
+    /// ([`Player::set_plan`]); every reader takes its own snapshot.
+    plan_slot: PlanSlot,
     slot: BufferSlot,
     buffer: Mutex<Arc<OutputBuffer>>,
     sink: Mutex<Option<Sink>>,
@@ -396,7 +400,7 @@ impl Player {
                 options.max_height,
             )),
             orchestrator,
-            plan: Arc::new(plan),
+            plan_slot: Arc::new(Mutex::new(Arc::new(plan))),
             slot,
             buffer: Mutex::new(buffer),
             sink: Mutex::new(Some(sink)),
@@ -445,9 +449,17 @@ impl Player {
         }
     }
 
+    /// The plan playing now.
     #[must_use]
-    pub fn plan(&self) -> &PlaybackPlan {
-        &self.inner.plan
+    pub fn plan(&self) -> Arc<PlaybackPlan> {
+        self.inner.plan()
+    }
+
+    /// Play `plan` from here on, keeping the position (#30). A segment that
+    /// is unchanged — same source, range, speed and place — keeps its
+    /// decoder; only what changed is decoded again. Writes no file.
+    pub fn set_plan(&self, plan: PlaybackPlan) {
+        self.inner.set_plan(plan);
     }
 
     /// Call `listener` with the new status whenever the state, the speed,
@@ -595,15 +607,55 @@ impl Inner {
         }
     }
 
+    fn plan(&self) -> Arc<PlaybackPlan> {
+        Arc::clone(&lock(&self.plan_slot))
+    }
+
+    fn set_plan(&self, plan: PlaybackPlan) {
+        let mut control = lock(&self.control);
+        let (generation, t) = self.position();
+        let old = self.plan();
+        let new = Arc::new(plan);
+        let unchanged_here = match (old.segment_at(t), new.segment_at(t)) {
+            (None, None) => true,
+            (Some((_, a)), Some((_, b))) => same_segment(a, b),
+            _ => false,
+        };
+        lock(&self.lanes).remap(&old, &new, generation);
+        // Keyed by segment index, which the new plan may have moved.
+        lock(&self.cache).clear();
+        *lock(&self.plan_slot) = Arc::clone(&new);
+        if let Some((start, end)) = *lock(&self.loop_range) {
+            let limit = new.duration();
+            *lock(&self.loop_range) =
+                (start.min(limit) < end.min(limit)).then(|| (start.min(limit), end.min(limit)));
+        }
+        if !unchanged_here || t >= new.duration() {
+            // What is on screen changed: show the new content at the same
+            // place, as a seek would.
+            self.seek(&mut control, t);
+        } else if control.state == PlaybackState::Playing {
+            // The picture carries on; the sound restarts on the new plan
+            // from the same position, in the same generation.
+            self.stop_feeder(&mut control);
+            self.clock.pause(t, generation);
+            self.start_feeder(&mut control, t, generation);
+        }
+        drop(control);
+        self.notify(&self.status());
+    }
+
     fn end(&self) -> ProgramTime {
-        self.plan.duration()
+        let plan = self.plan();
+        plan.duration()
     }
 
     /// Start the lane that will show `t` in `generation`.
     fn prepare(&self, generation: u64, t: ProgramTime) {
-        if let Some((i, segment)) = self.plan.segment_at(t) {
+        let plan = self.plan();
+        if let Some((i, segment)) = plan.segment_at(t) {
             let pts = segment.source_at(t);
-            let _ = lock(&self.lanes).lane(&self.plan, i, generation, pts);
+            let _ = lock(&self.lanes).lane(&plan, i, generation, pts);
         }
     }
 
@@ -676,16 +728,18 @@ impl Inner {
     }
 
     fn start_position(&self) -> ProgramTime {
+        let plan = self.plan();
         lock(&self.loop_range)
             .map(|(start, _)| start)
-            .or_else(|| self.plan.segments().first().map(|s| s.timeline_start))
+            .or_else(|| plan.segments().first().map(|s| s.timeline_start))
             .unwrap_or(0)
     }
 
     /// Where the last frame of the timeline starts.
     fn last_frame_position(&self) -> ProgramTime {
+        let plan = self.plan();
         let end = self.end();
-        let Some((_, segment)) = self.plan.segment_at(end.saturating_sub(1)) else {
+        let Some((_, segment)) = plan.segment_at(end.saturating_sub(1)) else {
             return end.saturating_sub(1).max(0);
         };
         let Some(video) = segment.source.video.as_ref() else {
@@ -718,11 +772,12 @@ impl Inner {
     }
 
     fn wait_for_video(&self, generation: u64, t: ProgramTime) {
-        let Some((i, segment)) = self.plan.segment_at(t) else {
+        let plan = self.plan();
+        let Some((i, segment)) = plan.segment_at(t) else {
             return;
         };
         let ring = lock(&self.lanes)
-            .lane(&self.plan, i, generation, segment.source_at(t))
+            .lane(&plan, i, generation, segment.source_at(t))
             .map(|lane| Arc::clone(&lane.ring));
         if let Some(ring) = ring {
             ring.wait_for_frame(VIDEO_PREROLL);
@@ -740,12 +795,13 @@ impl Inner {
     }
 
     fn start_feeder(&self, control: &mut Control, t: ProgramTime, generation: u64) {
+        let plan = self.plan();
         let buffer = self.buffer();
         buffer.clear();
         self.ended.store(false, Ordering::SeqCst);
         control.feeder = Some(Feeder::start(FeederConfig {
             orchestrator: self.orchestrator.clone(),
-            plan: Arc::clone(&self.plan),
+            plan,
             buffer,
             clock: Arc::clone(&self.clock),
             start: t,
@@ -807,6 +863,7 @@ impl Inner {
     /// Pause, then move `frames` real frames of the sources from the frame on
     /// screen.
     fn step(&self, control: &mut Control, frames: i32) {
+        let plan = self.plan();
         self.pause(control);
         if control.state == PlaybackState::Ended {
             control.state = PlaybackState::Paused;
@@ -827,14 +884,14 @@ impl Inner {
             }
         }
         let (segment, pts) = at;
-        let Some(target) = self.plan.segment(segment).map(|s| s.program_at(pts)) else {
+        let Some(target) = plan.segment(segment).map(|s| s.program_at(pts)) else {
             return;
         };
         // A frame the lane already holds: just move the clock to it.
         let reusable = {
             let mut lanes = lock(&self.lanes);
             lanes
-                .lane(&self.plan, segment, generation, pts)
+                .lane(&plan, segment, generation, pts)
                 .is_some_and(|lane| {
                     lane.ring.earliest_pts().is_some_and(|first| first <= pts)
                         && lane.ring.latest_pts().is_some_and(|last| last >= pts)
@@ -851,10 +908,8 @@ impl Inner {
     /// The segment and source timestamp of the frame due at `t` — from the
     /// clock, not from what the renderer last fetched, which can lag a step.
     fn frame_at(&self, t: ProgramTime) -> Option<(usize, i64)> {
-        let (i, segment) = self
-            .plan
-            .segment_at(t)
-            .or_else(|| self.plan.next_segment_after(t))?;
+        let plan = self.plan();
+        let (i, segment) = plan.segment_at(t).or_else(|| plan.next_segment_after(t))?;
         let video = segment.source.video.as_ref()?;
         let pts = segment
             .source
@@ -870,7 +925,8 @@ impl Inner {
 
     /// The first frame of segment `i`: the one on screen at its in point.
     fn first_frame(&self, i: usize) -> Option<i64> {
-        let segment = self.plan.segment(i)?;
+        let plan = self.plan();
+        let segment = plan.segment(i)?;
         let video = segment.source.video.as_ref()?;
         let index = &segment.source.index;
         index
@@ -886,7 +942,8 @@ impl Inner {
     }
 
     fn frame_after(&self, (i, pts): (usize, i64)) -> Option<(usize, i64)> {
-        let segment = self.plan.segment(i)?;
+        let plan = self.plan();
+        let segment = plan.segment(i)?;
         let video = segment.source.video.as_ref()?;
         if let Ok(Some(next)) = segment.source.index.frame_after(video.index, pts)
             && next < segment.source_out
@@ -894,11 +951,12 @@ impl Inner {
             return Some((i, next));
         }
         // The first frame of the next segment that has pictures.
-        (i + 1..self.plan.segments().len()).find_map(|k| self.first_frame(k).map(|pts| (k, pts)))
+        (i + 1..plan.segments().len()).find_map(|k| self.first_frame(k).map(|pts| (k, pts)))
     }
 
     fn frame_before(&self, (i, pts): (usize, i64)) -> Option<(usize, i64)> {
-        let segment = self.plan.segment(i)?;
+        let plan = self.plan();
+        let segment = plan.segment(i)?;
         let video = segment.source.video.as_ref()?;
         let first = self.first_frame(i)?;
         if pts > first
@@ -908,7 +966,7 @@ impl Inner {
         }
         // The last frame of the previous segment that has pictures.
         (0..i).rev().find_map(|k| {
-            let segment = self.plan.segment(k)?;
+            let segment = plan.segment(k)?;
             let video = segment.source.video.as_ref()?;
             let last = segment
                 .source
@@ -946,6 +1004,7 @@ impl Inner {
 
     /// Put the frame due at `t` on screen, and start what plays next.
     fn present(&self, generation: u64, t: ProgramTime) {
+        let plan = self.plan();
         if self.scrubbing.load(Ordering::SeqCst) {
             // The scrub worker owns the screen.
             return;
@@ -954,7 +1013,7 @@ impl Inner {
             // Past the end the last frame stays up.
             return;
         }
-        let Some((i, segment)) = self.plan.segment_at(t) else {
+        let Some((i, segment)) = plan.segment_at(t) else {
             self.show_black(t);
             return;
         };
@@ -968,22 +1027,22 @@ impl Inner {
             .source_at(t)
             .min(segment.source_out.saturating_sub(1));
         let mut lanes = lock(&self.lanes);
-        lanes.keep_up(&self.plan, i, generation, pts);
+        lanes.keep_up(&plan, i, generation, pts);
         let frame = lanes
-            .lane(&self.plan, i, generation, pts)
+            .lane(&plan, i, generation, pts)
             .and_then(|lane| lane.ring.take_due(pts));
         // What plays next: the following segment, and the far side of a loop.
         if segment.timeline_end() - t < PREFETCH
-            && let Some((k, next)) = self.plan.segment_at(segment.timeline_end())
+            && let Some((k, next)) = plan.segment_at(segment.timeline_end())
         {
-            let _ = lanes.lane(&self.plan, k, generation, next.source_in);
+            let _ = lanes.lane(&plan, k, generation, next.source_in);
         }
         if let Some((start, end)) = *lock(&self.loop_range)
             && end - t < PREFETCH
             && t < end
-            && let Some((k, looped)) = self.plan.segment_at(start)
+            && let Some((k, looped)) = plan.segment_at(start)
         {
-            let _ = lanes.lane(&self.plan, k, generation + 1, looped.source_at(start));
+            let _ = lanes.lane(&plan, k, generation + 1, looped.source_at(start));
         }
         lanes.retain(generation, Some(i));
         drop(lanes);
@@ -997,7 +1056,8 @@ impl Inner {
 
     /// Put `frame` of segment `i` on screen, chosen at clock position `t`.
     fn show_picture(&self, i: usize, frame: Arc<VideoFrame>, rotation: u32, t: ProgramTime) {
-        let Some(segment) = self.plan.segment(i) else {
+        let plan = self.plan();
+        let Some(segment) = plan.segment(i) else {
             return;
         };
         let position = segment.program_at(frame.pts);
@@ -1008,7 +1068,7 @@ impl Inner {
             rotation,
             position,
             chosen_at: t,
-            frame_number: timecode::frame_number(position, self.plan.frame_rate),
+            frame_number: timecode::frame_number(position, plan.frame_rate),
             picture: Some(frame),
         }));
     }
@@ -1036,7 +1096,7 @@ impl Inner {
         let worker = Worker {
             slot: Arc::clone(&self.scrub),
             orchestrator: self.orchestrator.clone(),
-            plan: Arc::clone(&self.plan),
+            plan: Arc::clone(&self.plan_slot),
             bound,
             cache: Arc::clone(&self.cache),
         };
@@ -1059,6 +1119,7 @@ impl Inner {
     }
 
     fn show_black(&self, t: ProgramTime) {
+        let plan = self.plan();
         let mut shown = lock(&self.shown);
         if shown
             .frame
@@ -1074,15 +1135,16 @@ impl Inner {
             rotation: 0,
             position: t,
             chosen_at: t,
-            frame_number: timecode::frame_number(t, self.plan.frame_rate),
+            frame_number: timecode::frame_number(t, plan.frame_rate),
         }));
     }
 
     fn status(&self) -> PlaybackStatus {
+        let plan = self.plan();
         let control = lock(&self.control);
         let (_, t) = self.position();
         let position = t.clamp(0, self.end());
-        let frame_rate = self.plan.frame_rate;
+        let frame_rate = plan.frame_rate;
         PlaybackStatus {
             state: control.state,
             position,
@@ -1096,8 +1158,7 @@ impl Inner {
             speed: control.speed,
             loop_range: lock(&self.loop_range).map(|(start, end)| LoopRange { start, end }),
             resolving: lock(&self.pending).is_some(),
-            proxy: self
-                .plan
+            proxy: plan
                 .segment_at(position.min(self.end().saturating_sub(1)))
                 .is_some_and(|(_, segment)| segment.source.proxy.is_some()),
             audio: lock(&self.sink).as_ref().map_or(
@@ -1110,8 +1171,9 @@ impl Inner {
     }
 
     fn stats(&self) -> DecodeStats {
+        let plan = self.plan();
         let (generation, t) = self.position();
-        let segment = self.plan.segment_at(t).map(|(i, _)| i);
+        let segment = plan.segment_at(t).map(|(i, _)| i);
         let lanes = lock(&self.lanes);
         let (current, decoded, dropped, presented) = lanes.stats(segment, generation);
         let to_u32 = |n: usize| u32::try_from(n).unwrap_or(u32::MAX);

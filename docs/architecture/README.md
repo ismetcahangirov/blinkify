@@ -36,6 +36,9 @@ How Blinkify is put together and why the structure holds under change.
   (#31)
 - [`project-file.md`](./project-file.md) — the edit graph, integer time,
   source fingerprints and relinking, the project file and its migrations (#32)
+- [`edit-graph-evaluation.md`](./edit-graph-evaluation.md) — the one
+  evaluator the preview and the export share, how the single path is
+  enforced, frame-to-microsecond rounding, and live graph changes (#30)
 
 ## What does not belong here
 

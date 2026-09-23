@@ -22,7 +22,7 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 
 use super::lanes::{frame_size, rotation_of, start_decoder};
-use super::plan::{PlaybackPlan, ProgramTime, Segment};
+use super::plan::{PlanSlot, ProgramTime, Segment};
 use crate::decode::{FrameRing, VideoFrame};
 use crate::orchestrator::Orchestrator;
 
@@ -85,6 +85,12 @@ impl FrameCache {
 
     pub(crate) fn bytes(&self) -> usize {
         self.bytes
+    }
+
+    pub(crate) fn clear(&mut self) {
+        self.frames.clear();
+        self.order.clear();
+        self.bytes = 0;
     }
 
     pub(crate) fn budget(&self) -> usize {
@@ -180,7 +186,7 @@ pub(crate) enum Picture {
 pub(crate) struct Worker {
     pub slot: Arc<ScrubSlot>,
     pub orchestrator: Orchestrator,
-    pub plan: Arc<PlaybackPlan>,
+    pub plan: PlanSlot,
     pub bound: (u32, u32),
     pub cache: Arc<Mutex<FrameCache>>,
 }
@@ -192,7 +198,8 @@ impl Worker {
         let mut served = None;
         while let Some((t, direction)) = self.slot.next(served) {
             served = Some(t);
-            let Some((i, segment)) = self.plan.segment_at(t) else {
+            let plan = Arc::clone(&lock(&self.plan));
+            let Some((i, segment)) = plan.segment_at(t) else {
                 show(Picture::Black, t);
                 continue;
             };

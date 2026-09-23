@@ -27,6 +27,7 @@ use super::monitor::{AudioInsert, MonitorSettings};
 use super::plan::{PlaybackPlan, ProgramTime, Segment, TrackId, next_boundary, segment_at};
 use crate::audio::{AudioDecoder, AudioRequest, CHANNELS, OutputBuffer, SampleRing};
 use crate::orchestrator::Orchestrator;
+use crate::project::evaluate::AudioOperation;
 
 /// How far ahead of the speaker the buffer is kept.
 const LEAD: Duration = Duration::from_millis(200);
@@ -167,7 +168,8 @@ fn start_lane(
             start_seconds: seg.source_seconds_at(at),
             stream_start_seconds: audio.start_seconds,
             sample_rate: rate,
-            tempo: config.speed,
+            // The clip's own speed (#30), under the transport's.
+            tempo: config.speed * seg.speed_factor(),
         },
         Arc::clone(&ring),
     );
@@ -359,7 +361,9 @@ fn write_chunk(
             // Whatever did not arrive in time stays silent.
             lane.ring.take(samples);
         }
-        // Epic #7's filter chain attaches here, before the mix and the meter.
+        // The clip's audio chain as the evaluator resolved it (#30), then
+        // Epic #7's insert — both before the mix and the meter.
+        render_chain(&segment.audio, samples);
         insert.process(track.id, i, samples, rate);
         if monitor.audible(track.id) {
             for (out, sample) in mix.iter_mut().zip(samples.iter()) {
@@ -369,6 +373,34 @@ fn write_chunk(
     }
     config.buffer.push(mix);
     walk.written += frames;
+}
+
+/// Apply what of a clip's audio chain the preview renders itself. Gain is
+/// exact arithmetic. Denoise and normalise are rendered by their own filters
+/// when #47 and #48 land; until then the preview plays them unprocessed and
+/// the diagnostic view says so (`chain_rendered`).
+fn render_chain(chain: &[AudioOperation], samples: &mut [f32]) {
+    let gain_db: f64 = chain
+        .iter()
+        .map(|operation| match *operation {
+            AudioOperation::Gain { db } => db,
+            AudioOperation::Denoise { .. } | AudioOperation::Normalise { .. } => 0.0,
+        })
+        .sum();
+    if gain_db == 0.0 {
+        return;
+    }
+    #[allow(clippy::cast_possible_truncation)]
+    let factor = 10_f64.powf(gain_db / 20.0) as f32;
+    for sample in samples {
+        *sample *= factor;
+    }
+}
+
+/// Whether the preview renders `operation` itself.
+#[must_use]
+pub fn chain_rendered(operation: &AudioOperation) -> bool {
+    matches!(operation, AudioOperation::Gain { .. })
 }
 
 /// Start what plays next on each track — its following segment, or the

@@ -2,10 +2,11 @@
 //! timeline.
 //!
 //! The player does not read the edit graph. The shared evaluator (#30) turns
-//! the graph into a plan, and the plan is all the player knows — so there is
-//! exactly one interpretation of the graph, and preview and export cannot
-//! disagree about what it means. Until #30 exists, a plan is built directly:
-//! one segment for a whole file, or several in tests.
+//! the graph into a [`Timeline`], [`PlaybackPlan::from_timeline`] turns that
+//! into segments, and the plan is all the player knows — so there is exactly
+//! one interpretation of the graph, and preview and export cannot disagree
+//! about what it means. A plan can also be built directly: one segment for a
+//! whole file, or several in tests.
 //!
 //! Timeline time ([`ProgramTime`]) is microseconds. A source range is kept in
 //! the source's own time base, and the conversions between the two round in
@@ -13,6 +14,7 @@
 //! position's source tick down — so that a frame survives the round trip (see
 //! `crate::time`).
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -20,8 +22,24 @@ use thiserror::Error;
 
 use crate::keyframes::KeyframeIndex;
 use crate::probe::{MediaInfo, Rational, StreamInfo, VideoInfo};
+use crate::project::evaluate::{AudioOperation, Placement, Timeline};
+use crate::project::{ClipId, SourceId, TrackKind};
 use crate::proxy::Proxy;
 use crate::time::{self, MICROSECONDS, Rounding};
+
+/// The plan a player plays, shared with its workers and replaced whole when
+/// the edit graph changes.
+pub(crate) type PlanSlot = Arc<std::sync::Mutex<Arc<PlaybackPlan>>>;
+
+/// Whether two segments play the same thing at the same place, so a decoder
+/// for one serves the other.
+pub(crate) fn same_segment(a: &Segment, b: &Segment) -> bool {
+    Arc::ptr_eq(&a.source, &b.source)
+        && a.source_in == b.source_in
+        && a.source_out == b.source_out
+        && a.timeline_start == b.timeline_start
+        && a.speed == b.speed
+}
 
 /// A position on the playback timeline, in microseconds from its start.
 pub type ProgramTime = i64;
@@ -80,7 +98,16 @@ pub enum PlanError {
     Inverted(usize),
     #[error("track {0} is used twice")]
     DuplicateTrack(TrackId),
+    #[error("clip {0} cannot be placed on the playback timeline")]
+    Unplaceable(ClipId),
 }
+
+/// How far two segments may overlap and still be a seam: the rounding of two
+/// exact frame positions to whole microseconds (see
+/// [`PlaybackPlan::from_timeline`]). The later segment wins the overlap.
+const SEAM_TOLERANCE: ProgramTime = 2;
+
+const NORMAL: Rational = Rational { num: 1, den: 1 };
 
 impl SourceMedia {
     /// The default video stream (never a cover image) and the default audio
@@ -191,12 +218,58 @@ pub struct Segment {
     pub source_out: i64,
     /// Where the segment starts on the timeline.
     pub timeline_start: ProgramTime,
+    /// How fast the source plays: `2/1` is double speed. From the edit graph,
+    /// not the transport — the transport's speed is on top of it.
+    pub speed: Rational,
+    /// The clip's audio chain, as the evaluator resolved it.
+    pub audio: Vec<AudioOperation>,
+    /// The clip the segment plays, when it came from the edit graph.
+    pub clip: Option<ClipId>,
 }
 
 impl Segment {
+    /// A segment at normal speed with no audio chain.
+    #[must_use]
+    pub fn new(
+        source: Arc<SourceMedia>,
+        source_in: i64,
+        source_out: i64,
+        timeline_start: ProgramTime,
+    ) -> Self {
+        Self {
+            source,
+            source_in,
+            source_out,
+            timeline_start,
+            speed: NORMAL,
+            audio: Vec::new(),
+            clip: None,
+        }
+    }
+
     #[must_use]
     pub fn time_base(&self) -> Rational {
         self.source.time_base()
+    }
+
+    /// The time base in which one source tick is one tick of timeline time:
+    /// the source's, stretched by the speed.
+    #[must_use]
+    pub fn played_time_base(&self) -> Rational {
+        let time_base = self.time_base();
+        Rational {
+            num: time_base.num.saturating_mul(self.speed.den),
+            den: time_base.den.saturating_mul(self.speed.num),
+        }
+    }
+
+    /// The speed as a factor, for the audio decoder's tempo.
+    #[must_use]
+    pub fn speed_factor(&self) -> f64 {
+        self.speed
+            .value()
+            .filter(|speed| *speed > 0.0)
+            .unwrap_or(1.0)
     }
 
     /// The segment's length on the timeline.
@@ -204,7 +277,7 @@ impl Segment {
     pub fn duration(&self) -> ProgramTime {
         time::rescale(
             self.source_out.saturating_sub(self.source_in),
-            self.time_base(),
+            self.played_time_base(),
             MICROSECONDS,
             Rounding::Up,
         )
@@ -222,7 +295,13 @@ impl Segment {
     pub fn source_at(&self, t: ProgramTime) -> i64 {
         let offset = t.saturating_sub(self.timeline_start);
         self.source_in.saturating_add(
-            time::rescale(offset, MICROSECONDS, self.time_base(), Rounding::Down).unwrap_or(0),
+            time::rescale(
+                offset,
+                MICROSECONDS,
+                self.played_time_base(),
+                Rounding::Down,
+            )
+            .unwrap_or(0),
         )
     }
 
@@ -233,7 +312,7 @@ impl Segment {
     pub fn program_at(&self, pts: i64) -> ProgramTime {
         let offset = pts.saturating_sub(self.source_in).max(0);
         self.timeline_start.saturating_add(
-            time::rescale(offset, self.time_base(), MICROSECONDS, Rounding::Up).unwrap_or(0),
+            time::rescale(offset, self.played_time_base(), MICROSECONDS, Rounding::Up).unwrap_or(0),
         )
     }
 
@@ -242,7 +321,7 @@ impl Segment {
     pub fn source_seconds_at(&self, t: ProgramTime) -> f64 {
         #[allow(clippy::cast_precision_loss)]
         let offset = t.saturating_sub(self.timeline_start) as f64 / 1_000_000.0;
-        time::seconds(self.source_in, self.time_base()) + offset
+        time::seconds(self.source_in, self.time_base()) + offset * self.speed_factor()
     }
 
     #[must_use]
@@ -320,6 +399,77 @@ impl PlaybackPlan {
             .collect()
     }
 
+    /// The preview of an evaluated edit graph (#30).
+    ///
+    /// The pictures, and their own sound, come from the first video track;
+    /// every audio track is a sound-only track with the project's track id.
+    /// A further video track is not composited — Blinkify is not a
+    /// compositor — so it is not previewed. A clip whose source is not in
+    /// `sources` (offline, #32) leaves a gap: black and silence.
+    ///
+    /// `sources` decides the preview's *quality* — a source may carry a
+    /// proxy. The *content* is the timeline's, which is what the export
+    /// uses too: the same clips, ranges, speeds and chains.
+    ///
+    /// Frame positions become microseconds with the segment start rounded
+    /// down and a seek target rounded up, so the source tick the preview
+    /// asks for is never before the one the evaluator gives for that frame;
+    /// two seams rounded that way may overlap by `SEAM_TOLERANCE`.
+    ///
+    /// # Errors
+    ///
+    /// Nothing to play, or a clip whose timing does not fit the playback
+    /// timeline.
+    pub fn from_timeline(
+        timeline: &Timeline,
+        sources: &BTreeMap<SourceId, Arc<SourceMedia>>,
+    ) -> Result<Self, PlanError> {
+        let segments_of = |placements: &[Placement]| -> Result<Vec<Segment>, PlanError> {
+            placements
+                .iter()
+                .filter_map(|placement| {
+                    let source = sources.get(&placement.source)?;
+                    Some(segment_of(placement, source, timeline.time_base))
+                })
+                .collect()
+        };
+        let main = timeline
+            .tracks
+            .iter()
+            .find(|track| track.kind == TrackKind::Video)
+            .map(|track| segments_of(&track.placements))
+            .transpose()?
+            .unwrap_or_default();
+        let mut plan = if main.is_empty() {
+            Self {
+                segments: Vec::new(),
+                audio_tracks: Vec::new(),
+                frame_rate: timeline.frame_rate,
+            }
+        } else {
+            check(&main)?;
+            Self {
+                segments: main,
+                audio_tracks: Vec::new(),
+                frame_rate: timeline.frame_rate,
+            }
+        };
+        for track in timeline
+            .tracks
+            .iter()
+            .filter(|track| track.kind == TrackKind::Audio)
+        {
+            plan = plan.with_audio_track(AudioTrack {
+                id: track.id,
+                segments: segments_of(&track.placements)?,
+            })?;
+        }
+        if plan.segments.is_empty() && plan.audio_tracks.iter().all(|t| t.segments.is_empty()) {
+            return Err(PlanError::Empty);
+        }
+        Ok(plan)
+    }
+
     /// A whole file from its first frame to its end.
     ///
     /// # Errors
@@ -327,12 +477,7 @@ impl PlaybackPlan {
     /// As [`PlaybackPlan::new`].
     pub fn whole(source: Arc<SourceMedia>) -> Result<Self, PlanError> {
         let (source_in, source_out) = source.full_range();
-        Self::new(vec![Segment {
-            source,
-            source_in,
-            source_out,
-            timeline_start: 0,
-        }])
+        Self::new(vec![Segment::new(source, source_in, source_out, 0)])
     }
 
     #[must_use]
@@ -381,6 +526,44 @@ impl PlaybackPlan {
     }
 }
 
+/// The segment playing `placement` from `source`.
+fn segment_of(
+    placement: &Placement,
+    source: &Arc<SourceMedia>,
+    sequence: Rational,
+) -> Result<Segment, PlanError> {
+    let unplaceable = || PlanError::Unplaceable(placement.clip);
+    let time_base = source.time_base();
+    // The clip's stream time base and the segment's (the source's video)
+    // are the same for a video clip; an audio clip of a file with video is
+    // converted, outward, to whole ticks of the video's.
+    let source_in = time::rescale(
+        placement.source_in,
+        placement.time_base,
+        time_base,
+        Rounding::Down,
+    )
+    .ok_or_else(unplaceable)?;
+    let source_out = time::rescale(
+        placement.source_out,
+        placement.time_base,
+        time_base,
+        Rounding::Up,
+    )
+    .ok_or_else(unplaceable)?;
+    let timeline_start = time::rescale(placement.start, sequence, MICROSECONDS, Rounding::Down)
+        .ok_or_else(unplaceable)?;
+    Ok(Segment {
+        source: Arc::clone(source),
+        source_in,
+        source_out,
+        timeline_start,
+        speed: placement.speed,
+        audio: placement.audio.clone(),
+        clip: Some(placement.clip),
+    })
+}
+
 /// A track of sound only.
 #[derive(Debug, Clone)]
 pub struct AudioTrack {
@@ -395,9 +578,9 @@ fn check(segments: &[Segment]) -> Result<(), PlanError> {
             return Err(PlanError::Inverted(i));
         }
         if i > 0
-            && segments
-                .get(i - 1)
-                .is_some_and(|previous| segment.timeline_start < previous.timeline_end())
+            && segments.get(i - 1).is_some_and(|previous| {
+                segment.timeline_start + SEAM_TOLERANCE < previous.timeline_end()
+            })
         {
             return Err(PlanError::Overlap(i));
         }

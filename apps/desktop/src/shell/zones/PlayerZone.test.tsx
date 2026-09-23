@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { usePreviewStore } from "../../player/preview.store.js";
+import { useProjectStore } from "../../project/project.store.js";
 import { PlayerZone } from "./PlayerZone.js";
 
 vi.mock("@tauri-apps/api/event", () => ({
@@ -47,9 +48,11 @@ beforeEach(() => {
     playback: null,
     frameNumber: null,
     path: null,
+    kind: null,
     error: null,
     stats: null,
   });
+  useProjectStore.setState({ view: null, error: null, relinkError: null });
 });
 
 describe("PlayerZone", () => {
@@ -140,5 +143,69 @@ describe("PlayerZone", () => {
     expect(stats).toHaveTextContent("12/16 frames · 12.0 MB");
     expect(stats).toHaveTextContent("58.5 fps");
     expect(stats).toHaveTextContent("Dropped3");
+  });
+
+  it("plays the open project through the evaluator, and lists its operations on request", async () => {
+    invoked.mockImplementation((command) =>
+      Promise.resolve(
+        command === "open_project_preview"
+          ? { session: 9, status: PLAYBACK }
+          : { position: 0, clips: [] },
+      ),
+    );
+    useProjectStore.setState({
+      view: {
+        path: "C:\\Work\\Trip.blinkify",
+        project: {
+          schemaVersion: 1,
+          name: "Trip",
+          sources: {},
+          sequence: {
+            settings: {
+              width: 1920,
+              height: 1080,
+              frameRate: { num: 30, den: 1 },
+              pixelAspect: { num: 1, den: 1 },
+              colour: "sdr",
+            },
+            tracks: [],
+          },
+        },
+        unavailable: {},
+        affectedClips: [],
+      },
+    });
+    render(
+      <TooltipProvider>
+        <PlayerZone />
+      </TooltipProvider>,
+    );
+    const operations = await screen.findByRole("button", {
+      name: "Operations",
+    });
+    expect(invoked).toHaveBeenCalledWith("open_project_preview", {
+      maxWidth: 0,
+      maxHeight: 0,
+    });
+    expect(usePreviewStore.getState()).toMatchObject({
+      session: 9,
+      kind: "project",
+      path: "Trip",
+    });
+    await userEvent.click(operations);
+    expect(await screen.findByTestId("operations-panel")).toHaveTextContent(
+      "Nothing on the timeline at frame 0.",
+    );
+    expect(invoked).toHaveBeenCalledWith("operations_at", { session: 9 });
+  });
+
+  it("offers no operations for a dropped file, which has no graph", () => {
+    usePreviewStore.setState({ ...OPEN, kind: "file" });
+    render(
+      <TooltipProvider>
+        <PlayerZone />
+      </TooltipProvider>,
+    );
+    expect(screen.queryByRole("button", { name: "Operations" })).toBeNull();
   });
 });

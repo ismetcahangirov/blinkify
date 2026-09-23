@@ -78,6 +78,9 @@ pub fn run() {
             media::preview_stats,
             project::launch_project,
             project::relink_source,
+            project::open_project_preview,
+            project::update_project,
+            project::operations_at,
             updater::pending_update,
             updater::install_update
         ])

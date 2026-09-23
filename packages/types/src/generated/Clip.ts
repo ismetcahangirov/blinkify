@@ -21,7 +21,15 @@ timeBase: Rational,
  */
 start: number, 
 /**
- * What is done to the clip, in order. Data only; the evaluator (#30)
- * decides what it means.
+ * What is done to the clip, in order. Data only, and private: the
+ * evaluator ([`evaluate`], #30) is the one reader, so there is no second
+ * interpretation to disagree with it.
+ *
+ * ```compile_fail
+ * # use blinkify_engine::project::Clip;
+ * fn interpret(clip: &Clip) -> usize {
+ *     clip.operations.len() // private: go through `project::evaluate`
+ * }
+ * ```
  */
 operations: Array<Operation>, };

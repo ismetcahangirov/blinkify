@@ -30,8 +30,10 @@ interface PreviewState {
   frameNumber: number | null;
   /** Where the frame on screen starts on the timeline, in microseconds. */
   framePosition: number | null;
-  /** The file being previewed, as the user gave it. */
+  /** The file being previewed as the user gave it, or the project's name. */
   path: string | null;
+  /** A dropped file, or the open project through the evaluator (#30). */
+  kind: "file" | "project" | null;
   error: string | null;
   stats: DecodeStats | null;
   /** What the editor hears: volume, mute, solo. Never part of an export. */
@@ -43,6 +45,15 @@ interface PreviewState {
   refreshLevels: () => Promise<void>;
   /** Open `path` for preview, closing whatever was open. */
   open: (path: string, maxWidth: number, maxHeight: number) => Promise<void>;
+  /**
+   * Preview the open project through the shared evaluator (#30), closing
+   * whatever was open. `name` is what the placeholder says while it opens.
+   */
+  openProject: (
+    name: string,
+    maxWidth: number,
+    maxHeight: number,
+  ) => Promise<void>;
   /** Close the open preview; resolves once its decoders have exited. */
   close: () => Promise<void>;
   /** Send a transport command to the open preview. */
@@ -60,55 +71,19 @@ interface PreviewState {
  * with a newer one does not install a stale session. */
 let generation = 0;
 
-export const usePreviewStore = create<PreviewState>((set, get) => ({
-  status: "empty",
-  session: null,
-  playback: null,
-  frameNumber: null,
-  framePosition: null,
-  path: null,
-  error: null,
-  stats: null,
-  monitoring: { volume: 1, muted: false, soloed: [], mutedTracks: [] },
-  levels: null,
-
-  monitor: async (command) => {
-    const { session } = get();
-    if (session === null) return;
-    try {
-      const monitoring = await invoke<MonitorStatus>("monitor", {
-        session,
-        command,
-      });
-      if (get().session === session) set({ monitoring });
-      if (command.type === "reset-clip") await get().refreshLevels();
-    } catch (error) {
-      set({ error: String(error) });
-    }
-  },
-
-  refreshLevels: async () => {
-    const { session } = get();
-    if (session === null) return;
-    try {
-      const levels = await invoke<MonitorLevels>("monitor_levels", { session });
-      if (get().session === session) set({ levels });
-    } catch {
-      // Closed between the check and the call.
-    }
-  },
-
-  open: async (path, maxWidth, maxHeight) => {
+export const usePreviewStore = create<PreviewState>((set, get) => {
+  /** Close what is open, then open what `request` opens, under `label`. */
+  const start = async (
+    label: string,
+    kind: "file" | "project",
+    request: () => Promise<PreviewOpened>,
+  ): Promise<void> => {
     const mine = ++generation;
     await get().close();
     generation = mine;
-    set({ status: "opening", path, error: null, stats: null });
+    set({ status: "opening", path: label, kind, error: null, stats: null });
     try {
-      const opened = await invoke<PreviewOpened>("open_preview", {
-        path,
-        maxWidth: Math.round(maxWidth),
-        maxHeight: Math.round(maxHeight),
-      });
+      const opened = await request();
       if (mine !== generation) {
         await invoke("close_preview", { session: opened.session });
         return;
@@ -126,62 +101,123 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
       if (mine !== generation) return;
       set({ status: "failed", session: null, error: String(error) });
     }
-  },
+  };
 
-  close: async () => {
-    generation += 1;
-    const { session } = get();
-    set({
-      status: "empty",
-      session: null,
-      playback: null,
-      frameNumber: null,
-      framePosition: null,
-      path: null,
-      stats: null,
-    });
-    if (session !== null) {
-      await invoke("close_preview", { session });
-    }
-  },
+  return {
+    status: "empty",
+    session: null,
+    playback: null,
+    frameNumber: null,
+    framePosition: null,
+    path: null,
+    kind: null,
+    error: null,
+    stats: null,
+    monitoring: { volume: 1, muted: false, soloed: [], mutedTracks: [] },
+    levels: null,
 
-  transport: async (command) => {
-    const { session } = get();
-    if (session === null) return;
-    try {
-      const playback = await invoke<PlaybackStatus>("transport", {
-        session,
-        command,
+    monitor: async (command) => {
+      const { session } = get();
+      if (session === null) return;
+      try {
+        const monitoring = await invoke<MonitorStatus>("monitor", {
+          session,
+          command,
+        });
+        if (get().session === session) set({ monitoring });
+        if (command.type === "reset-clip") await get().refreshLevels();
+      } catch (error) {
+        set({ error: String(error) });
+      }
+    },
+
+    refreshLevels: async () => {
+      const { session } = get();
+      if (session === null) return;
+      try {
+        const levels = await invoke<MonitorLevels>("monitor_levels", {
+          session,
+        });
+        if (get().session === session) set({ levels });
+      } catch {
+        // Closed between the check and the call.
+      }
+    },
+
+    open: async (path, maxWidth, maxHeight) => {
+      await start(path, "file", () =>
+        invoke<PreviewOpened>("open_preview", {
+          path,
+          maxWidth: Math.round(maxWidth),
+          maxHeight: Math.round(maxHeight),
+        }),
+      );
+    },
+
+    openProject: async (name, maxWidth, maxHeight) => {
+      await start(name, "project", () =>
+        invoke<PreviewOpened>("open_project_preview", {
+          maxWidth: Math.round(maxWidth),
+          maxHeight: Math.round(maxHeight),
+        }),
+      );
+    },
+    close: async () => {
+      generation += 1;
+      const { session } = get();
+      set({
+        status: "empty",
+        session: null,
+        playback: null,
+        frameNumber: null,
+        framePosition: null,
+        path: null,
+        kind: null,
+        stats: null,
       });
-      if (get().session === session) set({ playback });
-    } catch (error) {
-      set({ error: String(error) });
-    }
-  },
+      if (session !== null) {
+        await invoke("close_preview", { session });
+      }
+    },
 
-  applyUpdate: (update) => {
-    if (update.session === get().session) set({ playback: update.status });
-  },
+    transport: async (command) => {
+      const { session } = get();
+      if (session === null) return;
+      try {
+        const playback = await invoke<PlaybackStatus>("transport", {
+          session,
+          command,
+        });
+        if (get().session === session) set({ playback });
+      } catch (error) {
+        set({ error: String(error) });
+      }
+    },
 
-  showFrame: (frameNumber, framePosition) => {
-    if (get().framePosition !== framePosition) {
-      set({ frameNumber, framePosition });
-    }
-  },
+    applyUpdate: (update) => {
+      if (update.session === get().session) set({ playback: update.status });
+    },
 
-  refreshStats: async () => {
-    const { session } = get();
-    if (session === null) return;
-    try {
-      const stats = await invoke<DecodeStats>("preview_stats", { session });
-      if (get().session === session) set({ stats });
-    } catch {
-      // The session closed between the check and the call; the next open
-      // resets the display anyway.
-    }
-  },
+    showFrame: (frameNumber, framePosition) => {
+      if (get().framePosition !== framePosition) {
+        set({ frameNumber, framePosition });
+      }
+    },
 
-  fail: (message) => {
-    set({ status: "failed", error: message });
-  },
-}));
+    refreshStats: async () => {
+      const { session } = get();
+      if (session === null) return;
+      try {
+        const stats = await invoke<DecodeStats>("preview_stats", { session });
+        if (get().session === session) set({ stats });
+      } catch {
+        // The session closed between the check and the call; the next open
+        // resets the display anyway.
+      }
+    },
+
+    fail: (message) => {
+      set({ status: "failed", error: message });
+    },
+  };
+});

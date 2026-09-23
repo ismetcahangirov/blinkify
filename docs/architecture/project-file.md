@@ -26,9 +26,11 @@ Operation = trim { from, to }        source ticks, `to` exclusive
           | normalise { targetLufs }
 ```
 
-Operations are data. Nothing in the model decides what a gain does to a
-sample or whether a trim is keyframe-aligned — that is the shared evaluator
-(#30) for preview and the planner (Epic #6) for export. `Project::validate`
+Operations are data, and a clip's are private to the `project` module.
+Nothing in the model decides what a gain does to a sample or whether a trim
+is keyframe-aligned. The shared evaluator (#30) resolves them once, and the
+preview and the planner (Epic #6) both consume what it returns; see
+[`edit-graph-evaluation.md`](./edit-graph-evaluation.md). `Project::validate`
 only checks what the types cannot: unique ids, every clip's source present,
 parameters in range.
 

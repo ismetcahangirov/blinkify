@@ -88,22 +88,17 @@ fn tone(orchestrator: &Orchestrator, dir: &Path, name: &str, graph: &str, second
 
 fn whole(source: &Arc<SourceMedia>) -> Segment {
     let (source_in, source_out) = source.full_range();
-    Segment {
-        source: Arc::clone(source),
-        source_in,
-        source_out,
-        timeline_start: 0,
-    }
+    Segment::new(Arc::clone(source), source_in, source_out, 0)
 }
 
 fn segment(source: &Arc<SourceMedia>, from: f64, to: f64, at: f64) -> Segment {
     let tb = source.time_base();
-    Segment {
-        source: Arc::clone(source),
-        source_in: time::from_seconds(from, tb, Rounding::Nearest),
-        source_out: time::from_seconds(to, tb, Rounding::Nearest),
-        timeline_start: (at * 1_000_000.0).round() as i64,
-    }
+    Segment::new(
+        Arc::clone(source),
+        time::from_seconds(from, tb, Rounding::Nearest),
+        time::from_seconds(to, tb, Rounding::Nearest),
+        (at * 1_000_000.0).round() as i64,
+    )
 }
 
 /// Wait until at least `seconds` of sound follow the silence captured before

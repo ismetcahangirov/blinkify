@@ -140,6 +140,16 @@ jobs:
       - name: Boundaries (graph:validate)
         run: pnpm graph:validate
 
+      # #30: the shared evaluator is the only code that interprets the edit
+      # graph. The compiler keeps other Rust modules from reading a clip's
+      # operations; this keeps them, and the renderer, from taking an
+      # Operation apart by hand.
+      - name: Evaluator boundary (evaluator:check)
+        run: pnpm evaluator:check
+
+      - name: Evaluator boundary fires (evaluator:check:test)
+        run: pnpm evaluator:check:test
+
       # Runs before graph:check, on purpose. If a rule has been disarmed, the
       # committed graph is a faithful record of a check that proves nothing, and
       # graph:check would go green on it. Better to fail on the disarmed rule

@@ -26,6 +26,7 @@
 //!   order, and the output ends with one newline, so saving an unchanged
 //!   project changes no byte — no spurious diff, no "unsaved changes" prompt.
 
+pub mod evaluate;
 pub mod migrate;
 pub mod settings;
 pub mod source;
@@ -42,7 +43,6 @@ pub use source::{Fingerprint, RelinkError, SourceRef, SourceStatus};
 
 use crate::probe::Rational;
 use crate::proxy::ExportSource;
-use crate::time::{Rounding, rescale};
 
 /// The schema this build writes, and the newest it reads.
 pub const SCHEMA_VERSION: u32 = 1;
@@ -116,9 +116,17 @@ pub struct Clip {
     /// base (one tick per frame; see [`SequenceSettings::time_base`]).
     #[ts(type = "number")]
     pub start: i64,
-    /// What is done to the clip, in order. Data only; the evaluator (#30)
-    /// decides what it means.
-    pub operations: Vec<Operation>,
+    /// What is done to the clip, in order. Data only, and private: the
+    /// evaluator ([`evaluate`], #30) is the one reader, so there is no second
+    /// interpretation to disagree with it.
+    ///
+    /// ```compile_fail
+    /// # use blinkify_engine::project::Clip;
+    /// fn interpret(clip: &Clip) -> usize {
+    ///     clip.operations.len() // private: go through `project::evaluate`
+    /// }
+    /// ```
+    operations: Vec<Operation>,
 }
 
 /// One thing done to a clip, with its parameters.
@@ -145,65 +153,28 @@ pub enum Operation {
 }
 
 impl Clip {
-    /// The part of the source the clip plays, `(from, to)` in the clip's
-    /// time base — the last trim, or `None` for an untrimmed clip.
     #[must_use]
-    pub fn trim(&self) -> Option<(i64, i64)> {
-        self.operations
-            .iter()
-            .rev()
-            .find_map(|operation| match *operation {
-                Operation::Trim { from, to } => Some((from, to)),
-                _ => None,
-            })
-    }
-
-    /// The playback speed: the product of every speed operation.
-    #[must_use]
-    pub fn speed(&self) -> Rational {
-        self.operations.iter().fold(
-            Rational { num: 1, den: 1 },
-            |speed, operation| match *operation {
-                Operation::Speed { ratio } => Rational {
-                    num: speed.num.saturating_mul(ratio.num),
-                    den: speed.den.saturating_mul(ratio.den),
-                },
-                _ => speed,
-            },
-        )
-    }
-
-    /// The time base in which one source tick is one tick of *timeline*
-    /// time: the source's, stretched by the speed. At double speed a source
-    /// tick lasts half as long.
-    fn played_time_base(&self) -> Rational {
-        let speed = self.speed();
-        Rational {
-            num: self.time_base.num.saturating_mul(speed.den),
-            den: self.time_base.den.saturating_mul(speed.num),
+    pub fn new(
+        id: ClipId,
+        source: SourceId,
+        stream: u32,
+        time_base: Rational,
+        start: i64,
+        operations: Vec<Operation>,
+    ) -> Self {
+        Self {
+            id,
+            source,
+            stream,
+            time_base,
+            start,
+            operations,
         }
     }
 
-    /// How many sequence ticks (frames) the clip occupies. A frame the clip
-    /// only partly covers counts, so the clip is never cut short. `None` for
-    /// an untrimmed clip, whose length is the source's.
-    #[must_use]
-    pub fn length(&self, sequence: Rational) -> Option<i64> {
-        let (from, to) = self.trim()?;
-        rescale(to - from, self.played_time_base(), sequence, Rounding::Up)
-    }
-
-    /// The source tick shown at sequence tick `at`, if the clip covers it:
-    /// the last source tick at or before that moment.
-    #[must_use]
-    pub fn source_at(&self, at: i64, sequence: Rational) -> Option<i64> {
-        let (from, to) = self.trim()?;
-        let offset = at.checked_sub(self.start)?;
-        if offset < 0 {
-            return None;
-        }
-        let source = from + rescale(offset, sequence, self.played_time_base(), Rounding::Down)?;
-        (source < to).then_some(source)
+    /// Do `operation` to the clip, after everything already done to it.
+    pub fn push(&mut self, operation: Operation) {
+        self.operations.push(operation);
     }
 }
 
@@ -380,6 +351,10 @@ impl Project {
         let mut tracks = BTreeSet::new();
         let mut clips = BTreeSet::new();
         for track in &self.sequence.tracks {
+            if track.id == 0 {
+                // The preview's main track is 0; a project's start at 1.
+                return invalid("track 0 is reserved".to_owned());
+            }
             if !tracks.insert(track.id) {
                 return invalid(format!("track {} appears twice", track.id));
             }
@@ -600,52 +575,6 @@ mod tests {
             assert_eq!(loaded, project, "case {case}");
             assert_eq!(loaded.to_json().expect("json"), text, "case {case}");
         }
-    }
-
-    #[test]
-    fn timing_is_exact_in_integer_ticks() {
-        let clip = Clip {
-            id: 1,
-            source: 1,
-            stream: 0,
-            time_base: Rational {
-                num: 1,
-                den: 90_000,
-            },
-            start: 10,
-            operations: vec![Operation::Trim {
-                from: 225_000,
-                to: 288_000,
-            }],
-        };
-        let ntsc = SequenceSettings {
-            frame_rate: Rational {
-                num: 30_000,
-                den: 1001,
-            },
-            ..SequenceSettings::default()
-        }
-        .time_base();
-        // 0.7 s at 29.97 fps is 20.979 frames: the last, partial frame counts.
-        assert_eq!(clip.length(ntsc), Some(21));
-        assert_eq!(clip.source_at(10, ntsc), Some(225_000));
-        assert_eq!(clip.source_at(9, ntsc), None);
-        // Frame 20 of the clip starts at 20 × 3003 ticks of 90 kHz.
-        assert_eq!(clip.source_at(30, ntsc), Some(225_000 + 60_060));
-        assert_eq!(clip.source_at(31, ntsc), None);
-
-        let mut fast = clip.clone();
-        fast.operations.push(Operation::Speed {
-            ratio: Rational { num: 2, den: 1 },
-        });
-        fast.operations.push(Operation::Speed {
-            ratio: Rational { num: 3, den: 2 },
-        });
-        assert_eq!(fast.speed(), Rational { num: 6, den: 2 });
-        let thirty = SequenceSettings::default().time_base();
-        // 0.7 s at triple speed: 7 frames of 30 fps, exactly.
-        assert_eq!(fast.length(thirty), Some(7));
-        assert_eq!(fast.source_at(10 + 6, thirty), Some(225_000 + 6 * 9000));
     }
 
     #[test]

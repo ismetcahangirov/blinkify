@@ -53,6 +53,42 @@
   color: var(--text-primary);
 }
 
+/* The operations under the playhead (#30): opposite the stats, so both can
+   be open at once. */
+.player__operations {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  max-width: 50%;
+  max-height: calc(100% - 2 * var(--space-2));
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--text-primary);
+  background: var(--elevation-3-background);
+  border: var(--border-width) solid var(--elevation-3-border);
+  border-radius: var(--radius-md);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+}
+
+.player__operations-clip {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.player__operations-list {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+.player__operations-note {
+  color: var(--warning);
+}
+
 .player__error {
   margin: 0;
   font-size: var(--type-caption-size);
