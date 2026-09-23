@@ -156,7 +156,10 @@ const fn p(
 }
 
 // H.264 `level_idc` is the level times ten; HEVC `general_level_idc` is the
-// level times thirty. NVENC, AMF and Quick Sync all accept the numeric form.
+// level times thirty. NVENC and AMF take those numbers for their own codec.
+// Quick Sync does not: its HEVC levels are the level times ten, like H.264's
+// (`MFX_LEVEL_HEVC_51` is 51), so HEVC on QSV gets its own table. Found by
+// running the probe on an Intel iGPU, where every HEVC level "failed".
 const H264_LEVELS: &[(&str, &str)] = &[
     ("6.2", "62"),
     ("6.1", "61"),
@@ -175,6 +178,16 @@ const HEVC_LEVELS: &[(&str, &str)] = &[
     ("5.1", "153"),
     ("5.0", "150"),
     ("4.1", "123"),
+];
+
+const HEVC_QSV_LEVELS: &[(&str, &str)] = &[
+    ("6.2", "62"),
+    ("6.1", "61"),
+    ("6.0", "60"),
+    ("5.2", "52"),
+    ("5.1", "51"),
+    ("5.0", "50"),
+    ("4.1", "41"),
 ];
 
 const H264_PROFILES: &[ProfileCandidate] = &[
@@ -236,7 +249,7 @@ const CANDIDATES: &[Candidate] = &[
         encoder: "hevc_qsv",
         source: EncoderSource::Intel,
         profiles: HEVC_PROFILES,
-        levels: HEVC_LEVELS,
+        levels: HEVC_QSV_LEVELS,
     },
     Candidate {
         codec: VideoCodec::Hevc,
