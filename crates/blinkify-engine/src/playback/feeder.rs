@@ -1,10 +1,11 @@
 //! The audio feeder: the thread that keeps the output buffer a little ahead of
 //! the speaker.
 //!
-//! It walks the timeline in output-sample steps, taking each segment's audio
-//! from that segment's decoder, silence for gaps and for segments with no
-//! audio, and it records every jump in the timeline as a clock anchor. What
-//! it guarantees:
+//! It walks the timeline in output-sample steps, taking each track's sound
+//! from its current segment's decoder — silence for gaps and for segments
+//! with no audio — passing it through the filter-chain insertion point, and
+//! mixing the tracks the monitor hears. It records every jump in the timeline
+//! as a clock anchor. What it guarantees:
 //!
 //! - **A clip boundary is sample-exact.** Chunks are cut at the boundary, the
 //!   segment's decoder is dropped there and the next one — started ahead of
@@ -13,7 +14,8 @@
 //!   and an integer count of frames written since, never accumulated.
 //! - **Audio never stalls.** A decoder that falls behind costs a moment of
 //!   silence, not a stopped clock; a decoder that failed costs its segment's
-//!   sound, not the playback.
+//!   sound, not the playback. A gap in every track is silence, and the clock
+//!   runs through it.
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
@@ -21,7 +23,8 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
 use super::clock::{Anchor, PlaybackClock};
-use super::plan::{PlaybackPlan, ProgramTime};
+use super::monitor::{AudioInsert, MonitorSettings};
+use super::plan::{PlaybackPlan, ProgramTime, Segment, TrackId, next_boundary, segment_at};
 use crate::audio::{AudioDecoder, AudioRequest, CHANNELS, OutputBuffer, SampleRing};
 use crate::orchestrator::Orchestrator;
 
@@ -59,6 +62,10 @@ pub(crate) struct FeederConfig {
     pub loop_range: Arc<Mutex<LoopRange>>,
     /// Set once every sample up to the end of the timeline has been heard.
     pub ended: Arc<AtomicBool>,
+    /// Which tracks the monitor hears.
+    pub monitor: Arc<Mutex<MonitorSettings>>,
+    /// The filter chain's insertion point.
+    pub insert: Arc<Mutex<Arc<dyn AudioInsert>>>,
 }
 
 /// A running feeder.
@@ -140,8 +147,13 @@ fn frames_covering(span: ProgramTime, rate: u32, speed: f64) -> u64 {
     frames
 }
 
-fn start_lane(config: &FeederConfig, segment: usize, at: ProgramTime) -> Option<Lane> {
-    let seg = config.plan.segment(segment)?;
+fn start_lane(
+    config: &FeederConfig,
+    segments: &[Segment],
+    segment: usize,
+    at: ProgramTime,
+) -> Option<Lane> {
+    let seg = segments.get(segment)?;
     let audio = seg.source.audio?;
     let rate = config.buffer.sample_rate();
     let ring = Arc::new(SampleRing::new(
@@ -167,17 +179,30 @@ fn start_lane(config: &FeederConfig, segment: usize, at: ProgramTime) -> Option<
     })
 }
 
-/// Where the feeder is on the timeline, and the decoders it is using.
+/// One track's place: the lane playing now, and the one prepared for its next
+/// boundary or for the far side of a loop.
+struct Track {
+    id: TrackId,
+    segments: Vec<Segment>,
+    current: Option<Lane>,
+    upcoming: Option<Lane>,
+}
+
+impl Track {
+    fn start(&self, config: &FeederConfig, at: ProgramTime) -> Option<Lane> {
+        let (i, _) = segment_at(&self.segments, at)?;
+        start_lane(config, &self.segments, i, at)
+    }
+}
+
+/// Where the feeder is on the timeline, and every track's decoders.
 struct Walk {
     generation: u64,
     /// The timeline position of the last anchor…
     anchor_at: ProgramTime,
     /// …and the frames written since it.
     written: u64,
-    /// The lane playing now, and the one prepared for the next boundary or for
-    /// the far side of a loop.
-    current: Option<Lane>,
-    upcoming: Option<Lane>,
+    tracks: Vec<Track>,
 }
 
 impl Walk {
@@ -192,6 +217,7 @@ fn run(config: &FeederConfig, stop: &AtomicBool) {
     let lead = frames_for(LEAD, rate);
     let chunk = frames_for(CHUNK, rate);
     let mut walk = preroll(config, chunk);
+    let mut mix = Vec::new();
     let mut samples = Vec::new();
     while !stop.load(Ordering::SeqCst) {
         let t = walk.position(rate, config.speed);
@@ -213,26 +239,39 @@ fn run(config: &FeederConfig, stop: &AtomicBool) {
             continue;
         }
         let boundary = config.plan.next_boundary(t).min(end);
-        write_chunk(config, &mut walk, t, boundary, chunk, &mut samples);
-        prefetch(config, &mut walk, loop_range, boundary, end);
+        let frames = chunk.min(frames_covering(boundary - t, rate, config.speed));
+        write_chunk(config, &mut walk, t, frames, &mut mix, &mut samples);
+        prefetch(config, &mut walk, loop_range, end);
     }
 }
 
-/// Start the first decoder and wait for its first samples before the clock
-/// starts, so the picture does not start ahead of the sound.
+/// Start every track's first decoder and wait for its first samples before
+/// the clock starts, so the picture does not start ahead of the sound.
 fn preroll(config: &FeederConfig, chunk: u64) -> Walk {
     let mut walk = Walk {
         generation: config.generation,
         anchor_at: config.start,
         written: 0,
-        current: None,
-        upcoming: None,
+        tracks: config
+            .plan
+            .sound_tracks()
+            .into_iter()
+            .map(|(id, segments)| Track {
+                id,
+                segments: segments.to_vec(),
+                current: None,
+                upcoming: None,
+            })
+            .collect(),
     };
-    if let Some((i, _)) = config.plan.segment_at(config.start) {
-        walk.current = start_lane(config, i, config.start);
-        if let Some(lane) = &walk.current {
-            lane.ring
-                .wait_for(CHANNELS * usize::try_from(chunk).unwrap_or(1), PREROLL);
+    let deadline = Instant::now() + PREROLL;
+    for track in &mut walk.tracks {
+        track.current = track.start(config, config.start);
+        if let Some(lane) = &track.current {
+            lane.ring.wait_for(
+                CHANNELS * usize::try_from(chunk).unwrap_or(1),
+                deadline.saturating_duration_since(Instant::now()),
+            );
         }
     }
     config.clock.run(Anchor {
@@ -245,7 +284,7 @@ fn preroll(config: &FeederConfig, chunk: u64) -> Walk {
 }
 
 /// Jump back to the start of the loop: a new generation, a new anchor, and
-/// the decoder prepared for it.
+/// every track's decoder prepared for it.
 fn wrap(config: &FeederConfig, walk: &mut Walk, start: ProgramTime) {
     walk.generation = config.generations.fetch_add(1, Ordering::SeqCst) + 1;
     walk.anchor_at = start;
@@ -256,16 +295,12 @@ fn wrap(config: &FeederConfig, walk: &mut Walk, start: ProgramTime) {
         speed: config.speed,
         generation: walk.generation,
     });
-    walk.current = walk
-        .upcoming
-        .take()
-        .filter(|lane| lane.starts_at == start)
-        .or_else(|| {
-            config
-                .plan
-                .segment_at(start)
-                .and_then(|(i, _)| start_lane(config, i, start))
-        });
+    for track in &mut walk.tracks {
+        track.current = match track.upcoming.take() {
+            Some(lane) if lane.starts_at == start => Some(lane),
+            _ => track.start(config, start),
+        };
+    }
 }
 
 /// The end of the timeline: wait until the last sample has been heard.
@@ -282,68 +317,81 @@ fn wait_until_heard(config: &FeederConfig, stop: &AtomicBool) {
     }
 }
 
-/// Write up to `chunk` frames from `t`, never past `boundary`.
+/// Write `frames` frames from `t`: every track's sound through the insertion
+/// point, mixed if the monitor hears the track.
 fn write_chunk(
     config: &FeederConfig,
     walk: &mut Walk,
     t: ProgramTime,
-    boundary: ProgramTime,
-    chunk: u64,
+    frames: u64,
+    mix: &mut Vec<f32>,
     samples: &mut Vec<f32>,
 ) {
     let rate = config.buffer.sample_rate();
-    let frames = chunk.min(frames_covering(boundary - t, rate, config.speed));
     let count = usize::try_from(frames).unwrap_or(0) * CHANNELS;
-    samples.clear();
-    samples.resize(count, 0.0);
-    match config.plan.segment_at(t) {
-        Some((i, segment)) if segment.source.audio.is_some() => {
-            if walk.current.as_ref().is_none_or(|lane| lane.segment != i) {
-                walk.current = walk
-                    .upcoming
-                    .take()
-                    .filter(|lane| lane.segment == i)
-                    .or_else(|| start_lane(config, i, t));
-            }
-            if let Some(lane) = &walk.current {
-                lane.ring.wait_for(count, DECODER_PATIENCE);
-                // Whatever did not arrive in time stays silent.
-                lane.ring.take(samples);
+    mix.clear();
+    mix.resize(count, 0.0);
+    let monitor = config
+        .monitor
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .clone();
+    let insert = Arc::clone(&config.insert.lock().unwrap_or_else(PoisonError::into_inner));
+    for track in &mut walk.tracks {
+        let Some((i, segment)) = segment_at(&track.segments, t) else {
+            track.current = None;
+            continue;
+        };
+        if segment.source.audio.is_none() {
+            track.current = None;
+            continue;
+        }
+        if track.current.as_ref().is_none_or(|lane| lane.segment != i) {
+            track.current = match track.upcoming.take() {
+                Some(lane) if lane.segment == i => Some(lane),
+                _ => start_lane(config, &track.segments, i, t),
+            };
+        }
+        samples.clear();
+        samples.resize(count, 0.0);
+        if let Some(lane) = &track.current {
+            lane.ring.wait_for(count, DECODER_PATIENCE);
+            // Whatever did not arrive in time stays silent.
+            lane.ring.take(samples);
+        }
+        // Epic #7's filter chain attaches here, before the mix and the meter.
+        insert.process(track.id, i, samples, rate);
+        if monitor.audible(track.id) {
+            for (out, sample) in mix.iter_mut().zip(samples.iter()) {
+                *out += *sample;
             }
         }
-        _ => walk.current = None,
     }
-    config.buffer.push(samples);
+    config.buffer.push(mix);
     walk.written += frames;
 }
 
-/// Start what plays next — the following segment, or the loop's start — while
-/// this plays.
-fn prefetch(
-    config: &FeederConfig,
-    walk: &mut Walk,
-    loop_range: LoopRange,
-    boundary: ProgramTime,
-    end: ProgramTime,
-) {
-    if walk.upcoming.is_some() {
-        return;
-    }
+/// Start what plays next on each track — its following segment, or the
+/// loop's start — while this plays.
+fn prefetch(config: &FeederConfig, walk: &mut Walk, loop_range: LoopRange, end: ProgramTime) {
     let now = walk.position(config.buffer.sample_rate(), config.speed);
-    if let Some((start, loop_end)) = loop_range
-        && loop_end - now < PREFETCH
-        && boundary >= loop_end
-    {
-        walk.upcoming = config
-            .plan
-            .segment_at(start)
-            .and_then(|(i, _)| start_lane(config, i, start));
-    } else if boundary - now < PREFETCH
-        && boundary < end
-        && let Some((i, next)) = config.plan.segment_at(boundary)
-        && next.timeline_start == boundary
-    {
-        walk.upcoming = start_lane(config, i, boundary);
+    for track in &mut walk.tracks {
+        if track.upcoming.is_some() {
+            continue;
+        }
+        let boundary = next_boundary(&track.segments, now, end).min(end);
+        if let Some((start, loop_end)) = loop_range
+            && loop_end - now < PREFETCH
+            && boundary >= loop_end
+        {
+            track.upcoming = track.start(config, start);
+        } else if boundary - now < PREFETCH
+            && boundary < end
+            && let Some((i, next)) = segment_at(&track.segments, boundary)
+            && next.timeline_start == boundary
+        {
+            track.upcoming = start_lane(config, &track.segments, i, boundary);
+        }
     }
 }
 

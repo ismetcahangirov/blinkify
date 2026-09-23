@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 import { DecodeStatsOverlay } from "../../player/DecodeStatsOverlay.js";
+import { MonitorControls } from "../../player/MonitorControls.js";
 import { PreviewCanvas } from "../../player/PreviewCanvas.js";
 import { usePreviewStore } from "../../player/preview.store.js";
 import { ScrubBar } from "../../player/ScrubBar.js";
@@ -25,7 +26,8 @@ const PLAYBACK_EVENT = "media://playback";
  * decodes it into raw frames this zone draws. #28 added the transport — play,
  * pause, stop, frame steps, jumps, speed, loop, and the keys that drive them.
  * #29 added the playhead to drag, the indication that a seek is still on its
- * way, and the badge that says the picture comes from a proxy. The edit graph
+ * way, and the badge that says the picture comes from a proxy. #31 added
+ * monitoring: mute, the monitor volume and the level meter. The edit graph
  * arrives with #30; until then a dropped file is the whole timeline.
  *
  * `memo` is not an optimisation guess here — it is the boundary the shell asks
@@ -162,6 +164,7 @@ export const PlayerZone = memo(function PlayerZone() {
       </div>
       {session !== null && <ScrubBar />}
       {session !== null && <TransportBar />}
+      {session !== null && <MonitorControls />}
       {status === "failed" && error !== null && (
         <p className="player__error" role="alert">
           {error}

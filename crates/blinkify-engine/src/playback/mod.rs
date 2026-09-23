@@ -22,6 +22,7 @@
 mod clock;
 mod feeder;
 mod lanes;
+mod monitor;
 pub mod plan;
 mod scrub;
 pub mod timecode;
@@ -34,17 +35,20 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+pub use monitor::{AudioInsert, MonitorCommand, MonitorStatus, MonitorVolume, PassThrough};
 pub use plan::{
-    AudioStream, PlanError, PlaybackPlan, ProgramTime, Segment, SourceMedia, VideoStream,
+    AudioStream, AudioTrack, MAIN_TRACK, PlanError, PlaybackPlan, ProgramTime, Segment,
+    SourceMedia, TrackId, VideoStream,
 };
 
 use crate::audio::sink::SilentSink;
-use crate::audio::{AudioOutputState, BufferSlot, OutputBuffer, Sink};
+use crate::audio::{AudioOutputState, BufferSlot, MonitorLevels, OutputBuffer, Sink};
 use crate::decode::VideoFrame;
 use crate::orchestrator::Orchestrator;
 use clock::PlaybackClock;
 use feeder::{Feeder, FeederConfig, LoopRange as FeederLoop};
 use lanes::{LANE_BUDGET_BYTES, Lanes};
+use monitor::MonitorSettings;
 use scrub::{FrameCache, Picture, ScrubSlot, Worker};
 
 /// How far ahead of a boundary the next segment's video is started.
@@ -53,6 +57,9 @@ const PREFETCH: ProgramTime = 1_500_000;
 /// How long starting playback waits for the first frame before starting the
 /// clock anyway.
 const VIDEO_PREROLL: Duration = Duration::from_secs(3);
+
+/// How often the default output device is asked for, to follow a change.
+const DEVICE_CHECK: Duration = Duration::from_secs(1);
 
 /// How often the monitor checks for the end of playback and a failed device.
 const MONITOR_PERIOD: Duration = Duration::from_millis(50);
@@ -227,6 +234,28 @@ pub struct PlayerOptions {
     /// no bound.
     pub max_width: u32,
     pub max_height: u32,
+    /// Where the identity of the system's default output device comes from,
+    /// so that playback follows it when the user changes it.
+    pub default_device: DefaultDevice,
+}
+
+/// The source of truth for which output device is the default.
+#[derive(Debug, Clone)]
+pub enum DefaultDevice {
+    /// Ask the operating system.
+    System,
+    /// Take it from here — for tests and diagnosis, where the operating
+    /// system's default cannot be changed on demand.
+    Given(Arc<Mutex<Option<String>>>),
+}
+
+impl DefaultDevice {
+    fn current(&self) -> Option<String> {
+        match self {
+            Self::System => crate::audio::sink::default_device_id(),
+            Self::Given(id) => lock(id).clone(),
+        }
+    }
 }
 
 /// A frame on screen.
@@ -324,6 +353,13 @@ struct Inner {
     cache: Arc<Mutex<FrameCache>>,
     /// The position whose frame a seek or a scrub is still waiting for.
     pending: Mutex<Option<ProgramTime>>,
+    monitor: Arc<Mutex<MonitorSettings>>,
+    insert: Arc<Mutex<Arc<dyn AudioInsert>>>,
+    audio_choice: Mutex<AudioChoice>,
+    default_device: DefaultDevice,
+    /// The default device the current output was opened on.
+    current_device: Mutex<Option<String>>,
+    audio_switches: AtomicU64,
 }
 
 fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -380,6 +416,12 @@ impl Player {
             scrub: Arc::new(ScrubSlot::default()),
             cache: Arc::new(Mutex::new(FrameCache::new(LANE_BUDGET_BYTES * 2))),
             pending: Mutex::new(None),
+            monitor: Arc::new(Mutex::new(MonitorSettings::default())),
+            insert: Arc::new(Mutex::new(Arc::new(PassThrough))),
+            audio_choice: Mutex::new(options.audio.clone()),
+            current_device: Mutex::new(options.default_device.current()),
+            default_device: options.default_device.clone(),
+            audio_switches: AtomicU64::new(0),
         });
         inner.prepare(1, start);
         let scrubber = {
@@ -393,7 +435,7 @@ impl Player {
             let inner = Arc::clone(&inner);
             thread::Builder::new()
                 .name("playback-monitor".to_owned())
-                .spawn(move || inner.monitor())
+                .spawn(move || inner.watch())
                 .ok()
         };
         Self {
@@ -449,6 +491,29 @@ impl Player {
     #[must_use]
     pub fn stats(&self) -> DecodeStats {
         self.inner.stats()
+    }
+
+    /// Change what the editor hears — volume, mute, solo, a track's mute —
+    /// or put out the clip indication. Nothing here reaches an export.
+    pub fn monitor(&self, command: MonitorCommand) -> MonitorStatus {
+        self.inner.monitor(command)
+    }
+
+    /// The meter: peaks, short-term loudness, and whether anything clipped.
+    #[must_use]
+    pub fn levels(&self) -> MonitorLevels {
+        self.inner.buffer().levels()
+    }
+
+    /// Attach a filter chain at the insertion point, from the next chunk.
+    pub fn set_audio_insert(&self, insert: Arc<dyn AudioInsert>) {
+        *lock(&self.inner.insert) = insert;
+    }
+
+    /// How many times the audio output has been replaced.
+    #[must_use]
+    pub fn audio_switches(&self) -> u64 {
+        self.inner.audio_switches.load(Ordering::SeqCst)
     }
 
     /// The running video decoder processes.
@@ -689,7 +754,20 @@ impl Inner {
             speed: control.speed.factor(),
             loop_range: Arc::clone(&self.loop_range),
             ended: Arc::clone(&self.ended),
+            monitor: Arc::clone(&self.monitor),
+            insert: Arc::clone(&self.insert),
         }));
+    }
+
+    fn monitor(&self, command: MonitorCommand) -> MonitorStatus {
+        let mut settings = lock(&self.monitor);
+        settings.apply(command);
+        if command == MonitorCommand::ResetClip {
+            self.buffer().reset_clip();
+        }
+        self.buffer()
+            .set_gain(settings.volume.output_gain(settings.muted));
+        settings.status()
     }
 
     fn stop_feeder(&self, control: &mut Control) {
@@ -1061,13 +1139,19 @@ impl Inner {
         // Close the old output before opening the new one: a device that
         // failed may still hold the endpoint.
         *lock(&self.sink) = None;
+        *lock(&self.current_device) = self.default_device.current();
         let sink = open_sink(&self.slot, choice);
         if sink.sample_rate() != self.buffer().sample_rate() {
             let buffer = Arc::new(OutputBuffer::new(sink.sample_rate()));
+            let settings = lock(&self.monitor);
+            buffer.set_gain(settings.volume.output_gain(settings.muted));
+            drop(settings);
             *lock(&self.slot) = Some(Arc::clone(&buffer));
             *lock(&self.buffer) = buffer;
         }
         *lock(&self.sink) = Some(sink);
+        *lock(&self.audio_choice) = choice.clone();
+        self.audio_switches.fetch_add(1, Ordering::SeqCst);
         if playing {
             self.start_feeder(&mut control, t, generation);
         }
@@ -1075,9 +1159,14 @@ impl Inner {
 
     /// The end of playback, and a failed device, handled off the feeder's
     /// thread so that every state change goes through one lock.
-    fn monitor(self: Arc<Self>) {
+    fn watch(self: Arc<Self>) {
+        let mut last_device_check = Instant::now();
         while !self.closed.load(Ordering::SeqCst) {
             thread::sleep(MONITOR_PERIOD);
+            if last_device_check.elapsed() >= DEVICE_CHECK {
+                last_device_check = Instant::now();
+                self.follow_default_device();
+            }
             if self.ended.swap(false, Ordering::SeqCst) {
                 let mut control = lock(&self.control);
                 if control.state == PlaybackState::Playing {
@@ -1098,6 +1187,22 @@ impl Inner {
                 let status = self.status();
                 self.notify(&status);
             }
+        }
+    }
+
+    /// Move to the default output device when the user changes it — routine
+    /// on Windows, with Bluetooth headphones especially — without stopping.
+    fn follow_default_device(&self) {
+        let choice = lock(&self.audio_choice).clone();
+        if matches!(choice, AudioChoice::Silent) {
+            return;
+        }
+        let now = self.default_device.current();
+        let changed = now.is_some() && now != *lock(&self.current_device);
+        if changed {
+            self.switch_audio(&choice);
+            let status = self.status();
+            self.notify(&status);
         }
     }
 }

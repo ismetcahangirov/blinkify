@@ -1,5 +1,8 @@
 import type {
   DecodeStats,
+  MonitorCommand,
+  MonitorLevels,
+  MonitorStatus,
   PlaybackStatus,
   PlaybackUpdate,
   PreviewOpened,
@@ -31,6 +34,13 @@ interface PreviewState {
   path: string | null;
   error: string | null;
   stats: DecodeStats | null;
+  /** What the editor hears: volume, mute, solo. Never part of an export. */
+  monitoring: MonitorStatus;
+  /** The meter, as last read. */
+  levels: MonitorLevels | null;
+  /** Change monitoring, or put out the clip indication. */
+  monitor: (command: MonitorCommand) => Promise<void>;
+  refreshLevels: () => Promise<void>;
   /** Open `path` for preview, closing whatever was open. */
   open: (path: string, maxWidth: number, maxHeight: number) => Promise<void>;
   /** Close the open preview; resolves once its decoders have exited. */
@@ -59,6 +69,34 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
   path: null,
   error: null,
   stats: null,
+  monitoring: { volume: 1, muted: false, soloed: [], mutedTracks: [] },
+  levels: null,
+
+  monitor: async (command) => {
+    const { session } = get();
+    if (session === null) return;
+    try {
+      const monitoring = await invoke<MonitorStatus>("monitor", {
+        session,
+        command,
+      });
+      if (get().session === session) set({ monitoring });
+      if (command.type === "reset-clip") await get().refreshLevels();
+    } catch (error) {
+      set({ error: String(error) });
+    }
+  },
+
+  refreshLevels: async () => {
+    const { session } = get();
+    if (session === null) return;
+    try {
+      const levels = await invoke<MonitorLevels>("monitor_levels", { session });
+      if (get().session === session) set({ levels });
+    } catch {
+      // Closed between the check and the call.
+    }
+  },
 
   open: async (path, maxWidth, maxHeight) => {
     const mine = ++generation;
@@ -81,6 +119,8 @@ export const usePreviewStore = create<PreviewState>((set, get) => ({
         playback: opened.status,
         frameNumber: null,
         framePosition: null,
+        monitoring: { volume: 1, muted: false, soloed: [], mutedTracks: [] },
+        levels: null,
       });
     } catch (error) {
       if (mine !== generation) return;

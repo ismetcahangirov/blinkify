@@ -26,7 +26,8 @@ use blinkify_engine::orchestrator::{
     Flow, JobOptions, Limits, Orchestrator, Priority, SidecarCommand,
 };
 use blinkify_engine::playback::{
-    AudioChoice, PlaybackPlan, Player, PlayerOptions, ShownFrame, SourceMedia, TransportCommand,
+    AudioChoice, DefaultDevice, PlaybackPlan, Player, PlayerOptions, ShownFrame, SourceMedia,
+    TransportCommand,
 };
 use blinkify_engine::probe::{MediaInfo, Prober, Rational};
 
@@ -314,6 +315,7 @@ fn player_of(
             audio: AudioChoice::Silent,
             max_width,
             max_height,
+            default_device: DefaultDevice::System,
         },
     )
 }

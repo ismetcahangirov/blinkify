@@ -29,8 +29,8 @@ use blinkify_engine::orchestrator::{
 };
 use blinkify_engine::playback::timecode;
 use blinkify_engine::playback::{
-    AudioChoice, LoopRange, PlaybackPlan, PlaybackState, Player, PlayerOptions, PreviewSpeed,
-    Segment, ShownFrame, SourceMedia, TransportCommand,
+    AudioChoice, DefaultDevice, LoopRange, PlaybackPlan, PlaybackState, Player, PlayerOptions,
+    PreviewSpeed, Segment, ShownFrame, SourceMedia, TransportCommand,
 };
 use blinkify_engine::probe::Prober;
 use blinkify_engine::time::{self, Rounding};
@@ -64,6 +64,7 @@ fn capturing_player(orchestrator: &Orchestrator, plan: PlaybackPlan) -> (Player,
             },
             max_width: 160,
             max_height: 90,
+            default_device: DefaultDevice::System,
         },
     );
     (player, samples)
@@ -687,6 +688,7 @@ fn with_no_audio_output_playback_runs_in_silence() {
             audio: AudioChoice::Silent,
             max_width: 160,
             max_height: 90,
+            default_device: DefaultDevice::System,
         },
     );
     let status = player.command(TransportCommand::Play);

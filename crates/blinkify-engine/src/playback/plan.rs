@@ -26,6 +26,12 @@ use crate::time::{self, MICROSECONDS, Rounding};
 /// A position on the playback timeline, in microseconds from its start.
 pub type ProgramTime = i64;
 
+/// A track of the timeline, for monitoring: solo and mute are per track.
+pub type TrackId = u32;
+
+/// The track the main segments — the pictures and their own sound — are on.
+pub const MAIN_TRACK: TrackId = 0;
+
 /// The frame rate timecode is counted in when a plan has no video.
 const DEFAULT_FRAME_RATE: Rational = Rational { num: 30, den: 1 };
 
@@ -72,6 +78,8 @@ pub enum PlanError {
     Overlap(usize),
     #[error("segment {0} ends before it starts")]
     Inverted(usize),
+    #[error("track {0} is used twice")]
+    DuplicateTrack(TrackId),
 }
 
 impl SourceMedia {
@@ -247,6 +255,9 @@ impl Segment {
 #[derive(Debug, Clone)]
 pub struct PlaybackPlan {
     segments: Vec<Segment>,
+    /// Further tracks of sound only — detached audio, music — mixed with the
+    /// main segments' own.
+    audio_tracks: Vec<AudioTrack>,
     /// The rate timecode is counted in.
     pub frame_rate: Rational,
 }
@@ -263,18 +274,7 @@ impl PlaybackPlan {
         if segments.is_empty() {
             return Err(PlanError::Empty);
         }
-        for (i, segment) in segments.iter().enumerate() {
-            if segment.source_out <= segment.source_in {
-                return Err(PlanError::Inverted(i));
-            }
-            if i > 0
-                && segments
-                    .get(i - 1)
-                    .is_some_and(|previous| segment.timeline_start < previous.timeline_end())
-            {
-                return Err(PlanError::Overlap(i));
-            }
-        }
+        check(&segments)?;
         let frame_rate = segments
             .iter()
             .find_map(|segment| segment.source.video.as_ref())
@@ -289,8 +289,35 @@ impl PlaybackPlan {
             .unwrap_or(DEFAULT_FRAME_RATE);
         Ok(Self {
             segments,
+            audio_tracks: Vec::new(),
             frame_rate,
         })
+    }
+
+    /// Add a track of sound only.
+    ///
+    /// # Errors
+    ///
+    /// Its segments overlap or run backwards, or its id is taken.
+    pub fn with_audio_track(mut self, track: AudioTrack) -> Result<Self, PlanError> {
+        if track.id == MAIN_TRACK || self.audio_tracks.iter().any(|t| t.id == track.id) {
+            return Err(PlanError::DuplicateTrack(track.id));
+        }
+        check(&track.segments)?;
+        self.audio_tracks.push(track);
+        Ok(self)
+    }
+
+    /// Every track that carries sound, main first, as `(id, segments)`.
+    #[must_use]
+    pub fn sound_tracks(&self) -> Vec<(TrackId, &[Segment])> {
+        std::iter::once((MAIN_TRACK, self.segments.as_slice()))
+            .chain(
+                self.audio_tracks
+                    .iter()
+                    .map(|track| (track.id, track.segments.as_slice())),
+            )
+            .collect()
     }
 
     /// A whole file from its first frame to its end.
@@ -313,22 +340,23 @@ impl PlaybackPlan {
         &self.segments
     }
 
-    /// The end of the last segment.
+    /// The end of the last segment on any track.
     #[must_use]
     pub fn duration(&self) -> ProgramTime {
-        self.segments.last().map_or(0, Segment::timeline_end)
+        self.sound_tracks()
+            .iter()
+            .filter_map(|(_, segments)| segments.last().map(Segment::timeline_end))
+            .max()
+            .unwrap_or(0)
     }
 
-    /// The segment playing at `t`, if `t` is not in a gap.
+    /// The main segment playing at `t`, if `t` is not in a gap.
     #[must_use]
     pub fn segment_at(&self, t: ProgramTime) -> Option<(usize, &Segment)> {
-        let after = self.segments.partition_point(|s| s.timeline_start <= t);
-        let i = after.checked_sub(1)?;
-        let segment = self.segments.get(i)?;
-        segment.contains(t).then_some((i, segment))
+        segment_at(&self.segments, t)
     }
 
-    /// The first segment starting after `t`.
+    /// The first main segment starting after `t`.
     #[must_use]
     pub fn next_segment_after(&self, t: ProgramTime) -> Option<(usize, &Segment)> {
         let i = self.segments.partition_point(|s| s.timeline_start <= t);
@@ -340,15 +368,58 @@ impl PlaybackPlan {
         self.segments.get(i)
     }
 
-    /// The next timeline position after `t` where what plays changes: a
-    /// segment's end, or the start of the next one after a gap.
+    /// The next timeline position after `t` where what plays changes on any
+    /// track: a segment's end, or the start of the next one after a gap.
     #[must_use]
     pub fn next_boundary(&self, t: ProgramTime) -> ProgramTime {
-        match self.segment_at(t) {
-            Some((_, segment)) => segment.timeline_end(),
-            None => self
-                .next_segment_after(t)
-                .map_or(self.duration(), |(_, s)| s.timeline_start),
+        let end = self.duration();
+        self.sound_tracks()
+            .iter()
+            .map(|(_, segments)| next_boundary(segments, t, end))
+            .min()
+            .unwrap_or(end)
+    }
+}
+
+/// A track of sound only.
+#[derive(Debug, Clone)]
+pub struct AudioTrack {
+    pub id: TrackId,
+    pub segments: Vec<Segment>,
+}
+
+/// Segments in order, none overlapping, none backwards.
+fn check(segments: &[Segment]) -> Result<(), PlanError> {
+    for (i, segment) in segments.iter().enumerate() {
+        if segment.source_out <= segment.source_in {
+            return Err(PlanError::Inverted(i));
+        }
+        if i > 0
+            && segments
+                .get(i - 1)
+                .is_some_and(|previous| segment.timeline_start < previous.timeline_end())
+        {
+            return Err(PlanError::Overlap(i));
         }
     }
+    Ok(())
+}
+
+/// The segment of `segments` playing at `t`, if `t` is not in a gap.
+#[must_use]
+pub fn segment_at(segments: &[Segment], t: ProgramTime) -> Option<(usize, &Segment)> {
+    let after = segments.partition_point(|s| s.timeline_start <= t);
+    let i = after.checked_sub(1)?;
+    let segment = segments.get(i)?;
+    segment.contains(t).then_some((i, segment))
+}
+
+/// The next position after `t` where what `segments` plays changes, or `end`.
+#[must_use]
+pub fn next_boundary(segments: &[Segment], t: ProgramTime, end: ProgramTime) -> ProgramTime {
+    if let Some((_, segment)) = segment_at(segments, t) {
+        return segment.timeline_end();
+    }
+    let i = segments.partition_point(|s| s.timeline_start <= t);
+    segments.get(i).map_or(end, |s| s.timeline_start)
 }

@@ -12,6 +12,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 use std::thread;
 use std::time::Duration;
 
+use blinkify_engine::audio::MonitorLevels;
 use blinkify_engine::cache::Cache;
 use blinkify_engine::capability;
 use blinkify_engine::filmstrip::{Filmstrip, Filmstrips};
@@ -19,8 +20,8 @@ use blinkify_engine::keyframes::{self, IndexProgress, KeyframeIndex};
 use blinkify_engine::orchestrator::CancelToken;
 use blinkify_engine::orchestrator::{JobProgress, Limits, Orchestrator};
 use blinkify_engine::playback::{
-    AudioChoice, DecodeStats, PlaybackPlan, PlaybackStatus, Player, PlayerOptions, SourceMedia,
-    TransportCommand,
+    AudioChoice, DecodeStats, DefaultDevice, MonitorCommand, MonitorStatus, PlaybackPlan,
+    PlaybackStatus, Player, PlayerOptions, SourceMedia, TransportCommand,
 };
 use blinkify_engine::probe::{MediaInfo, Prober};
 use blinkify_engine::proxy::{Proxies, Proxy, ProxyReason, proxy_advice};
@@ -645,6 +646,7 @@ pub fn open_preview(
             audio: AudioChoice::Device,
             max_width,
             max_height,
+            default_device: DefaultDevice::System,
         },
     );
     let session = engine.next_preview.fetch_add(1, Ordering::Relaxed);
@@ -707,6 +709,47 @@ pub fn close_preview(engine: tauri::State<'_, MediaEngine>, session: u32) {
 #[allow(clippy::needless_pass_by_value)]
 pub fn close_all_previews(engine: tauri::State<'_, MediaEngine>) {
     engine.close_all_previews();
+}
+
+/// Change what the editor hears in a preview session — volume, mute, a
+/// track's solo or mute — or put out the clip indication. Monitoring only:
+/// nothing here reaches an export.
+///
+/// # Errors
+///
+/// No such session.
+#[tauri::command]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn monitor(
+    engine: tauri::State<'_, MediaEngine>,
+    session: u32,
+    command: MonitorCommand,
+) -> Result<MonitorStatus, String> {
+    engine
+        .preview(session)
+        .map(|player| player.monitor(command))
+        .ok_or_else(|| format!("no preview session {session}"))
+}
+
+/// The meter of a preview session: peaks, short-term loudness, clip.
+///
+/// # Errors
+///
+/// No such session.
+#[tauri::command]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn monitor_levels(
+    engine: tauri::State<'_, MediaEngine>,
+    session: u32,
+) -> Result<MonitorLevels, String> {
+    engine
+        .preview(session)
+        .map(|player| player.levels())
+        .ok_or_else(|| format!("no preview session {session}"))
 }
 
 /// Decode statistics for a preview session, for the diagnostic overlay.

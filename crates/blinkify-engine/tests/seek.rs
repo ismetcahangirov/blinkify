@@ -29,7 +29,8 @@ use blinkify_engine::orchestrator::{
     CancelToken, Flow, JobOptions, Limits, Orchestrator, Priority, SidecarCommand,
 };
 use blinkify_engine::playback::{
-    AudioChoice, PlaybackPlan, Player, PlayerOptions, ShownFrame, SourceMedia, TransportCommand,
+    AudioChoice, DefaultDevice, PlaybackPlan, Player, PlayerOptions, ShownFrame, SourceMedia,
+    TransportCommand,
 };
 use blinkify_engine::probe::{MediaInfo, Prober};
 use blinkify_engine::proxy::Proxies;
@@ -69,6 +70,7 @@ fn player(orchestrator: &Orchestrator, source: SourceMedia) -> Player {
             audio: AudioChoice::Silent,
             max_width: 160,
             max_height: 90,
+            default_device: DefaultDevice::System,
         },
     )
 }
@@ -298,6 +300,7 @@ fn prefetch_while_scrubbing_stays_inside_its_bound() {
             audio: AudioChoice::Silent,
             max_width: 1920,
             max_height: 1080,
+            default_device: DefaultDevice::System,
         },
     );
     let mut worst = 0;
@@ -424,6 +427,7 @@ fn seek_latency_is_imperceptible_on_dense_keyframes_and_bounded_on_sparse() {
                 audio: AudioChoice::Silent,
                 max_width: 960,
                 max_height: 540,
+                default_device: DefaultDevice::System,
             },
         );
         let _ = settle(&player);

@@ -123,3 +123,72 @@
   border: var(--border-width) solid var(--warning);
   border-radius: var(--radius-sm);
 }
+
+/* #31: monitoring. Volume and meter share a row under the transport. */
+.player__monitor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.player__volume {
+  width: var(--space-16);
+}
+
+.player__meter {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: var(--space-2);
+  row-gap: var(--space-1);
+  align-items: center;
+}
+
+.player__meter-track {
+  grid-column: 1;
+  height: var(--space-1);
+  overflow: hidden;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.player__meter-bar {
+  height: 100%;
+}
+
+.player__meter-bar--ok {
+  background: var(--success);
+}
+
+.player__meter-bar--loud {
+  background: var(--warning);
+}
+
+.player__meter-bar--hot {
+  background: var(--danger);
+}
+
+.player__loudness {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.player__clip {
+  padding: 0 var(--space-1);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  color: var(--text-disabled);
+  background: transparent;
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.player__clip--lit {
+  color: var(--text-primary);
+  cursor: pointer;
+  background: var(--danger);
+  border-color: var(--danger);
+}
