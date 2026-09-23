@@ -5,7 +5,7 @@
     "tools"
   ],
   "totals": {
-    "files": 101,
+    "files": 100,
     "tests": 11,
     "violations": 0
   },
@@ -74,14 +74,13 @@
       ]
     },
     "tools": {
-      "files": 24,
+      "files": 23,
       "tests": 0,
       "untested": [
         "tools/apply-labels.mjs",
         "tools/check-links.mjs",
         "tools/colour-gate-test.mjs",
         "tools/colour-gate.mjs",
-        "tools/corpus/generate.mjs",
         "tools/crate-boundaries-test.mjs",
         "tools/crate-boundaries.mjs",
         "tools/design-token-gate-test.mjs",
@@ -1244,15 +1243,6 @@
       "hasNoDependents": true
     },
     "tools/colour-gate.mjs": {
-      "workspace": "tools",
-      "layer": "tooling",
-      "isTest": false,
-      "dependsOn": [],
-      "dependedOnBy": [],
-      "coveredByTests": [],
-      "hasNoDependents": true
-    },
-    "tools/corpus/generate.mjs": {
       "workspace": "tools",
       "layer": "tooling",
       "isTest": false,
