@@ -90,3 +90,36 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* #29: the player's own playhead, the length of the timeline. */
+.player__scrub {
+  width: 100%;
+}
+
+/* A seek still on its way. In a corner, over the frame it will replace, so
+   the frozen picture is never mistaken for the answer. */
+.player__resolving {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  color: var(--text-primary);
+  background: var(--elevation-3-background);
+  border-radius: var(--radius-sm);
+}
+
+/* #26: the picture is a proxy. Persistent, beside the zone title, in the
+   warning role: it is a statement about fidelity, not decoration. */
+.player__badge {
+  margin-right: auto;
+  margin-left: var(--space-2);
+  padding: 0 var(--space-1);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  color: var(--warning);
+  border: var(--border-width) solid var(--warning);
+  border-radius: var(--radius-sm);
+}

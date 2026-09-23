@@ -189,6 +189,15 @@ impl FrameRing {
         frame
     }
 
+    /// Take the earliest frame, whatever the clock: for a consumer that keeps
+    /// every frame rather than presenting the due one — a scrub cache, a
+    /// single-frame decode.
+    pub fn pop(&self) -> Option<VideoFrame> {
+        let frame = self.lock().frames.pop_front();
+        self.changed.notify_all();
+        frame
+    }
+
     /// The earliest buffered timestamp, if any.
     #[must_use]
     pub fn earliest_pts(&self) -> Option<i64> {

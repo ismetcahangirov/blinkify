@@ -4,7 +4,8 @@ import { useEffect } from "react";
 /**
  * The transport's keys, as `docs/design/keyboard-shortcuts.md` documents them.
  * CapCut's where CapCut has one: Space plays and pauses, the arrow keys step a
- * frame. The full map is #38's.
+ * frame. The shuttle keys are the J/K/L every editor shares, less reverse
+ * play, which v1 does not have. The full map is #38's.
  */
 export const TRANSPORT_SHORTCUTS = {
   playPause: "Space",
@@ -12,18 +13,47 @@ export const TRANSPORT_SHORTCUTS = {
   nextFrame: "→",
   jumpToStart: "Home",
   jumpToEnd: "End",
+  shuttleBack: "J",
+  shuttlePause: "K",
+  shuttleForward: "L",
 } as const;
 
+/** How far J moves back, in timeline frames: about a second. */
+export function framesPerSecond(frameRate: {
+  num: number;
+  den: number;
+}): number {
+  return frameRate.den > 0
+    ? Math.max(1, Math.round(frameRate.num / frameRate.den))
+    : 30;
+}
+
 /** The command a key press means, or `null` for a key the transport ignores. */
-export function commandForKey(event: {
-  key: string;
-  ctrlKey: boolean;
-  altKey: boolean;
-  metaKey: boolean;
-  shiftKey: boolean;
-}): TransportCommand | null {
+export function commandForKey(
+  event: {
+    key: string;
+    ctrlKey: boolean;
+    altKey: boolean;
+    metaKey: boolean;
+    shiftKey: boolean;
+  },
+  context: { playing: boolean; secondInFrames: number } = {
+    playing: false,
+    secondInFrames: 30,
+  },
+): TransportCommand | null {
   if (event.ctrlKey || event.altKey || event.metaKey) return null;
-  switch (event.key) {
+  switch (event.key.length === 1 ? event.key.toLowerCase() : event.key) {
+    case "k":
+      return { type: "pause" };
+    case "l":
+      // Play; pressed again while playing, double speed.
+      return context.playing
+        ? { type: "set-speed", speed: "double" }
+        : { type: "play" };
+    case "j":
+      // No reverse play in v1: back a second, and again while held.
+      return { type: "step", frames: -context.secondInFrames };
     case " ":
       return { type: "toggle" };
     case "ArrowLeft":
@@ -65,12 +95,16 @@ function typingInto(target: EventTarget | null): boolean {
 export function useTransportShortcuts(
   enabled: boolean,
   send: (command: TransportCommand) => void,
+  context: () => { playing: boolean; secondInFrames: number } = () => ({
+    playing: false,
+    secondInFrames: 30,
+  }),
 ): void {
   useEffect(() => {
     if (!enabled) return undefined;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || typingInto(event.target)) return;
-      const command = commandForKey(event);
+      const command = commandForKey(event, context());
       if (!command) return;
       event.preventDefault();
       if (event.repeat && command.type === "toggle") return;
@@ -80,5 +114,5 @@ export function useTransportShortcuts(
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [enabled, send]);
+  }, [enabled, send, context]);
 }

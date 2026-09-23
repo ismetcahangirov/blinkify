@@ -149,6 +149,40 @@ pub struct Proxy {
     pub segments: Vec<ProxySegment>,
 }
 
+impl Proxy {
+    /// The proxy's segments as one input: an FFmpeg concat list beside them,
+    /// written the first time it is asked for. Relative names, so a user
+    /// directory with a quote in it needs no escaping. The list is text, not
+    /// media, and lives with the proxy it describes.
+    ///
+    /// # Errors
+    ///
+    /// The proxy has no segments, or the list cannot be written.
+    pub fn concat_list(&self) -> std::io::Result<PathBuf> {
+        let dir = self
+            .segments
+            .first()
+            .and_then(|segment| segment.file.parent())
+            .ok_or_else(|| std::io::Error::other("the proxy has no segments"))?;
+        let list = dir.join("segments.ffconcat");
+        if !list.is_file() {
+            let mut text = String::from("ffconcat version 1.0\n");
+            for segment in &self.segments {
+                let name = segment
+                    .file
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .ok_or_else(|| std::io::Error::other("a proxy segment has no name"))?;
+                text.push_str("file ");
+                text.push_str(name);
+                text.push('\n');
+            }
+            fs::write(&list, text)?;
+        }
+        Ok(list)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -311,6 +345,15 @@ impl Proxies {
             .write(&manifest, &bytes)
             .map_err(ProxyError::Io)?;
         Ok(proxy)
+    }
+
+    /// The finished proxy of `source`, if one was made. Never generates.
+    ///
+    /// # Errors
+    ///
+    /// The source cannot be read to find its proxy.
+    pub fn find(&self, source: &Path) -> Result<Option<Proxy>, ProxyError> {
+        Ok(read_manifest(&self.directory(source)?.join("proxy.json")))
     }
 
     /// Delete a proxy, finished or partial.

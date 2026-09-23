@@ -182,6 +182,7 @@ fn frames_carry_the_streams_own_timestamps() {
                     height: 36,
                 },
                 max_frames: None,
+                concat: false,
             },
         );
         let decoded: Vec<i64> = frames.iter().map(|f| f.pts).collect();
@@ -220,6 +221,7 @@ fn a_decode_starts_at_exactly_the_requested_frame_and_matches_it_by_content() {
             first_pts: target,
             size: FrameSize { width, height },
             max_frames: Some(1),
+            concat: false,
         },
     );
     let [frame] = frames.as_slice() else {
@@ -253,6 +255,7 @@ fn a_throttled_consumer_bounds_memory_and_stalls_the_decoder() {
             first_pts: i64::MIN,
             size: FrameSize { width, height },
             max_frames: None,
+            concat: false,
         },
         Arc::clone(&ring),
     );

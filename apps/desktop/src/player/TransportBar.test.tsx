@@ -26,6 +26,8 @@ const PAUSED: PlaybackStatus = {
   speed: "normal",
   loopRange: null,
   audio: { kind: "device", name: "Speakers" },
+  resolving: false,
+  proxy: false,
 };
 
 function renderBar() {
@@ -93,7 +95,7 @@ describe("TransportBar", () => {
       "00:00:00:00 / 00:00:04:00",
     );
     act(() => {
-      usePreviewStore.getState().showFrame(35);
+      usePreviewStore.getState().showFrame(35, 1_166_667);
     });
     expect(screen.getByTestId("timecode")).toHaveTextContent(
       "00:00:01:05 / 00:00:04:00",
@@ -145,6 +147,21 @@ describe("the transport keys", () => {
     expect(commandForKey(key("End"))).toEqual({ type: "jump-to-end" });
     expect(commandForKey(key("ArrowRight", { ctrlKey: true }))).toBeNull();
     expect(commandForKey(key("a"))).toBeNull();
+  });
+
+  it("shuttle with J, K and L — back a second, pause, play and then faster", () => {
+    const paused = { playing: false, secondInFrames: 30 };
+    const playing = { playing: true, secondInFrames: 25 };
+    expect(commandForKey(key("k"), playing)).toEqual({ type: "pause" });
+    expect(commandForKey(key("l"), paused)).toEqual({ type: "play" });
+    expect(commandForKey(key("L"), playing)).toEqual({
+      type: "set-speed",
+      speed: "double",
+    });
+    expect(commandForKey(key("j"), playing)).toEqual({
+      type: "step",
+      frames: -25,
+    });
   });
 
   function Harness({ send }: { send: (command: object) => void }) {

@@ -24,6 +24,7 @@ pub mod orchestrator;
 pub mod playback;
 pub mod probe;
 pub mod proxy;
+pub mod seek;
 pub mod sidecar;
 pub mod tier;
 pub mod time;

@@ -27,6 +27,9 @@ How Blinkify is put together and why the structure holds under change.
 - [`playback.md`](./playback.md) — the audio master clock, anchors and
   generations, seamless clip boundaries, exact frame steps, the transport, and
   playback without an audio device (#28)
+- [`seek-and-scrub.md`](./seek-and-scrub.md) — the shared two-stage seek,
+  coalesced scrubbing with a bounded prefetch cache, the resolving indication,
+  and previewing from a proxy without changing the frame shown (#29)
 
 ## What does not belong here
 

@@ -30,6 +30,8 @@ const PLAYBACK: PlaybackStatus = {
   speed: "normal",
   loopRange: null,
   audio: { kind: "device", name: "Speakers" },
+  resolving: false,
+  proxy: false,
 };
 
 const OPEN = { status: "open" as const, session: 7, playback: PLAYBACK };
@@ -70,6 +72,36 @@ describe("PlayerZone", () => {
     expect(screen.getByTestId("preview-canvas")).toBeInTheDocument();
     expect(
       screen.getByRole("toolbar", { name: "Transport" }),
+    ).toBeInTheDocument();
+  });
+
+  it("says when the frame is still on its way, and when it is a proxy", () => {
+    usePreviewStore.setState({
+      ...OPEN,
+      playback: { ...PLAYBACK, resolving: true, proxy: true },
+    });
+    render(
+      <TooltipProvider>
+        <PlayerZone />
+      </TooltipProvider>,
+    );
+    expect(screen.getByTestId("resolving")).toHaveTextContent(
+      "Finding the frame…",
+    );
+    expect(screen.getByTestId("proxy-badge")).toHaveTextContent("Proxy");
+  });
+
+  it("shows neither once the frame is up and the picture is the file", () => {
+    usePreviewStore.setState(OPEN);
+    render(
+      <TooltipProvider>
+        <PlayerZone />
+      </TooltipProvider>,
+    );
+    expect(screen.queryByTestId("resolving")).toBeNull();
+    expect(screen.queryByTestId("proxy-badge")).toBeNull();
+    expect(
+      screen.getByRole("slider", { name: "Playhead" }),
     ).toBeInTheDocument();
   });
 
