@@ -9,11 +9,7 @@ export type DecodeStats = { bufferedFrames: number, capacityFrames: number, buff
  */
 droppedFrames: number, presentedFrames: number, decodeFps: number, 
 /**
- * Times the decoder was restarted ahead of a clock it could not keep up
+ * Times a decoder was restarted ahead of a clock it could not keep up
  * with.
  */
-resyncs: number, 
-/**
- * The decoder has delivered its last frame and it has been shown.
- */
-ended: boolean, error: string | null, };
+resyncs: number, error: string | null, };

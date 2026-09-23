@@ -127,3 +127,9 @@ jobs:
       # within 64 MB. Real time by construction, so it cannot run on a PR.
       - name: Ten minutes of 1080p30 preview with stable memory (#27)
         run: cargo test -p blinkify-engine --test preview -- --ignored ten_minutes_of_1080p30_plays_at_full_rate_with_stable_memory --nocapture
+
+      # #28: over ten minutes of playback against the audio clock, no frame
+      # is chosen more than one frame behind the sound, and the clock ends
+      # within a frame of the audio actually consumed.
+      - name: A/V drift under a frame over ten minutes (#28)
+        run: cargo test -p blinkify-engine --test playback -- --ignored av_drift_stays_under_a_frame_over_ten_minutes --nocapture

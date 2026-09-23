@@ -14,12 +14,14 @@ use std::time::Duration;
 
 use blinkify_engine::cache::Cache;
 use blinkify_engine::capability;
-use blinkify_engine::decode::wire_frame;
 use blinkify_engine::filmstrip::{Filmstrip, Filmstrips};
 use blinkify_engine::keyframes::{self, IndexProgress, KeyframeIndex};
 use blinkify_engine::orchestrator::CancelToken;
 use blinkify_engine::orchestrator::{JobProgress, Limits, Orchestrator};
-use blinkify_engine::preview::{DecodeStats, PreviewInfo, PreviewSession};
+use blinkify_engine::playback::{
+    AudioChoice, DecodeStats, PlaybackPlan, PlaybackStatus, Player, PlayerOptions, SourceMedia,
+    TransportCommand,
+};
 use blinkify_engine::probe::{MediaInfo, Prober};
 use blinkify_engine::proxy::{Proxies, Proxy, ProxyReason, proxy_advice};
 use blinkify_engine::waveform::{Peaks, WaveformStatus, Waveforms};
@@ -70,6 +72,11 @@ pub const FRAME_SCHEME: &str = "frame";
 /// that a closed session is noticed promptly.
 const FRAME_WAIT: Duration = Duration::from_millis(50);
 
+/// Transport state changes — play, pause, the end, a speed, a loop, a new audio
+/// device — with a [`PlaybackUpdate`] payload. Positions arrive with frames,
+/// not here.
+pub const PLAYBACK_EVENT: &str = "media://playback";
+
 /// How long shutdown waits for sidecar processes to exit before the window
 /// closes anyway. The job object guarantees they die with the process even if
 /// this runs out.
@@ -88,7 +95,7 @@ pub struct MediaEngine {
     /// Files whose index is being completed in the background.
     indexing: Mutex<HashSet<PathBuf>>,
     waveforms: Arc<Mutex<HashMap<(PathBuf, u32), Waveform>>>,
-    previews: Mutex<HashMap<u32, Arc<PreviewSession>>>,
+    previews: Mutex<HashMap<u32, Arc<Player>>>,
     next_preview: AtomicU32,
 }
 
@@ -216,7 +223,7 @@ impl MediaEngine {
         }
     }
 
-    fn preview(&self, session: u32) -> Option<Arc<PreviewSession>> {
+    fn preview(&self, session: u32) -> Option<Arc<Player>> {
         self.previews
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
@@ -582,17 +589,26 @@ fn forward_to(app: AppHandle, event: &'static str) -> impl FnMut(JobProgress) + 
 }
 
 /// A preview session, as the renderer receives it when one opens.
-#[derive(Debug, Clone, Copy, Serialize, TS)]
+#[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct PreviewOpened {
     pub session: u32,
-    pub info: PreviewInfo,
+    pub status: PlaybackStatus,
 }
 
-/// Open a preview of `path` sized for a `max_width` by `max_height` canvas,
-/// and start it playing from the beginning. Frames are then fetched from
-/// [`FRAME_SCHEME`], never returned through IPC.
+/// The payload of [`PLAYBACK_EVENT`].
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PlaybackUpdate {
+    pub session: u32,
+    pub status: PlaybackStatus,
+}
+
+/// Open a preview of `path` sized for a `max_width` by `max_height` surface,
+/// paused on its first frame. Frames are then fetched from [`FRAME_SCHEME`],
+/// never returned through IPC; transport goes through [`transport`].
 ///
 /// # Errors
 ///
@@ -602,6 +618,7 @@ pub struct PreviewOpened {
 // `updater::pending_update`.
 #[allow(clippy::needless_pass_by_value)]
 pub fn open_preview(
+    app: AppHandle,
     engine: tauri::State<'_, MediaEngine>,
     path: PathBuf,
     max_width: u32,
@@ -609,26 +626,53 @@ pub fn open_preview(
 ) -> Result<PreviewOpened, String> {
     let info = engine.prober()?.probe(&path).map_err(|e| e.to_string())?;
     let index = engine.index(&path, &info)?;
-    let session = PreviewSession::open(
+    let source = SourceMedia::new(&path, info, index).map_err(|e| e.to_string())?;
+    let plan = PlaybackPlan::whole(Arc::new(source)).map_err(|e| e.to_string())?;
+    let player = Player::new(
         engine.orchestrator()?.clone(),
-        &path,
-        &info,
-        index,
-        max_width,
-        max_height,
-    )
-    .map_err(|e| e.to_string())?;
-    session.play_from_start().map_err(|e| e.to_string())?;
+        plan,
+        &PlayerOptions {
+            audio: AudioChoice::Device,
+            max_width,
+            max_height,
+        },
+    );
+    let session = engine.next_preview.fetch_add(1, Ordering::Relaxed);
+    player.set_listener(move |status| {
+        let _ = app.emit(PLAYBACK_EVENT, PlaybackUpdate { session, status });
+    });
     let opened = PreviewOpened {
-        session: engine.next_preview.fetch_add(1, Ordering::Relaxed),
-        info: session.info(),
+        session,
+        status: player.status(),
     };
     engine
         .previews
         .lock()
         .unwrap_or_else(PoisonError::into_inner)
-        .insert(opened.session, Arc::new(session));
+        .insert(session, Arc::new(player));
     Ok(opened)
+}
+
+/// Play, pause, step, seek, change speed or loop a preview session, and
+/// return where it is afterwards. One command for the whole transport keeps
+/// the IPC surface coarse.
+///
+/// # Errors
+///
+/// No such session.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn transport(
+    engine: tauri::State<'_, MediaEngine>,
+    session: u32,
+    command: TransportCommand,
+) -> Result<PlaybackStatus, String> {
+    engine
+        .preview(session)
+        .map(|player| player.command(command))
+        .ok_or_else(|| format!("no preview session {session}"))
 }
 
 /// Close a preview session. Returns once its decoder process has exited.
@@ -683,7 +727,7 @@ fn frame_request(path: &str) -> Option<(u32, u64)> {
 }
 
 /// Answer one request on [`FRAME_SCHEME`]: `200` with the frame to show now,
-/// in the wire format of `blinkify_engine::decode::wire_frame`; `204` when no
+/// in the wire format of `blinkify_engine::playback::ShownFrame::wire`; `204` when no
 /// newer frame became due within [`FRAME_WAIT`]; `404` for an unknown or
 /// closed session. Blocks for up to [`FRAME_WAIT`], so it is called off the
 /// webview's thread.
@@ -710,7 +754,7 @@ pub fn serve_frame(engine: &MediaEngine, path: &str) -> Response<Vec<u8>> {
         return respond(StatusCode::NOT_FOUND, Vec::new());
     };
     match preview.next_frame(after, FRAME_WAIT) {
-        Some((seq, frame)) => respond(StatusCode::OK, wire_frame(seq, &frame)),
+        Some(frame) => respond(StatusCode::OK, frame.wire()),
         None => respond(StatusCode::NO_CONTENT, Vec::new()),
     }
 }

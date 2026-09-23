@@ -8,6 +8,11 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+# Audio output through the operating system's low-latency path — WASAPI on
+# Windows (#28). Audio is the playback clock, so this is what every preview
+# frame is timed against. Apache-2.0, RustAudio, released monthly. No default
+# features: no ASIO, JACK or PulseAudio.
+cpal = "0.18.2"
 serde = { workspace = true }
 serde_json = { workspace = true }
 # SHA-256 for the content key of on-disk caches (#24). RustCrypto; already in

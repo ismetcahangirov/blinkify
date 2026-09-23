@@ -20,10 +20,14 @@
 //!   priority, a chunk at a time, and never blocks the interface.
 //! - **It persists** in the content-keyed cache, so it survives a restart and
 //!   is rebuilt when the file changes.
+//! - **It knows every frame, not only the keyframes.** The same packet listing
+//!   gives the presentation timestamp of every frame that is shown, so frame
+//!   stepping (#28) and seeking a variable frame rate source (#29) move by
+//!   real timestamps, never by a frame number times a nominal duration.
 
 pub mod nal;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
@@ -51,7 +55,12 @@ const LEADING_WINDOW: u32 = 16;
 
 /// The cache format version. A change to [`Stored`] bumps it, and an entry
 /// with any other version is ignored and rebuilt rather than misread.
-const FORMAT_VERSION: u32 = 1;
+const FORMAT_VERSION: u32 = 2;
+
+/// How far before a region's limit its frame list is trusted. Packets arrive
+/// in decode order, so a frame shown just before the limit can be decoded
+/// just after it and never read; reordering never reaches this far.
+const REORDER_MARGIN_SECONDS: f64 = 2.0;
 
 /// Whether a cut at a keyframe can depend on the previous GOP.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -175,6 +184,13 @@ struct StreamIndex {
     /// it is implied: nothing precedes the first packet.
     entries: BTreeMap<i64, Entry>,
     coverage: Coverage,
+    /// The presentation timestamp of every shown frame read so far — packets
+    /// the container marks as discarded (an edit list's pre-roll) are not
+    /// shown and are not here.
+    frames: BTreeSet<i64>,
+    /// Where `frames` is complete. Narrower than `coverage` at a region's
+    /// end, by [`REORDER_MARGIN_SECONDS`].
+    frame_coverage: Coverage,
 }
 
 impl StreamIndex {
@@ -224,6 +240,8 @@ struct Packet {
     pos: Option<u64>,
     size: u64,
     key: bool,
+    /// The container says the packet is decoded but not shown.
+    discard: bool,
 }
 
 /// `pts=…|dts=…|size=…|pos=…|flags=K__`, one packet per line.
@@ -237,6 +255,7 @@ fn parse_packets(text: &str) -> Vec<Packet> {
                 pos: None,
                 size: 0,
                 key: false,
+                discard: false,
             };
             for field in line.trim().split('|') {
                 let Some((key, value)) = field.split_once('=') else {
@@ -247,7 +266,10 @@ fn parse_packets(text: &str) -> Vec<Packet> {
                     "dts" => packet.dts = value.parse().ok(),
                     "pos" => packet.pos = value.parse().ok(),
                     "size" => packet.size = value.parse().unwrap_or(0),
-                    "flags" => packet.key = value.starts_with('K'),
+                    "flags" => {
+                        packet.key = value.starts_with('K');
+                        packet.discard = value.contains('D');
+                    }
                     _ => {}
                 }
             }
@@ -263,6 +285,8 @@ struct Region {
     reached_end: bool,
     /// The requested end, in ticks.
     limit: i64,
+    /// How far before `limit` the frame list is complete.
+    margin: i64,
 }
 
 /// The keyframe index of every video stream of one file.
@@ -330,6 +354,8 @@ impl KeyframeIndex {
                     end: None,
                     entries: BTreeMap::new(),
                     coverage: Coverage::default(),
+                    frames: BTreeSet::new(),
+                    frame_coverage: Coverage::default(),
                 };
                 let duration = stream.duration_seconds.or(info.container.duration_seconds);
                 index.end = duration.map(|seconds| index.seconds_to_ticks(seconds));
@@ -403,6 +429,46 @@ impl KeyframeIndex {
                 Some(end) => from = end,
             }
         }
+    }
+
+    /// The frame shown at `pts`: the newest frame whose presentation
+    /// timestamp is at or before it. `None` before the first frame.
+    ///
+    /// # Errors
+    ///
+    /// As [`KeyframeIndex::at_or_before`].
+    pub fn frame_at_or_before(&self, stream: u32, pts: i64) -> Result<Option<i64>, IndexError> {
+        self.ensure_frames_covered(stream, pts)?;
+        Ok(self.lock(stream)?.frames.range(..=pts).next_back().copied())
+    }
+
+    /// The first frame shown strictly after `pts`. `None` after the last.
+    ///
+    /// # Errors
+    ///
+    /// As [`KeyframeIndex::at_or_before`].
+    pub fn frame_after(&self, stream: u32, pts: i64) -> Result<Option<i64>, IndexError> {
+        let mut from = pts.saturating_add(1);
+        loop {
+            self.ensure_frames_covered(stream, from)?;
+            let index = self.lock(stream)?;
+            if let Some(next) = index.frames.range(pts.saturating_add(1)..).next() {
+                return Ok(Some(*next));
+            }
+            match index.frame_coverage.end_of_range(from) {
+                Some(i64::MAX) | None => return Ok(None),
+                Some(end) => from = end,
+            }
+        }
+    }
+
+    /// The last frame shown strictly before `pts`. `None` before the first.
+    ///
+    /// # Errors
+    ///
+    /// As [`KeyframeIndex::at_or_before`].
+    pub fn frame_before(&self, stream: u32, pts: i64) -> Result<Option<i64>, IndexError> {
+        self.frame_at_or_before(stream, pts.saturating_sub(1))
     }
 
     /// Whether `pts` is exactly a keyframe's presentation timestamp.
@@ -569,6 +635,16 @@ impl KeyframeIndex {
             .unwrap_or_else(PoisonError::into_inner))
     }
 
+    fn ensure_frames_covered(&self, stream: u32, pts: i64) -> Result<(), IndexError> {
+        let covered = self.lock(stream)?.frame_coverage.contains(pts);
+        if covered {
+            return Ok(());
+        }
+        // A region read from `pts` covers frames from its keyframe to its
+        // limit less the reorder margin, which always includes `pts`.
+        self.read_region(stream, pts.max(0), Priority::Interactive)
+    }
+
     fn ensure_covered(&self, stream: u32, pts: i64, priority: Priority) -> Result<(), IndexError> {
         let covered = {
             let index = self.lock(stream)?;
@@ -584,7 +660,7 @@ impl KeyframeIndex {
     /// `from`, and merge them in. The lock is not held while `ffprobe` runs,
     /// so queries into different regions proceed concurrently.
     fn read_region(&self, stream: u32, from: i64, priority: Priority) -> Result<(), IndexError> {
-        let (start_seconds, end_seconds, limit, stream_end, two_seconds) = {
+        let (start_seconds, end_seconds, limit, stream_end, two_seconds, margin) = {
             let index = self.lock(stream)?;
             let start = index.ticks_to_seconds(from);
             let end = start + self.chunk_seconds;
@@ -594,6 +670,7 @@ impl KeyframeIndex {
                 index.seconds_to_ticks(end),
                 index.end,
                 index.seconds_to_ticks(2.0),
+                index.seconds_to_ticks(REORDER_MARGIN_SECONDS.min(self.chunk_seconds / 2.0)),
             )
         };
         let output = self
@@ -606,7 +683,7 @@ impl KeyframeIndex {
                     .option("-of", "compact=p=0")
                     .option(
                         "-read_intervals",
-                        format!("{start_seconds:.6}%{end_seconds:.6}"),
+                        interval(from, start_seconds, end_seconds),
                     )
                     .input(&self.path),
                 priority,
@@ -629,6 +706,7 @@ impl KeyframeIndex {
             packets,
             reached_end,
             limit,
+            margin,
         };
         let pictures = self.classify_pictures(stream, &region);
         let mut index = self.lock(stream)?;
@@ -657,6 +735,20 @@ impl KeyframeIndex {
     }
 }
 
+/// The `-read_intervals` value for a region.
+///
+/// A region at the start of the stream reads from the beginning of the file
+/// rather than seeking to zero: with an MP4 edit list the stream's first
+/// keyframe has a negative timestamp, and a seek to zero lands on the *next*
+/// keyframe, silently skipping every frame before it.
+fn interval(from: i64, start_seconds: f64, end_seconds: f64) -> String {
+    if from <= 0 {
+        format!("%{end_seconds:.6}")
+    } else {
+        format!("{start_seconds:.6}%{end_seconds:.6}")
+    }
+}
+
 /// Merge one region's packets into the index.
 fn merge(
     index: &mut StreamIndex,
@@ -667,6 +759,11 @@ fn merge(
     let mut current: Option<i64> = None;
     let mut first_key: Option<i64> = None;
     for packet in &region.packets {
+        if !packet.discard
+            && let Some(pts) = packet.pts
+        {
+            index.frames.insert(pts);
+        }
         if packet.key {
             let Some(pts) = packet.pts.or(packet.dts) else {
                 continue;
@@ -725,6 +822,12 @@ fn merge(
         region.limit
     };
     index.coverage.add(start, end);
+    let frames_end = if region.reached_end {
+        i64::MAX
+    } else {
+        region.limit.saturating_sub(region.margin)
+    };
+    index.frame_coverage.add(start, frames_end);
 }
 
 /// Open or closed, from what the picture is and what follows it.

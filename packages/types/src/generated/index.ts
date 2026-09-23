@@ -6,6 +6,7 @@
 // renderer is compiling against a contract the Rust side no longer implements.
 
 export * from "./AudioInfo";
+export * from "./AudioOutputState";
 export * from "./Chapter";
 export * from "./Chroma";
 export * from "./ChromaSubsampling";
@@ -31,11 +32,15 @@ export * from "./IndexProgress";
 export * from "./JobId";
 export * from "./JobProgress";
 export * from "./Keyframe";
+export * from "./LoopRange";
 export * from "./MasteringDisplay";
 export * from "./MediaInfo";
 export * from "./PictureKind";
-export * from "./PreviewInfo";
+export * from "./PlaybackState";
+export * from "./PlaybackStatus";
+export * from "./PlaybackUpdate";
 export * from "./PreviewOpened";
+export * from "./PreviewSpeed";
 export * from "./ProfileCapability";
 export * from "./Progress";
 export * from "./Proxy";
@@ -47,6 +52,7 @@ export * from "./SeamReason";
 export * from "./SheetReady";
 export * from "./StreamInfo";
 export * from "./StreamKind";
+export * from "./TransportCommand";
 export * from "./UpdateOffer";
 export * from "./VideoCodec";
 export * from "./VideoInfo";

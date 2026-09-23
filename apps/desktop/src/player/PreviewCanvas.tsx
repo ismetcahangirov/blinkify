@@ -7,8 +7,6 @@ import { usePreviewStore } from "./preview.store.js";
 
 interface PreviewCanvasProps {
   session: number;
-  /** Counter-clockwise rotation from the probe's display matrix. */
-  rotation: number;
 }
 
 /**
@@ -17,10 +15,14 @@ interface PreviewCanvasProps {
  * Frames arrive as raw RGBA from the engine's `frame` scheme (#27), are put
  * into an offscreen canvas at their own size with `putImageData` — no decode,
  * no conversion, no copy — and drawn onto the visible canvas rotated and
- * fitted. The visible canvas's backing store follows its CSS size times the
- * device pixel ratio, so the picture is sharp at any zoom level.
+ * fitted. Each frame carries its own rotation, because a timeline can cut from
+ * a landscape clip to a portrait one. A frame in a gap of the timeline is
+ * black: the canvas is cleared to the surface behind it.
+ *
+ * Every frame drawn reports its timeline frame number, so the timecode shown
+ * is the timecode of the picture shown (#28).
  */
-export function PreviewCanvas({ session, rotation }: PreviewCanvasProps) {
+export function PreviewCanvas({ session }: PreviewCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -35,6 +37,18 @@ export function PreviewCanvas({ session, rotation }: PreviewCanvasProps) {
       url: (after) => frameUrl(base, session, after),
       fetch: (url, init) => fetch(url, init),
       onFrame: (frame) => {
+        const ratio = window.devicePixelRatio || 1;
+        const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
+        const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
+        if (canvas.width !== width || canvas.height !== height) {
+          canvas.width = width;
+          canvas.height = height;
+        }
+        usePreviewStore.getState().showFrame(frame.frameNumber);
+        if (frame.black) {
+          context.clearRect(0, 0, width, height);
+          return;
+        }
         if (staging.width !== frame.width || staging.height !== frame.height) {
           staging.width = frame.width;
           staging.height = frame.height;
@@ -44,24 +58,17 @@ export function PreviewCanvas({ session, rotation }: PreviewCanvasProps) {
           0,
           0,
         );
-        const ratio = window.devicePixelRatio || 1;
-        const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
-        const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
-        if (canvas.width !== width || canvas.height !== height) {
-          canvas.width = width;
-          canvas.height = height;
-        }
         drawFrame(
           context,
           staging,
-          placeFrame(frame.width, frame.height, rotation, width, height),
+          placeFrame(frame.width, frame.height, frame.rotation, width, height),
         );
       },
       onError: (error) => {
         usePreviewStore.getState().fail(error.message);
       },
     });
-  }, [session, rotation]);
+  }, [session]);
 
   return (
     <canvas

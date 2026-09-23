@@ -6,7 +6,7 @@ import { WIRE_HEADER_BYTES } from "./frameWire.js";
 function frameResponse(seq: number): Response {
   const buffer = new ArrayBuffer(WIRE_HEADER_BYTES + 4);
   const view = new DataView(buffer);
-  new Uint8Array(buffer, 0, 4).set([0x42, 0x4b, 0x46, 0x31]);
+  new Uint8Array(buffer, 0, 4).set([0x42, 0x4b, 0x46, 0x32]);
   view.setUint32(4, 1, true);
   view.setUint32(8, 1, true);
   view.setBigUint64(16, BigInt(seq), true);

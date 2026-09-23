@@ -397,6 +397,214 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/player/TransportBar.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./TransportBar.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/TransportBar.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./preview.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/preview.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./useTransportShortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/useTransportShortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/player/TransportBar.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./preview.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/preview.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./timecode.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/timecode.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./transportGlyphs.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/transportGlyphs.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./useTransportShortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/useTransportShortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/player/framePump.test.ts",
       "dependencies": [
         {
@@ -573,6 +781,24 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [],
@@ -604,9 +830,74 @@
       "dependents": [
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
+        "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/player/timecode.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./timecode.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/timecode.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/player/timecode.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/player/timecode.test.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/player/transportGlyphs.tsx",
+      "dependencies": [],
+      "dependents": [
+        "apps/desktop/src/player/TransportBar.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -616,6 +907,36 @@
       "dependencies": [],
       "dependents": [
         "apps/desktop/src/player/preview.store.test.ts",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/player/useTransportShortcuts.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
       "orphan": false,
@@ -1003,6 +1324,41 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [],
@@ -1048,6 +1404,23 @@
         },
         {
           "dynamic": false,
+          "module": "../../player/TransportBar.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/TransportBar.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../player/preview.store.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1082,6 +1455,23 @@
         },
         {
           "dynamic": false,
+          "module": "../../player/useTransportShortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/useTransportShortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../shell.store.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1090,6 +1480,24 @@
             "import"
           ],
           "resolved": "apps/desktop/src/shell.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1189,6 +1597,16 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/StreamKind.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/AudioOutputState.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -1587,7 +2005,6 @@
       "source": "packages/types/src/generated/FrameSize.ts",
       "dependencies": [],
       "dependents": [
-        "packages/types/src/generated/PreviewInfo.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -1790,6 +2207,17 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/LoopRange.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/PlaybackStatus.ts",
+        "packages/types/src/generated/TransportCommand.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/MasteringDisplay.ts",
       "dependencies": [],
       "dependents": [
@@ -1856,11 +2284,21 @@
       "valid": true
     },
     {
-      "source": "packages/types/src/generated/PreviewInfo.ts",
+      "source": "packages/types/src/generated/PlaybackState.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/PlaybackStatus.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/PlaybackStatus.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./FrameSize",
+          "module": "./AudioOutputState",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -1868,7 +2306,61 @@
             "type-only",
             "import"
           ],
-          "resolved": "packages/types/src/generated/FrameSize.ts",
+          "resolved": "packages/types/src/generated/AudioOutputState.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./LoopRange",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/LoopRange.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./PlaybackState",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/PlaybackState.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./PreviewSpeed",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/PreviewSpeed.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1896,7 +2388,36 @@
         }
       ],
       "dependents": [
+        "packages/types/src/generated/PlaybackUpdate.ts",
         "packages/types/src/generated/PreviewOpened.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/PlaybackUpdate.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./PlaybackStatus",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/PlaybackStatus.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -1907,7 +2428,7 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./PreviewInfo",
+          "module": "./PlaybackStatus",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -1915,7 +2436,7 @@
             "type-only",
             "import"
           ],
-          "resolved": "packages/types/src/generated/PreviewInfo.ts",
+          "resolved": "packages/types/src/generated/PlaybackStatus.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1925,6 +2446,17 @@
         }
       ],
       "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/PreviewSpeed.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/PlaybackStatus.ts",
+        "packages/types/src/generated/TransportCommand.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -2021,7 +2553,7 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/FrameRate.ts",
-        "packages/types/src/generated/PreviewInfo.ts",
+        "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/VideoInfo.ts",
         "packages/types/src/generated/index.ts"
@@ -2147,6 +2679,52 @@
       ],
       "dependents": [
         "packages/types/src/generated/StreamInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/TransportCommand.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./LoopRange",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/LoopRange.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./PreviewSpeed",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/PreviewSpeed.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -2323,6 +2901,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/AudioInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./AudioOutputState",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/AudioOutputState.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2757,6 +3352,23 @@
         },
         {
           "dynamic": false,
+          "module": "./LoopRange",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/LoopRange.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./MasteringDisplay",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2808,14 +3420,48 @@
         },
         {
           "dynamic": false,
-          "module": "./PreviewInfo",
+          "module": "./PlaybackState",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "packages/types/src/generated/PreviewInfo.ts",
+          "resolved": "packages/types/src/generated/PlaybackState.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./PlaybackStatus",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/PlaybackStatus.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./PlaybackUpdate",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/PlaybackUpdate.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2833,6 +3479,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/PreviewOpened.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./PreviewSpeed",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/PreviewSpeed.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3029,6 +3692,23 @@
         },
         {
           "dynamic": false,
+          "module": "./TransportCommand",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/TransportCommand.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./UpdateOffer",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3141,7 +3821,14 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/player/timecode.ts",
+        "apps/desktop/src/player/useTransportShortcuts.ts",
+        "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/update.store.ts"
       ],
       "orphan": false,
@@ -4774,8 +5461,11 @@
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
         "apps/desktop/src/main.tsx",
+        "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
       "orphan": false,
@@ -5085,8 +5775,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 146,
-    "totalDependenciesCruised": 213,
+    "totalCruised": 158,
+    "totalDependenciesCruised": 245,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,
