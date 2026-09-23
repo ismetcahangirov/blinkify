@@ -14,6 +14,7 @@ import {
   onWindowResized,
   toggleMaximiseWindow,
 } from "./windowChrome.js";
+import { projectName, useProjectStore } from "../project/project.store.js";
 
 /**
  * The application bar (#19), laid out as the layout reference specifies:
@@ -178,6 +179,7 @@ function RedoGlyph() {
 
 export function AppBar() {
   const [maximised, setMaximised] = useState(false);
+  const name = useProjectStore((state) => projectName(state.view));
 
   useEffect(() => {
     let cancelled = false;
@@ -225,11 +227,11 @@ export function AppBar() {
         ))}
       </nav>
 
-      {/* Not an input yet: renaming a project needs a project, which is #54.
-          It is the reference's "project name, editable in place", in the place
-          the reference puts it. */}
+      {/* Not an input yet: renaming a project is #54. It is the reference's
+          "project name, editable in place", in the place the reference puts
+          it; the name is the open project's since #32. */}
       <span className="shell__project" data-testid="project-name">
-        Untitled project
+        {name}
       </span>
 
       <div className="shell__history">

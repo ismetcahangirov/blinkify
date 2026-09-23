@@ -10,6 +10,7 @@
 //! waiting to be written.
 
 pub mod media;
+pub mod project;
 pub mod updater;
 pub mod window_state;
 
@@ -17,6 +18,7 @@ use blinkify_engine::ExportTier;
 use tauri::{Manager, RunEvent, WindowEvent};
 
 use media::MediaEngine;
+use project::{LaunchFile, OpenProject};
 use updater::PendingUpdate;
 
 /// Whether a given export tier leaves the pixels untouched.
@@ -43,6 +45,9 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(PendingUpdate::default())
+        // A double-clicked `.blinkify` arrives as the first argument (#32).
+        .manage(LaunchFile::from_args(std::env::args()))
+        .manage(OpenProject::default())
         // Preview frames are fetched, not invoked: see `media::FRAME_SCHEME`.
         // Each request may wait for its frame to fall due, so it is answered
         // on its own thread and never on the webview's.
@@ -71,6 +76,8 @@ pub fn run() {
             media::close_preview,
             media::close_all_previews,
             media::preview_stats,
+            project::launch_project,
+            project::relink_source,
             updater::pending_update,
             updater::install_update
         ])
