@@ -50,6 +50,10 @@ pub fn run() {
             media::index_keyframes,
             media::generate_waveform,
             media::waveform_peaks,
+            media::generate_filmstrip,
+            media::proxy_reasons,
+            media::generate_proxy,
+            media::cancel_proxy,
             updater::pending_update,
             updater::install_update
         ])

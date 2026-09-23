@@ -177,6 +177,7 @@ pub struct JobOptions {
     on_chunk: Option<ChunkConsumer>,
     on_progress: Option<ProgressCallback>,
     remove_on_failure: Vec<PathBuf>,
+    cancel: Option<CancelToken>,
 }
 
 impl std::fmt::Debug for JobOptions {
@@ -185,6 +186,7 @@ impl std::fmt::Debug for JobOptions {
             .field("on_chunk", &self.on_chunk.is_some())
             .field("on_progress", &self.on_progress.is_some())
             .field("remove_on_failure", &self.remove_on_failure)
+            .field("cancel", &self.cancel)
             .finish()
     }
 }
@@ -203,6 +205,14 @@ impl JobOptions {
     #[must_use]
     pub fn on_progress(mut self, callback: impl FnMut(JobProgress) + Send + 'static) -> Self {
         self.on_progress = Some(Box::new(callback));
+        self
+    }
+
+    /// Cancel the job through `token`, which the caller already holds — for
+    /// work that owns its own cancel switch across several steps.
+    #[must_use]
+    pub fn cancel_token(mut self, token: CancelToken) -> Self {
+        self.cancel = Some(token);
         self
     }
 
@@ -353,9 +363,9 @@ impl Orchestrator {
     /// Queue `command` at `priority`. Returns at once; the job starts when a
     /// slot allows.
     #[must_use]
-    pub fn run(&self, command: SidecarCommand, priority: Priority, options: JobOptions) -> Job {
+    pub fn run(&self, command: SidecarCommand, priority: Priority, mut options: JobOptions) -> Job {
         let (sender, result) = mpsc::channel();
-        let cancel = CancelToken::default();
+        let cancel = options.cancel.take().unwrap_or_default();
         let id = {
             let mut state = self.inner.lock();
             let id = JobId(state.next_id);

@@ -5,7 +5,7 @@
     "tools"
   ],
   "totals": {
-    "files": 125,
+    "files": 130,
     "tests": 11,
     "violations": 0
   },
@@ -28,7 +28,7 @@
       ]
     },
     "packages/types": {
-      "files": 40,
+      "files": 45,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/AudioInfo.ts",
@@ -45,6 +45,7 @@
         "packages/types/src/generated/EncoderCapability.ts",
         "packages/types/src/generated/EncoderSource.ts",
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/Filmstrip.ts",
         "packages/types/src/generated/FrameRate.ts",
         "packages/types/src/generated/FrameRateMode.ts",
         "packages/types/src/generated/GopKind.ts",
@@ -59,9 +60,13 @@
         "packages/types/src/generated/PictureKind.ts",
         "packages/types/src/generated/ProfileCapability.ts",
         "packages/types/src/generated/Progress.ts",
+        "packages/types/src/generated/Proxy.ts",
+        "packages/types/src/generated/ProxyReason.ts",
+        "packages/types/src/generated/ProxySegment.ts",
         "packages/types/src/generated/Rational.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
         "packages/types/src/generated/SeamReason.ts",
+        "packages/types/src/generated/SheetReady.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/StreamKind.ts",
         "packages/types/src/generated/UpdateOffer.ts",
@@ -607,6 +612,17 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Filmstrip.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/FrameRate.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -789,6 +805,42 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Proxy.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/ProxySegment.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/ProxyReason.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/ProxySegment.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Proxy.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/Rational.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -822,6 +874,17 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/SheetReady.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -942,6 +1005,7 @@
         "packages/types/src/generated/EncoderCapability.ts",
         "packages/types/src/generated/EncoderSource.ts",
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/Filmstrip.ts",
         "packages/types/src/generated/FrameRate.ts",
         "packages/types/src/generated/FrameRateMode.ts",
         "packages/types/src/generated/GopKind.ts",
@@ -956,9 +1020,13 @@
         "packages/types/src/generated/PictureKind.ts",
         "packages/types/src/generated/ProfileCapability.ts",
         "packages/types/src/generated/Progress.ts",
+        "packages/types/src/generated/Proxy.ts",
+        "packages/types/src/generated/ProxyReason.ts",
+        "packages/types/src/generated/ProxySegment.ts",
         "packages/types/src/generated/Rational.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
         "packages/types/src/generated/SeamReason.ts",
+        "packages/types/src/generated/SheetReady.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/StreamKind.ts",
         "packages/types/src/generated/UpdateOffer.ts",

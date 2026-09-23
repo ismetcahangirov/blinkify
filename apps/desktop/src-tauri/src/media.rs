@@ -13,9 +13,12 @@ use std::time::Duration;
 
 use blinkify_engine::cache::Cache;
 use blinkify_engine::capability;
+use blinkify_engine::filmstrip::{Filmstrip, Filmstrips};
 use blinkify_engine::keyframes::{self, IndexProgress, KeyframeIndex};
+use blinkify_engine::orchestrator::CancelToken;
 use blinkify_engine::orchestrator::{JobProgress, Limits, Orchestrator};
 use blinkify_engine::probe::{MediaInfo, Prober};
+use blinkify_engine::proxy::{Proxies, Proxy, ProxyReason, proxy_advice};
 use blinkify_engine::waveform::{Peaks, WaveformStatus, Waveforms};
 use blinkify_engine::{EncoderCapabilities, Sidecar};
 use serde::Serialize;
@@ -36,6 +39,16 @@ pub const INDEX_PROGRESS_EVENT: &str = "media://keyframe-index";
 /// payload.
 pub const WAVEFORM_EVENT: &str = "media://waveform";
 
+/// A filmstrip sheet written, with a `SheetReady` payload.
+pub const FILMSTRIP_EVENT: &str = "media://filmstrip";
+
+/// Proxy generation progress, with a `JobProgress` payload.
+pub const PROXY_PROGRESS_EVENT: &str = "media://proxy-progress";
+
+/// Proxies get their own directory and budget: an hour of 4K is gigabytes,
+/// and sharing the artefact budget would let one proxy evict every waveform.
+const PROXY_BUDGET_BYTES: u64 = 50 * 1024 * 1024 * 1024;
+
 /// The on-disk cache budget: keyframe indices, waveform peaks and filmstrips
 /// together. Evicted least-recently-used beyond this.
 const CACHE_BUDGET_BYTES: u64 = 2 * 1024 * 1024 * 1024;
@@ -51,7 +64,9 @@ pub struct MediaEngine {
     orchestrator: Result<Orchestrator, String>,
     prober: Option<Prober>,
     cache: Option<Cache>,
+    proxy_cache: Option<Cache>,
     capabilities: Arc<Mutex<Option<EncoderCapabilities>>>,
+    proxies_running: Mutex<HashMap<PathBuf, CancelToken>>,
     indices: Mutex<HashMap<PathBuf, Arc<KeyframeIndex>>>,
     waveforms: Arc<Mutex<HashMap<(PathBuf, u32), Waveform>>>,
 }
@@ -99,7 +114,11 @@ impl MediaEngine {
         Self {
             prober: orchestrator.as_ref().ok().cloned().map(Prober::new),
             orchestrator,
-            cache: cache_dir.map(|dir| Cache::new(dir, CACHE_BUDGET_BYTES)),
+            cache: cache_dir
+                .as_ref()
+                .map(|dir| Cache::new(dir.join("artefacts"), CACHE_BUDGET_BYTES)),
+            proxy_cache: cache_dir.map(|dir| Cache::new(dir.join("proxies"), PROXY_BUDGET_BYTES)),
+            proxies_running: Mutex::new(HashMap::new()),
             capabilities: Arc::new(Mutex::new(None)),
             indices: Mutex::new(HashMap::new()),
             waveforms: Arc::new(Mutex::new(HashMap::new())),
@@ -142,6 +161,14 @@ impl MediaEngine {
         {
             index.stop_background();
             index.persist();
+        }
+        for cancel in self
+            .proxies_running
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .values()
+        {
+            cancel.cancel();
         }
         if let Ok(orchestrator) = &self.orchestrator {
             orchestrator.shutdown(SHUTDOWN_TIMEOUT);
@@ -387,4 +414,119 @@ pub fn waveform_peaks(
         .flatten()
         .collect();
     Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// The filmstrip of `path` at `height` pixels, one thumbnail every
+/// `interval` seconds (see `filmstrip::interval_for_zoom`). Sheets are
+/// announced on [`FILMSTRIP_EVENT`] as each is written, so the timeline fills
+/// in from the start while the rest is decoded; the command returns the whole
+/// filmstrip when it is done.
+///
+/// # Errors
+///
+/// No cache directory, the sidecar is missing, or generation failed.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn generate_filmstrip(
+    app: AppHandle,
+    engine: tauri::State<'_, MediaEngine>,
+    path: PathBuf,
+    height: u32,
+    interval: f64,
+) -> Result<Filmstrip, String> {
+    let cache = engine
+        .cache
+        .clone()
+        .ok_or_else(|| "no cache directory is available".to_owned())?;
+    let info = engine.prober()?.probe(&path).map_err(|e| e.to_string())?;
+    Filmstrips::new(engine.orchestrator()?.clone(), cache)
+        .filmstrip(&path, &info, height, interval, None, move |sheet| {
+            let _ = app.emit(FILMSTRIP_EVENT, sheet);
+        })
+        .map_err(|e| e.to_string())
+}
+
+/// Why a proxy is worth offering for `path`; empty when it scrubs as it is.
+/// Only advice: nothing is generated unless the user asks.
+///
+/// # Errors
+///
+/// The sidecar is missing, or the file cannot be probed.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn proxy_reasons(
+    engine: tauri::State<'_, MediaEngine>,
+    path: PathBuf,
+) -> Result<Vec<ProxyReason>, String> {
+    let info = engine.prober()?.probe(&path).map_err(|e| e.to_string())?;
+    Ok(proxy_advice(&info))
+}
+
+/// Make a preview proxy of `path` — resuming a cancelled one — reporting
+/// progress on [`PROXY_PROGRESS_EVENT`]. For preview only: nothing in the
+/// export path can take a proxy (see `blinkify_engine::proxy`).
+///
+/// # Errors
+///
+/// No cache directory, the sidecar is missing, or generation failed or was
+/// cancelled.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn generate_proxy(
+    app: AppHandle,
+    engine: tauri::State<'_, MediaEngine>,
+    path: PathBuf,
+) -> Result<Proxy, String> {
+    let cache = engine
+        .proxy_cache
+        .clone()
+        .ok_or_else(|| "no cache directory is available".to_owned())?;
+    let info = engine.prober()?.probe(&path).map_err(|e| e.to_string())?;
+    let cancel = CancelToken::default();
+    engine
+        .proxies_running
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .insert(path.clone(), cancel.clone());
+    let result = Proxies::new(engine.orchestrator()?.clone(), cache).generate(
+        &path,
+        &info,
+        &cancel,
+        forward_to(app, PROXY_PROGRESS_EVENT),
+    );
+    engine
+        .proxies_running
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .remove(&path);
+    result.map_err(|e| e.to_string())
+}
+
+/// Stop generating the proxy of `path`. Its finished segments are kept, so
+/// asking again resumes rather than restarts.
+#[tauri::command]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn cancel_proxy(engine: tauri::State<'_, MediaEngine>, path: PathBuf) {
+    if let Some(cancel) = engine
+        .proxies_running
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .get(&path)
+    {
+        cancel.cancel();
+    }
+}
+
+fn forward_to(app: AppHandle, event: &'static str) -> impl FnMut(JobProgress) + Send + 'static {
+    move |update| {
+        let _ = app.emit(event, update);
+    }
 }
