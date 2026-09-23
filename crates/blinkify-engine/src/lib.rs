@@ -14,7 +14,9 @@
 //! stop being tested. `cargo test -p blinkify-engine` runs with no window, no
 //! `WebView2` and no renderer, and CI asserts the dependency is absent.
 
+pub mod cache;
 pub mod capability;
+pub mod keyframes;
 pub mod orchestrator;
 pub mod probe;
 pub mod sidecar;

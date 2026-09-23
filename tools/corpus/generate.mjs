@@ -152,12 +152,14 @@ const RECIPES = [
   },
   {
     file: "vfr-screen.mp4",
-    note: "Variable frame rate: 30 fps for two seconds, then 10 fps",
+    note: "Variable frame rate: 30 fps for two seconds, then 10 fps; keyframes at 0, 1, 2.5 and 3.2 s",
     steps: [
       [
         ...VIDEO("640x360", 30, 4),
         "-vf", "setpts='if(lt(N,60),N/30,2+(N-60)/10)/TB'",
         "-fps_mode", "passthrough",
+        // Keyframes on both sides of the rate change, at times the tests know.
+        "-force_key_frames", "0,1,2.5,3.2",
         "-c:v", "libx264", "-pix_fmt", "yuv420p",
         "-video_track_timescale", "90000",
         "{out}",
@@ -231,13 +233,34 @@ title=Closing
 /** The recipes' own fingerprint: a change to any of them regenerates. */
 const RECIPE_HASH = sha256(JSON.stringify({ RECIPES, CHAPTERS, LOCK }));
 
+/**
+ * Download with retries: GitHub's release CDN answers the occasional 5xx, and
+ * a run that fails on one teaches people to re-run without reading. The bytes
+ * are checked against the lock either way.
+ */
+async function download(url) {
+  const attempts = 4;
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      const response = await fetch(url, { redirect: "follow" });
+      if (response.ok) return Buffer.from(await response.arrayBuffer());
+      if (response.status < 500 || attempt === attempts) {
+        throw new Error(`HTTP ${response.status} for ${url}`);
+      }
+      console.log(`corpus: HTTP ${response.status}, retrying`);
+    } catch (error) {
+      if (attempt === attempts) throw error;
+      console.log(`corpus: ${error.message}, retrying`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, attempt * 5000));
+  }
+}
+
 async function ensureTool() {
   const exe = join(TOOL_DIR, LOCK.folder, "bin", "ffmpeg.exe");
   if (existsSync(exe)) return exe;
   console.log(`corpus: fetching the corpus tool (${LOCK.url})`);
-  const response = await fetch(LOCK.url, { redirect: "follow" });
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${LOCK.url}`);
-  const zip = Buffer.from(await response.arrayBuffer());
+  const zip = await download(LOCK.url);
   if (sha256(zip) !== LOCK.sha256) {
     throw new Error("corpus tool SHA-256 does not match corpus-tool.lock.json");
   }

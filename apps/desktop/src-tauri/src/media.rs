@@ -5,11 +5,15 @@
 //! through, forwards job progress to the renderer as events, and hands the
 //! renderer what the engine concluded. It decides nothing itself.
 
+use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex, PoisonError};
 use std::thread;
 use std::time::Duration;
 
+use blinkify_engine::cache::Cache;
 use blinkify_engine::capability;
+use blinkify_engine::keyframes::{self, IndexProgress, KeyframeIndex};
 use blinkify_engine::orchestrator::{JobProgress, Limits, Orchestrator};
 use blinkify_engine::probe::{MediaInfo, Prober};
 use blinkify_engine::{EncoderCapabilities, Sidecar};
@@ -22,6 +26,13 @@ use tauri::{AppHandle, Emitter};
 /// section 2). The engine throttles before anything reaches here.
 pub const PROGRESS_EVENT: &str = "media://progress";
 
+/// Background keyframe indexing progress, with an [`IndexProgress`] payload.
+pub const INDEX_PROGRESS_EVENT: &str = "media://keyframe-index";
+
+/// The on-disk cache budget: keyframe indices, waveform peaks and filmstrips
+/// together. Evicted least-recently-used beyond this.
+const CACHE_BUDGET_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+
 /// How long shutdown waits for sidecar processes to exit before the window
 /// closes anyway. The job object guarantees they die with the process even if
 /// this runs out.
@@ -32,22 +43,29 @@ const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(3);
 pub struct MediaEngine {
     orchestrator: Result<Orchestrator, String>,
     prober: Option<Prober>,
+    cache: Option<Cache>,
     capabilities: Arc<Mutex<Option<EncoderCapabilities>>>,
+    indices: Mutex<HashMap<PathBuf, Arc<KeyframeIndex>>>,
 }
 
 impl MediaEngine {
     /// Locate the sidecar installed beside the executable. There is no
     /// fallback to a system FFmpeg (`ADR-0002`); a missing sidecar is carried
     /// as an error and reported the first time anything asks for media work.
+    ///
+    /// `cache_dir` is the OS cache directory for this application; without
+    /// one, derived artefacts are computed but not kept.
     #[must_use]
-    pub fn locate() -> Self {
+    pub fn locate(cache_dir: Option<PathBuf>) -> Self {
         let orchestrator = Sidecar::beside_current_exe()
             .map(|sidecar| Orchestrator::new(sidecar, Limits::for_this_machine()))
             .map_err(|error| error.to_string());
         Self {
             prober: orchestrator.as_ref().ok().cloned().map(Prober::new),
             orchestrator,
+            cache: cache_dir.map(|dir| Cache::new(dir, CACHE_BUDGET_BYTES)),
             capabilities: Arc::new(Mutex::new(None)),
+            indices: Mutex::new(HashMap::new()),
         }
     }
 
@@ -77,9 +95,27 @@ impl MediaEngine {
     /// Cancel every job and wait for its process to exit. Called as the
     /// application closes.
     pub fn shutdown(&self) {
+        // Stop background indexing first and keep what it had, so the next
+        // launch starts from there rather than from nothing.
+        for index in self
+            .indices
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .values()
+        {
+            index.stop_background();
+            index.persist();
+        }
         if let Ok(orchestrator) = &self.orchestrator {
             orchestrator.shutdown(SHUTDOWN_TIMEOUT);
         }
+    }
+
+    fn prober(&self) -> Result<&Prober, String> {
+        self.orchestrator()?;
+        self.prober
+            .as_ref()
+            .ok_or_else(|| "the media engine is not available".to_owned())
     }
 }
 
@@ -136,13 +172,59 @@ pub fn probe_media(
     engine: tauri::State<'_, MediaEngine>,
     path: std::path::PathBuf,
 ) -> Result<MediaInfo, String> {
-    engine.orchestrator()?;
-    let prober = engine
-        .prober
-        .as_ref()
-        .ok_or_else(|| "the media engine is not available".to_owned())?;
-    prober
+    engine
+        .prober()?
         .probe(&path)
         .map(|info| (*info).clone())
         .map_err(|error| error.to_string())
+}
+
+/// Start indexing every keyframe of `path` in the background, and return the
+/// fraction already indexed — `1.0` when a previous session finished it.
+///
+/// Returns at once. Progress arrives on [`INDEX_PROGRESS_EVENT`]; queries do
+/// not wait for it, because each reads the region it needs (#24).
+///
+/// # Errors
+///
+/// The sidecar is missing, or the file cannot be probed or read.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn index_keyframes(
+    app: AppHandle,
+    engine: tauri::State<'_, MediaEngine>,
+    path: PathBuf,
+) -> Result<f64, String> {
+    if let Some(index) = engine
+        .indices
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .get(&path)
+    {
+        return Ok(index.fraction());
+    }
+    let info = engine.prober()?.probe(&path).map_err(|e| e.to_string())?;
+    let index = Arc::new(
+        KeyframeIndex::open(
+            &path,
+            &info,
+            engine.orchestrator()?.clone(),
+            engine.cache.clone(),
+        )
+        .map_err(|e| e.to_string())?,
+    );
+    let fraction = index.fraction();
+    engine
+        .indices
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .insert(path, Arc::clone(&index));
+    if !index.is_complete() {
+        let _ = keyframes::spawn_background(index, move |progress: IndexProgress| {
+            let _ = app.emit(INDEX_PROGRESS_EVENT, progress);
+        });
+    }
+    Ok(fraction)
 }

@@ -5,7 +5,7 @@
     "tools"
   ],
   "totals": {
-    "files": 119,
+    "files": 123,
     "tests": 11,
     "violations": 0
   },
@@ -28,7 +28,7 @@
       ]
     },
     "packages/types": {
-      "files": 34,
+      "files": 38,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/AudioInfo.ts",
@@ -47,12 +47,16 @@
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/FrameRate.ts",
         "packages/types/src/generated/FrameRateMode.ts",
+        "packages/types/src/generated/GopKind.ts",
         "packages/types/src/generated/Hdr.ts",
         "packages/types/src/generated/HdrTransfer.ts",
+        "packages/types/src/generated/IndexProgress.ts",
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/JobProgress.ts",
+        "packages/types/src/generated/Keyframe.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
         "packages/types/src/generated/MediaInfo.ts",
+        "packages/types/src/generated/PictureKind.ts",
         "packages/types/src/generated/ProfileCapability.ts",
         "packages/types/src/generated/Progress.ts",
         "packages/types/src/generated/Rational.ts",
@@ -628,6 +632,18 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/GopKind.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Keyframe.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/Hdr.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -651,6 +667,17 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/IndexProgress.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -682,6 +709,20 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Keyframe.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/GopKind.ts",
+        "packages/types/src/generated/PictureKind.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/MasteringDisplay.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -703,6 +744,18 @@
         "packages/types/src/generated/StreamInfo.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/PictureKind.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Keyframe.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -864,12 +917,16 @@
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/FrameRate.ts",
         "packages/types/src/generated/FrameRateMode.ts",
+        "packages/types/src/generated/GopKind.ts",
         "packages/types/src/generated/Hdr.ts",
         "packages/types/src/generated/HdrTransfer.ts",
+        "packages/types/src/generated/IndexProgress.ts",
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/JobProgress.ts",
+        "packages/types/src/generated/Keyframe.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
         "packages/types/src/generated/MediaInfo.ts",
+        "packages/types/src/generated/PictureKind.ts",
         "packages/types/src/generated/ProfileCapability.ts",
         "packages/types/src/generated/Progress.ts",
         "packages/types/src/generated/Rational.ts",
