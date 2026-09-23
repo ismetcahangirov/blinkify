@@ -21,6 +21,9 @@ How Blinkify is put together and why the structure holds under change.
 - [`filmstrips-and-proxies.md`](./filmstrips-and-proxies.md) — sprite-sheet
   thumbnails, preview proxies, and the type that keeps proxies out of export
   (#26)
+- [`preview-pipeline.md`](./preview-pipeline.md) — the decode process, the
+  bounded frame ring, presentation by timestamp, rotation at draw time, and
+  teardown (#27)
 
 ## What does not belong here
 

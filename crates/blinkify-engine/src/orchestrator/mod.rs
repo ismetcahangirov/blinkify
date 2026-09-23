@@ -64,8 +64,12 @@ const COLLECT_LIMIT: usize = 64 * 1024 * 1024;
 /// How urgently a job needs to run.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Priority {
-    /// The user is waiting on it right now: playback decode, a seek.
+    /// The user is waiting on it right now: a probe, a single-frame seek.
     Interactive,
+    /// A decode that runs for as long as playback does: the preview's video
+    /// and audio. Long-lived, so it has its own slots — held in the
+    /// interactive ones it would leave a probe queued behind a film.
+    Playback,
     /// The user asked for it and is watching it: an export.
     Foreground,
     /// Nobody is waiting: keyframe indexing, waveforms, thumbnails, proxies.
@@ -77,6 +81,9 @@ pub enum Priority {
 pub struct Limits {
     /// Slots reserved for interactive work, which nothing else may take.
     pub interactive: usize,
+    /// Slots for playback decodes: video and audio of the clip playing, and
+    /// of the next one, so a clip boundary never waits for a process to start.
+    pub playback: usize,
     /// Slots shared by foreground and background work.
     pub shared: usize,
     /// The most of the shared slots background work may hold, so a queue of
@@ -95,6 +102,7 @@ impl Limits {
         let shared = (cores >> 2).clamp(2, 4);
         Self {
             interactive: 2,
+            playback: 4,
             shared,
             background: shared - 1,
         }
@@ -170,12 +178,14 @@ pub enum Flow {
 
 type ChunkConsumer = Box<dyn FnMut(&[u8]) -> Flow + Send>;
 type ProgressCallback = Box<dyn FnMut(JobProgress) + Send>;
+type LineConsumer = Box<dyn FnMut(&str) + Send>;
 
 /// Everything a job needs besides its command line.
 #[derive(Default)]
 pub struct JobOptions {
     on_chunk: Option<ChunkConsumer>,
     on_progress: Option<ProgressCallback>,
+    on_stderr_line: Option<LineConsumer>,
     remove_on_failure: Vec<PathBuf>,
     cancel: Option<CancelToken>,
 }
@@ -185,6 +195,7 @@ impl std::fmt::Debug for JobOptions {
         f.debug_struct("JobOptions")
             .field("on_chunk", &self.on_chunk.is_some())
             .field("on_progress", &self.on_progress.is_some())
+            .field("on_stderr_line", &self.on_stderr_line.is_some())
             .field("remove_on_failure", &self.remove_on_failure)
             .field("cancel", &self.cancel)
             .finish()
@@ -205,6 +216,16 @@ impl JobOptions {
     #[must_use]
     pub fn on_progress(mut self, callback: impl FnMut(JobProgress) + Send + 'static) -> Self {
         self.on_progress = Some(Box::new(callback));
+        self
+    }
+
+    /// Receive every line FFmpeg writes to stderr, as it is written — for
+    /// filters that report per frame there, such as `showinfo`. Called on the
+    /// stderr drain thread, which must never stall: a blocked drain fills the
+    /// pipe and stops FFmpeg.
+    #[must_use]
+    pub fn on_stderr_line(mut self, consumer: impl FnMut(&str) + Send + 'static) -> Self {
+        self.on_stderr_line = Some(Box::new(consumer));
         self
     }
 
@@ -268,6 +289,14 @@ impl Job {
         self.pid.get().copied()
     }
 
+    /// Where the process id appears once the job has started — for a caller
+    /// that hands the job to another thread to wait on but still needs to
+    /// know which process is its.
+    #[must_use]
+    pub fn pid_handle(&self) -> Arc<OnceLock<u32>> {
+        Arc::clone(&self.pid)
+    }
+
     /// A handle that can cancel this job from elsewhere.
     #[must_use]
     pub fn canceller(&self) -> CancelToken {
@@ -310,6 +339,7 @@ impl State {
         let shared_in_use = running(Priority::Foreground) + running(Priority::Background);
         match priority {
             Priority::Interactive => running(Priority::Interactive) < limits.interactive,
+            Priority::Playback => running(Priority::Playback) < limits.playback,
             Priority::Foreground => shared_in_use < limits.shared,
             Priority::Background => {
                 shared_in_use < limits.shared
@@ -317,6 +347,7 @@ impl State {
                     // Yield: nothing more urgent may be waiting for a slot.
                     && Self::count(&self.waiting, Priority::Foreground) == 0
                     && Self::count(&self.waiting, Priority::Interactive) == 0
+                    && Self::count(&self.waiting, Priority::Playback) == 0
             }
         }
     }
@@ -525,7 +556,7 @@ fn execute(
     priority: Priority,
     cancel: &CancelToken,
     pid: &OnceLock<u32>,
-    options: JobOptions,
+    mut options: JobOptions,
 ) -> Result<JobOutput, JobError> {
     let program = match command.tool() {
         Tool::Ffmpeg => inner.sidecar.ffmpeg(),
@@ -547,10 +578,13 @@ fn execute(
     let _ = registry::adopt(&child);
 
     let stderr_tail = Arc::new(Mutex::new(VecDeque::with_capacity(STDERR_TAIL)));
-    let stderr_reader = child
-        .stderr
-        .take()
-        .map(|stderr| drain_stderr(stderr, Arc::clone(&stderr_tail)));
+    let stderr_reader = child.stderr.take().map(|stderr| {
+        drain_stderr(
+            stderr,
+            Arc::clone(&stderr_tail),
+            options.on_stderr_line.take(),
+        )
+    });
     let consumer_verdict: Arc<Mutex<Option<Flow>>> = Arc::new(Mutex::new(None));
     let stdout_reader = child.stdout.take().map(|stdout| {
         read_stdout(
@@ -649,7 +683,11 @@ fn wait_or_kill(child: &mut Child, cancel: &CancelToken) -> Option<ExitStatus> {
     }
 }
 
-fn drain_stderr(stderr: ChildStderr, tail: Arc<Mutex<VecDeque<String>>>) -> JoinHandle<()> {
+fn drain_stderr(
+    stderr: ChildStderr,
+    tail: Arc<Mutex<VecDeque<String>>>,
+    mut on_line: Option<LineConsumer>,
+) -> JoinHandle<()> {
     thread::spawn(move || {
         let mut reader = BufReader::new(stderr);
         let mut line = Vec::new();
@@ -660,6 +698,9 @@ fn drain_stderr(stderr: ChildStderr, tail: Arc<Mutex<VecDeque<String>>>) -> Join
             .is_ok_and(|read| read > 0)
         {
             let text = String::from_utf8_lossy(&line).trim_end().to_owned();
+            if let Some(on_line) = on_line.as_mut() {
+                on_line(&text);
+            }
             if !text.is_empty() {
                 let mut tail = tail.lock().unwrap_or_else(PoisonError::into_inner);
                 if tail.len() == STDERR_TAIL {
@@ -766,7 +807,7 @@ fn set_creation_flags(command: &mut Command, priority: Priority) {
         const BELOW_NORMAL_PRIORITY_CLASS: u32 = 0x0000_4000;
         let class = match priority {
             Priority::Background => BELOW_NORMAL_PRIORITY_CLASS,
-            Priority::Interactive | Priority::Foreground => 0,
+            Priority::Interactive | Priority::Playback | Priority::Foreground => 0,
         };
         command.creation_flags(CREATE_NO_WINDOW | class);
     }
@@ -788,6 +829,7 @@ mod tests {
 
     const LIMITS: Limits = Limits {
         interactive: 2,
+        playback: 2,
         shared: 2,
         background: 1,
     };

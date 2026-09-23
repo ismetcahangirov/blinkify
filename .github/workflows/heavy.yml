@@ -121,3 +121,9 @@ jobs:
       # least 3x faster. Measured locally at 1.12 s versus 47 ms.
       - name: A proxy makes 4K scrubbable (#26)
         run: cargo test -p blinkify-engine --test proxy -- --ignored a_proxy_makes_a_4k_source_scrubbable --nocapture
+
+      # #27: ten minutes of 1080p30 through the preview session at full rate —
+      # more than 29 presented frames a second — with the working set flat to
+      # within 64 MB. Real time by construction, so it cannot run on a PR.
+      - name: Ten minutes of 1080p30 preview with stable memory (#27)
+        run: cargo test -p blinkify-engine --test preview -- --ignored ten_minutes_of_1080p30_plays_at_full_rate_with_stable_memory --nocapture

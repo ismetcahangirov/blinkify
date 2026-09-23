@@ -21,6 +21,7 @@ fn orchestrator(limits: Limits) -> Orchestrator {
 
 const ROOMY: Limits = Limits {
     interactive: 4,
+    playback: 4,
     shared: 4,
     background: 3,
 };
@@ -279,6 +280,7 @@ fn an_invalid_command_is_a_structured_error_not_a_panic() {
 fn the_concurrency_limits_hold_under_load() {
     let limits = Limits {
         interactive: 1,
+        playback: 1,
         shared: 2,
         background: 1,
     };
