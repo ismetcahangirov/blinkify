@@ -1,0 +1,38 @@
+# Build the FFmpeg sidecar from its committed configuration.
+#
+# Manual only. The sidecar is a pinned artefact, not something rebuilt on every
+# push: FFmpeg takes far longer to compile than the pull-request budget, and a
+# binary that changes on every run is a binary nobody can pin a SHA-256 to.
+#
+# The run uploads the zip as a workflow artifact. Publishing it as a release
+# asset, and recording its hashes in sidecar.lock.json, is a deliberate step in
+# a pull request — docs/engineering/ffmpeg-sidecar.md describes it.
+
+name: FFmpeg sidecar
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ffmpeg.exe and ffprobe.exe
+    # A Linux runner cross-compiling for Windows: the toolchain image is a
+    # Linux container, and this is how the pinned image expects to be used.
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build
+        run: bash tools/ffmpeg-sidecar/build.sh
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-sidecar
+          path: tools/ffmpeg-sidecar/dist/*.zip
+          if-no-files-found: error
+          retention-days: 30

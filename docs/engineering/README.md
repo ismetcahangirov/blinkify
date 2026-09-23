@@ -12,6 +12,8 @@ How to work on Blinkify day to day.
   a release, and how to reproduce a CI failure locally
 - [`release.md`](./release.md) — cutting a release, the updater signing key, and
   the unsigned-binary gap
+- [`ffmpeg-sidecar.md`](./ffmpeg-sidecar.md) — where the bundled FFmpeg comes
+  from, how to fetch it, and how to rebuild or upgrade it
 - Local environment setup: toolchain versions, WebView2, MSVC build tools
 - Debugging guides — the Tauri IPC boundary, the FFmpeg sidecar, the timeline
   canvas

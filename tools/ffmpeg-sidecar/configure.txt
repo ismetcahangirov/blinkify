@@ -1,0 +1,97 @@
+# The FFmpeg configure line Blinkify ships. One flag per line; `#` starts a
+# comment. `build.sh` joins the non-comment lines and passes them to
+# `./configure` after the toolchain flags the build image supplies.
+#
+# ADR-0002: no `--enable-gpl`, no `--enable-nonfree`, no GPL library.
+# ADR-0003: no software H.264 or HEVC encoder at all, `openh264` included.
+# ADR-0004: why this line is ours rather than a distributor's.
+#
+# Every line below is either something Blinkify uses or something that keeps
+# the binary honest. A library is not enabled "in case"; each one is licence
+# surface, attack surface, and installer weight.
+
+# --- Licence posture --------------------------------------------------------
+# Deliberately absent: --enable-gpl, --enable-nonfree, --enable-version3.
+# Without version3 the build is LGPL v2.1-or-later, which is what ADR-0002 and
+# THIRD_PARTY.md state. The distributors' "lgpl" builds enable version3 to pull
+# in (L)GPLv3-only libraries Blinkify has no use for.
+
+# --- What the binary is -----------------------------------------------------
+--disable-debug
+--disable-doc
+--disable-ffplay
+--enable-pthreads
+--disable-w32threads
+
+# CLAUDE.md section 20 rule 8: no network call except the update check. The
+# sidecar only ever opens local files and pipes, so it is built unable to do
+# anything else. A URL that reaches it by mistake fails to open rather than
+# making a request.
+--disable-network
+
+# Nothing is autodetected. A library that appears because the build image
+# happened to have it is a library nobody reviewed the licence of.
+--disable-autodetect
+
+# --- Windows platform ----------------------------------------------------------
+# Hardware decode through the OS, shipped by Microsoft with Windows and not
+# redistributed; and the two compression libraries container headers use.
+--enable-d3d11va
+--enable-dxva2
+--enable-zlib
+--enable-lzma
+
+# --- Hardware encoders: the only H.264 and HEVC encode path (ADR-0003) --------
+# NVIDIA: headers only (MIT); the driver supplies the encoder at runtime.
+--enable-ffnvcodec
+--enable-nvenc
+--enable-nvdec
+--enable-cuvid
+# AMD: headers only (MIT); the driver supplies the encoder at runtime.
+--enable-amf
+# Intel Quick Sync via oneVPL (MIT).
+--enable-libvpl
+
+# --- Software encoders and decoders that are licence-clean --------------------
+# VP9 (BSD-3-Clause). Encode and decode.
+--enable-libvpx
+# AV1 encode: SVT-AV1 (BSD-3-Clause + AOM patent licence) and libaom
+# (BSD-2-Clause + AOM patent licence). AV1 decode: dav1d (BSD-2-Clause).
+--enable-libsvtav1
+--enable-libaom
+--enable-libdav1d
+# Audio encoders for tier-3 output: Opus (BSD-3-Clause), MP3 (LGPL v2+),
+# Vorbis (BSD-3-Clause). AAC is FFmpeg's native encoder and needs no flag.
+--enable-libopus
+--enable-libmp3lame
+--enable-libvorbis
+
+# --- Filters -------------------------------------------------------------------
+# zscale (zimg, WTFPL) for HDR-aware scaling in preview proxies and thumbnails.
+--enable-libzimg
+# soxr (LGPL v2.1+) for a resampler that does not alias on 44.1 <-> 48 kHz.
+--enable-libsoxr
+
+# Deliberately absent, and each one was considered:
+#   libx264, libx265, libxvid, libxavs2, libdavs2, libvidstab, frei0r,
+#   librubberband  — GPL. ADR-0002.
+#   libopenh264    — a software H.264 encoder. ADR-0003 part 3.
+#   libkvazaar, libvvenc — software HEVC / VVC encoders; the patent position
+#                    ADR-0003 takes for H.264 and HEVC applies to them too.
+#   libfdk-aac     — non-free.
+#   iconv          — only converts subtitle character sets, which Blinkify
+#                    does not read; and GNU libiconv would be one more LGPL
+#                    library in the binary for nothing.
+#   mediafoundation — FFmpeg uses it only for encoders (`h264_mf`, `hevc_mf`,
+#                    `aac_mf`). Windows' own H.264 encoder would be a new
+#                    answer to ADR-0003's question, and it gets an ADR if it is
+#                    ever wanted, not a configure flag.
+#   libopencore-amr*, libaribb24, libaribcaption — (L)GPLv3-only via version3.
+#   libass, libfreetype, libfontconfig, libharfbuzz — subtitle burn-in is a
+#                    compositor feature, a non-goal in CLAUDE.md section 1.
+#   sdl2, openal, lv2, vulkan, opencl, libplacebo — playback and GPU compute
+#                    Blinkify does not route through the sidecar.
+#   libsrt, librist, libssh, libzmq, schannel — network. See above.
+#   (The native `arnndn`, `loudnorm`, `alimiter` and `volume` filters that
+#   Epic #7 depends on are part of libavfilter and need no flag; the sidecar
+#   gate asserts they are present.)

@@ -45,6 +45,7 @@
     "publisher": "Ismet Cahangirov",
     "copyright": "Copyright © 2026 Ismet Cahangirov",
     "category": "Video",
+    "externalBin": ["binaries/ffmpeg", "binaries/ffprobe"],
     "fileAssociations": [
       {
         "ext": ["blinkify"],

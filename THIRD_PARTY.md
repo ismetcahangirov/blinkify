@@ -19,10 +19,61 @@ installer, with its licence and what obligation that licence places on us.
 
 ## Bundled binaries
 
-| Component                              | Version | Licence      | Obligation                                                                                         | Status                                                                 |
-| -------------------------------------- | ------- | ------------ | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| FFmpeg (LGPL build, no `--enable-gpl`) | —       | LGPL v2.1+   | Ship the licence text; keep the component replaceable by the user; publish the build configuration | Planned — [#21](https://github.com/ismetcahangirov/blinkify/issues/21) |
-| RNNoise model weights                  | —       | BSD-3-Clause | Attribution                                                                                        | Planned — [#47](https://github.com/ismetcahangirov/blinkify/issues/47) |
+| Component                              | Version       | Licence      | Obligation                                                                                         | Status                                                                 |
+| -------------------------------------- | ------------- | ------------ | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| FFmpeg (LGPL build, no `--enable-gpl`) | FFmpeg n8.1.3 | LGPL v2.1+   | Ship the licence text; keep the component replaceable by the user; publish the build configuration | Bundled — [#21](https://github.com/ismetcahangirov/blinkify/issues/21) |
+| RNNoise model weights                  | —             | BSD-3-Clause | Attribution                                                                                        | Planned — [#47](https://github.com/ismetcahangirov/blinkify/issues/47) |
+
+### The FFmpeg sidecar in detail
+
+`ffmpeg.exe` and `ffprobe.exe` are FFmpeg **n8.1.3** (commit `1041abdc962f`),
+built by Blinkify from the configure line in
+[`tools/ffmpeg-sidecar/configure.txt`](./tools/ffmpeg-sidecar/configure.txt) —
+not a distributor build, for the reasons in
+[ADR-0004](./docs/decisions/ADR-0004-build-the-ffmpeg-sidecar-ourselves.md).
+The exact source commit, toolchain image digest and SHA-256 of each binary are
+in [`tools/ffmpeg-sidecar/sidecar.lock.json`](./tools/ffmpeg-sidecar/sidecar.lock.json),
+and `pnpm sidecar:check` fails CI if the bundled binaries differ from any of it.
+
+The configuration, as the binary reports it (toolchain flags omitted):
+
+```
+--disable-debug --disable-doc --disable-ffplay --enable-pthreads
+--disable-w32threads --disable-network --disable-autodetect --enable-d3d11va
+--enable-dxva2 --enable-zlib --enable-lzma --enable-ffnvcodec
+--enable-nvenc --enable-nvdec --enable-cuvid --enable-amf --enable-libvpl
+--enable-libvpx --enable-libsvtav1 --enable-libaom --enable-libdav1d
+--enable-libopus --enable-libmp3lame --enable-libvorbis --enable-libzimg
+--enable-libsoxr
+```
+
+No `--enable-gpl`, no `--enable-nonfree`, no `--enable-version3`: the build is
+LGPL v2.1-or-later. It is also built with `--disable-network`, so it cannot make
+a network request (`CLAUDE.md` forbidden behaviour 8).
+
+Libraries statically linked into those two binaries, and therefore shipped:
+
+| Library            | Licence                                     | Used for                     |
+| ------------------ | ------------------------------------------- | ---------------------------- |
+| libvpx             | BSD-3-Clause                                | VP9 encode and decode        |
+| SVT-AV1            | BSD-3-Clause-Clear + AOMedia Patent Licence | AV1 encode                   |
+| libaom             | BSD-2-Clause + AOMedia Patent Licence       | AV1 encode                   |
+| dav1d              | BSD-2-Clause                                | AV1 decode                   |
+| Opus               | BSD-3-Clause                                | Opus encode                  |
+| LAME               | LGPL v2+                                    | MP3 encode                   |
+| libvorbis, libogg  | BSD-3-Clause                                | Vorbis encode                |
+| zimg               | WTFPL                                       | `zscale` for proxies         |
+| soxr               | LGPL v2.1+                                  | resampling                   |
+| oneVPL dispatcher  | MIT                                         | Intel Quick Sync             |
+| nv-codec-headers   | MIT                                         | NVIDIA NVENC and NVDEC       |
+| AMF headers        | MIT                                         | AMD AMF                      |
+| zlib               | Zlib                                        | compressed container headers |
+| liblzma (XZ Utils) | 0BSD                                        | compressed container headers |
+
+Every one is permissive or LGPL, and LGPL is satisfied the same way as for
+FFmpeg itself: the whole sidecar is a separate, replaceable executable. Their
+licence texts ship in the attribution bundle tracked by
+[#73](https://github.com/ismetcahangirov/blinkify/issues/73).
 
 **The FFmpeg entry is load-bearing.** It is invoked as a separate sidecar
 process, never linked into the Blinkify process, which is how the LGPL

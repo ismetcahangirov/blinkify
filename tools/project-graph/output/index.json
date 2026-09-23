@@ -5,7 +5,7 @@
     "tools"
   ],
   "totals": {
-    "files": 87,
+    "files": 98,
     "tests": 11,
     "violations": 0
   },
@@ -28,13 +28,20 @@
       ]
     },
     "packages/types": {
-      "files": 6,
+      "files": 13,
       "tests": 0,
       "untested": [
+        "packages/types/src/generated/Chroma.ts",
+        "packages/types/src/generated/CodecCapability.ts",
+        "packages/types/src/generated/EncoderCapabilities.ts",
+        "packages/types/src/generated/EncoderCapability.ts",
+        "packages/types/src/generated/EncoderSource.ts",
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/ProfileCapability.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
         "packages/types/src/generated/SeamReason.ts",
         "packages/types/src/generated/UpdateOffer.ts",
+        "packages/types/src/generated/VideoCodec.ts",
         "packages/types/src/generated/index.ts",
         "packages/types/src/index.ts"
       ]
@@ -64,17 +71,19 @@
       ]
     },
     "tools": {
-      "files": 20,
+      "files": 24,
       "tests": 0,
       "untested": [
         "tools/apply-labels.mjs",
         "tools/check-links.mjs",
         "tools/colour-gate-test.mjs",
         "tools/colour-gate.mjs",
+        "tools/corpus/generate.mjs",
         "tools/crate-boundaries-test.mjs",
         "tools/crate-boundaries.mjs",
         "tools/design-token-gate-test.mjs",
         "tools/design-token-gate.mjs",
+        "tools/fetch-sidecar.mjs",
         "tools/generate-icons.mjs",
         "tools/generate-types-index.mjs",
         "tools/licence-gate-test.mjs",
@@ -86,6 +95,8 @@
         "tools/project-graph/injection-test.mjs",
         "tools/project-graph/query.mjs",
         "tools/project-graph/validate.mjs",
+        "tools/sidecar-gate-test.mjs",
+        "tools/sidecar-gate.mjs",
         "tools/version.mjs"
       ]
     }
@@ -387,6 +398,73 @@
       "coveredByTests": [],
       "hasNoDependents": true
     },
+    "packages/types/src/generated/Chroma.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/ProfileCapability.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/CodecCapability.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/EncoderCapability.ts",
+        "packages/types/src/generated/VideoCodec.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/EncoderCapabilities.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/EncoderCapabilities.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/CodecCapability.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/EncoderCapability.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/EncoderSource.ts",
+        "packages/types/src/generated/ProfileCapability.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/CodecCapability.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/EncoderSource.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/EncoderCapability.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/ExportTier.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -396,6 +474,20 @@
         "packages/types/src/generated/SeamReason.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/ProfileCapability.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Chroma.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/EncoderCapability.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -436,15 +528,34 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/VideoCodec.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/CodecCapability.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/index.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
+        "packages/types/src/generated/Chroma.ts",
+        "packages/types/src/generated/CodecCapability.ts",
+        "packages/types/src/generated/EncoderCapabilities.ts",
+        "packages/types/src/generated/EncoderCapability.ts",
+        "packages/types/src/generated/EncoderSource.ts",
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/ProfileCapability.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
         "packages/types/src/generated/SeamReason.ts",
-        "packages/types/src/generated/UpdateOffer.ts"
+        "packages/types/src/generated/UpdateOffer.ts",
+        "packages/types/src/generated/VideoCodec.ts"
       ],
       "dependedOnBy": [
         "packages/types/src/index.ts"
@@ -1097,6 +1208,15 @@
       "coveredByTests": [],
       "hasNoDependents": true
     },
+    "tools/corpus/generate.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
     "tools/crate-boundaries-test.mjs": {
       "workspace": "tools",
       "layer": "tooling",
@@ -1129,6 +1249,17 @@
       "layer": "tooling",
       "isTest": false,
       "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/fetch-sidecar.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [
+        "tools/sidecar-gate.mjs"
+      ],
       "dependedOnBy": [],
       "coveredByTests": [],
       "hasNoDependents": true
@@ -1231,6 +1362,29 @@
       "dependedOnBy": [],
       "coveredByTests": [],
       "hasNoDependents": true
+    },
+    "tools/sidecar-gate-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [
+        "tools/sidecar-gate.mjs"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/sidecar-gate.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "tools/fetch-sidecar.mjs",
+        "tools/sidecar-gate-test.mjs"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
     },
     "tools/version.mjs": {
       "workspace": "tools",

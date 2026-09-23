@@ -1,0 +1,22 @@
+name: Fetch the FFmpeg sidecar
+description: >
+  Put the pinned LGPL FFmpeg sidecar in apps/desktop/src-tauri/binaries, where
+  Tauri requires every externalBin to exist before the shell crate compiles.
+  Cached on the lock file, so a runner downloads the ~100 MB zip only when the
+  pin moves. Verified against sidecar.lock.json either way — a cache is not a
+  source of trust.
+
+runs:
+  using: composite
+  steps:
+    - name: Restore the sidecar
+      uses: actions/cache@v4
+      with:
+        path: apps/desktop/src-tauri/binaries
+        key: ffmpeg-sidecar-${{ hashFiles('tools/ffmpeg-sidecar/sidecar.lock.json') }}
+
+    # Node builtins only, so this works before pnpm is set up. A cache hit is
+    # re-hashed against the lock; a miss downloads and verifies.
+    - name: Fetch and verify
+      shell: pwsh
+      run: node tools/fetch-sidecar.mjs

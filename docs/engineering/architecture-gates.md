@@ -16,8 +16,9 @@ works after you touch it.
 | `pnpm colours:check`   | No colour value outside the design token file             | #15        |
 | `pnpm offline:check`   | No remote asset the interface needs in order to appear    | #16        |
 | `pnpm tokens:check`    | No hard-coded length, duration or weight in `packages/ui` | #17        |
+| `pnpm sidecar:check`   | The bundled FFmpeg is LGPL-only, ours, and complete       | #21        |
 
-All seven run in `pnpm verify`, and all seven block a merge — see
+All eight run in `pnpm verify`, and all eight block a merge — see
 [`ci.md`](./ci.md) for how they are wired into the pipeline and in what order.
 
 ## Two languages, two tools — and why that is not pedantry
@@ -190,15 +191,16 @@ So CLAUDE.md section 14 requires an injection test for any change under
 pnpm gates:prove
 ```
 
-| Script                      | Proves                                                                                                                                                                                                                                   |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm graph:injection`      | Each of the seven rules fires on its own violation, **by name**                                                                                                                                                                          |
-| `pnpm graph:determinism`    | Two generator runs over an unchanged tree are byte-identical                                                                                                                                                                             |
-| `pnpm boundaries:rust:test` | The Tauri check catches a direct **and** a transitive dependency                                                                                                                                                                         |
-| `pnpm deny:test`            | The licence gate rejects GPL, AGPL and LGPL, and accepts MIT                                                                                                                                                                             |
-| `pnpm colours:check:test`   | The colour gate catches a hex, an `rgb()` and a named colour, and does not catch a `var()` reference or a comment                                                                                                                        |
-| `pnpm offline:check:test`   | The offline gate catches a font-service `<link>`, a remote `url()`, a remote `@import` and a remote `src`, and does not catch a URL in a comment or an `<a href>` a user clicks                                                          |
-| `pnpm tokens:check:test`    | The design-token gate catches a pixel padding, a rem radius, a millisecond duration, a numeric font weight and a length in an inline style, and does not catch a percentage, a `calc()` over tokens, zero, or the token files themselves |
+| Script                      | Proves                                                                                                                                                                                                                                                                       |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm graph:injection`      | Each of the seven rules fires on its own violation, **by name**                                                                                                                                                                                                              |
+| `pnpm graph:determinism`    | Two generator runs over an unchanged tree are byte-identical                                                                                                                                                                                                                 |
+| `pnpm boundaries:rust:test` | The Tauri check catches a direct **and** a transitive dependency                                                                                                                                                                                                             |
+| `pnpm deny:test`            | The licence gate rejects GPL, AGPL and LGPL, and accepts MIT                                                                                                                                                                                                                 |
+| `pnpm colours:check:test`   | The colour gate catches a hex, an `rgb()` and a named colour, and does not catch a `var()` reference or a comment                                                                                                                                                            |
+| `pnpm offline:check:test`   | The offline gate catches a font-service `<link>`, a remote `url()`, a remote `@import` and a remote `src`, and does not catch a URL in a comment or an `<a href>` a user clicks                                                                                              |
+| `pnpm sidecar:check:test`   | The sidecar gate rejects a GPL build, a non-free build, a distributor's "LGPL" build carrying `openh264`, a build missing `arnndn` or `hevc_nvenc`, a binary whose hash differs from the lock, and a committed `ffmpeg.exe` — see [`ffmpeg-sidecar.md`](./ffmpeg-sidecar.md) |
+| `pnpm tokens:check:test`    | The design-token gate catches a pixel padding, a rem radius, a millisecond duration, a numeric font weight and a length in an inline style, and does not catch a percentage, a `calc()` over tokens, zero, or the token files themselves                                     |
 
 Asserting on the rule _name_ rather than on a non-zero exit code is the point.
 Exit 1 could come from any rule, or from the tool failing to start. Only the

@@ -9,12 +9,14 @@
 //! process boundary, so a per-frame or per-clip command is a performance bug
 //! waiting to be written.
 
+pub mod media;
 pub mod updater;
 pub mod window_state;
 
 use blinkify_engine::ExportTier;
 use tauri::{Manager, WindowEvent};
 
+use media::MediaEngine;
 use updater::PendingUpdate;
 
 /// Whether a given export tier leaves the pixels untouched.
@@ -41,8 +43,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(PendingUpdate::default())
+        .manage(MediaEngine::locate())
         .invoke_handler(tauri::generate_handler![
             tier_is_lossless,
+            media::encoder_capabilities,
             updater::pending_update,
             updater::install_update
         ])
@@ -52,6 +56,10 @@ pub fn run() {
             // must appear whether or not the network answers, and it applies
             // nothing on its own — see `updater`.
             updater::check_on_launch(app.handle());
+
+            // ADR-0003 part 1: what this machine can encode is measured, not
+            // assumed, and measured before anything needs the answer.
+            app.state::<MediaEngine>().probe_encoders_in_background();
 
             // Put the window back where the user left it, if that is still
             // somewhere they can see it. `window_state::restore` validates the

@@ -26,17 +26,17 @@ v1.
 Nine checks, each its own job so a failure is legible from the pull request
 without opening a log.
 
-| Check                       | Runs                                                                      |
-| --------------------------- | ------------------------------------------------------------------------- |
-| **Format (Prettier)**       | `pnpm format:check`                                                       |
-| **Lint (ESLint)**           | `pnpm lint`                                                               |
-| **Typecheck (tsc)**         | `pnpm typecheck`, then `pnpm build`                                       |
-| **Test (Vitest)**           | `pnpm test:ts`                                                            |
-| **Docs links**              | `pnpm check:links`                                                        |
-| **Project graph**           | `graph:validate`, `graph:injection`, `graph:determinism`, `graph:check`   |
-| **Rust**                    | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test --workspace` |
-| **Boundaries and licences** | `boundaries:rust`, `boundaries:rust:test`, `deny:licenses`, `deny:test`   |
-| **Installer**               | `pnpm tauri build`, and uploads the `.exe`                                |
+| Check                       | Runs                                                                                                           |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Format (Prettier)**       | `pnpm format:check`                                                                                            |
+| **Lint (ESLint)**           | `pnpm lint`                                                                                                    |
+| **Typecheck (tsc)**         | `pnpm typecheck`, then `pnpm build`                                                                            |
+| **Test (Vitest)**           | `pnpm test:ts`                                                                                                 |
+| **Docs links**              | `pnpm check:links`                                                                                             |
+| **Project graph**           | `graph:validate`, `graph:injection`, `graph:determinism`, `graph:check`                                        |
+| **Rust**                    | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test --workspace`                                      |
+| **Boundaries and licences** | `boundaries:rust`, `boundaries:rust:test`, `deny:licenses`, `deny:test`, `sidecar:check`, `sidecar:check:test` |
+| **Installer**               | `pnpm tauri build`, installs it silently and runs the installed sidecar, and uploads the `.exe`                |
 
 `cargo fmt`, `clippy` and `cargo test` share one job on purpose. Each compiles
 the whole Tauri dependency tree; three jobs would compile it three times, and
@@ -70,6 +70,9 @@ causes, in order of likelihood:
 4. **Running cargo from Git Bash.** See
    [`toolchain.md`](./toolchain.md#windows-build-prerequisites) — coreutils
    ships a `link` that shadows MSVC's `link.exe`, and the error blames rustc.
+5. **No FFmpeg sidecar.** `pnpm sidecar:fetch`. Tauri will not compile the
+   shell without it, and the engine's integration tests run it — see
+   [`ffmpeg-sidecar.md`](./ffmpeg-sidecar.md).
 
 ## Caching
 
@@ -82,6 +85,7 @@ Without it, a Rust build on a Windows runner runs past the 15-minute budget in
 | `~/.cargo/registry`, `~/.cargo/git/db` | `Cargo.lock`                                      |
 | `target/`                              | `Cargo.lock` + `rust-toolchain.toml`, per profile |
 | `cargo-deny` binary                    | `CARGO_DENY_VERSION` in `ci.yml`                  |
+| FFmpeg sidecar                         | `tools/ffmpeg-sidecar/sidecar.lock.json`          |
 
 Two things there are load-bearing:
 

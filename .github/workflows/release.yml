@@ -68,6 +68,12 @@ jobs:
         with:
           target-cache: release
 
+      # The installer bundles the sidecar (#21). A release is never built
+      # without first proving that sidecar is the pinned LGPL build.
+      - uses: ./.github/actions/fetch-sidecar
+      - name: The FFmpeg sidecar is LGPL-only and complete
+        run: pnpm sidecar:check
+
       - name: Compose the release notes
         id: notes
         shell: pwsh
