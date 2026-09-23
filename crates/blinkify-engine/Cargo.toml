@@ -10,6 +10,9 @@ repository.workspace = true
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
+# SHA-256 for the content key of on-disk caches (#24). RustCrypto; already in
+# the tree through Tauri, so this adds no new package to what ships.
+sha2 = "0.10.9"
 thiserror = { workspace = true }
 ts-rs = { workspace = true }
 

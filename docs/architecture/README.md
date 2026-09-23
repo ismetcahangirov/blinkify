@@ -12,6 +12,11 @@ How Blinkify is put together and why the structure holds under change.
 - The caching strategy and the cache key derivation
 - Threading and cancellation: what runs where, and how work is stopped
 
+## Documents
+
+- [`keyframe-index.md`](./keyframe-index.md) — what the keyframe index stores,
+  how open GOPs are told apart, and how it fills lazily and persists (#24)
+
 ## What does not belong here
 
 - **A choice between alternatives** — that is an ADR in

@@ -53,7 +53,7 @@ distributes, and the corpus tool is neither linked nor distributed.
 | `hevc-closed-gop-radl.mp4` | HEVC IDR_W_RADL keyframes: leading pictures, but a closed GOP           |
 | `hevc-hdr10.mp4`           | HEVC Main 10, BT.2020 / PQ, mastering display and content light level   |
 | `portrait-phone.mp4`       | A landscape-coded stream with a 90-degree display rotation              |
-| `vfr-screen.mp4`           | Variable frame rate: 30 fps, then 10 fps                                |
+| `vfr-screen.mp4`           | Variable frame rate: 30 fps, then 10 fps; keyframes at 0, 1, 2.5, 3.2 s |
 | `edit-list.mp4`            | Stream-copied from inside a GOP; the MP4 edit list hides the pre-roll   |
 | `multi-audio.mkv`          | VP9 with Opus stereo and AAC 5.1 audio tracks, and two chapters         |
 | `vp9.webm`                 | VP9 profile 0 and Opus                                                  |

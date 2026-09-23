@@ -152,12 +152,14 @@ const RECIPES = [
   },
   {
     file: "vfr-screen.mp4",
-    note: "Variable frame rate: 30 fps for two seconds, then 10 fps",
+    note: "Variable frame rate: 30 fps for two seconds, then 10 fps; keyframes at 0, 1, 2.5 and 3.2 s",
     steps: [
       [
         ...VIDEO("640x360", 30, 4),
         "-vf", "setpts='if(lt(N,60),N/30,2+(N-60)/10)/TB'",
         "-fps_mode", "passthrough",
+        // Keyframes on both sides of the rate change, at times the tests know.
+        "-force_key_frames", "0,1,2.5,3.2",
         "-c:v", "libx264", "-pix_fmt", "yuv420p",
         "-video_track_timescale", "90000",
         "{out}",

@@ -1125,6 +1125,16 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/GopKind.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Keyframe.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/Hdr.ts",
       "dependencies": [
         {
@@ -1200,6 +1210,15 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/IndexProgress.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/JobId.ts",
       "dependencies": [],
       "dependents": [
@@ -1241,6 +1260,52 @@
             "import"
           ],
           "resolved": "packages/types/src/generated/Progress.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Keyframe.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./GopKind",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/GopKind.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./PictureKind",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/PictureKind.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1306,6 +1371,16 @@
         }
       ],
       "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/PictureKind.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Keyframe.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -1873,6 +1948,23 @@
         },
         {
           "dynamic": false,
+          "module": "./GopKind",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/GopKind.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Hdr",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1898,6 +1990,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/HdrTransfer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./IndexProgress",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/IndexProgress.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1941,6 +2050,23 @@
         },
         {
           "dynamic": false,
+          "module": "./Keyframe",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Keyframe.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./MasteringDisplay",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1966,6 +2092,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/MediaInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./PictureKind",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/PictureKind.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4114,8 +4257,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 119,
-    "totalDependenciesCruised": 172,
+    "totalCruised": 123,
+    "totalDependenciesCruised": 178,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

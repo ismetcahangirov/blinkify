@@ -43,11 +43,11 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(PendingUpdate::default())
-        .manage(MediaEngine::locate())
         .invoke_handler(tauri::generate_handler![
             tier_is_lossless,
             media::encoder_capabilities,
             media::probe_media,
+            media::index_keyframes,
             updater::pending_update,
             updater::install_update
         ])
@@ -57,6 +57,11 @@ pub fn run() {
             // must appear whether or not the network answers, and it applies
             // nothing on its own — see `updater`.
             updater::check_on_launch(app.handle());
+
+            // The engine needs the OS cache directory, which only exists
+            // once the app does — hence managed here rather than on the
+            // builder.
+            app.manage(MediaEngine::locate(app.path().app_cache_dir().ok()));
 
             // ADR-0003 part 1: what this machine can encode is measured, not
             // assumed, and measured before anything needs the answer.
