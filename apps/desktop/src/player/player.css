@@ -59,3 +59,34 @@
   line-height: var(--type-caption-line);
   color: var(--danger);
 }
+
+/* The transport row (#28). The timecode sits between the stepping controls
+   and the playback options, where the eye already is when stepping. */
+.player__transport {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.player__timecode {
+  margin-inline: var(--space-2);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.player__transport-end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.player__silent {
+  max-width: 16rem;
+  overflow: hidden;
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  color: var(--warning);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

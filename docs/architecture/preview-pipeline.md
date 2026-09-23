@@ -21,7 +21,7 @@ at full rate without consuming unbounded memory. The choice of transport is
       │ take_due(clock): newest frame at or before the   │
       │ clock; older ones dropped and counted            │
       ▼                                                  │
- PreviewSession ── WallClock (#28 replaces with audio) ──┘
+ Player (lanes) ── PlaybackClock, read from the audio ────┘
       │
       ▼  http://frame.localhost/<session>/<after>   (one request in flight)
  renderer: fetch → ImageData → putImageData (offscreen, frame size)
@@ -85,10 +85,16 @@ The engine, not the renderer, decides what is on screen.
   every cycle and drop frames at 30 fps. A throttled window sees fewer, newer
   frames.
 
-Audio is not in this path. The playback clock becomes the audio clock in
-[#28](https://github.com/ismetcahangirov/blinkify/issues/28), and audio decode
-runs in its own process on its own thread, so a stalled video decoder cannot
-stall it.
+Audio is not in this path. The clock is read from the audio being played
+([`playback.md`](./playback.md), #28), and audio decodes in its own process on
+its own thread, so a stalled video decoder cannot stall it — the test
+`under_load_frames_drop_and_audio_carries_on` asserts two seconds of
+uninterrupted tone while a throttled renderer drops frames.
+
+The frame on the wire is a 48-byte header — magic `BKF2`, size, flags (the
+rotation in quarter turns, and "black" for a gap in the timeline), sequence
+number, source timestamp, timeline position and timeline frame number — then the
+pixels. #27 shipped a 32-byte header; #28 added the timeline fields.
 
 ## Rotation and aspect
 
@@ -106,8 +112,8 @@ so every delivered frame has square pixels and the renderer only ever rotates.
 
 ## Teardown
 
-`PreviewSession::close` closes the ring (waking a blocked producer), cancels the
-decoder, and returns once its process has exited. The shell closes every
+`Player::close` closes every lane's ring (waking a blocked producer), cancels
+its decoders, and returns once their processes have exited. The shell closes every
 session on `close_all_previews` — what closing a project calls — and before the
 application exits; the orchestrator's job object covers an unclean exit. A test
 asserts the decoder's process id is gone from the process table after close.
@@ -125,8 +131,8 @@ shows them over the video.
 
 ## What this does not do yet
 
-- **Audio** and the audio master clock: #28 and #31.
-- **Seek and scrub**, and prefetch around the playhead: #29.
+- **Audio monitoring** — device following, levels, mute and solo: #31.
+- **Scrub**, and prefetch around the playhead: #29.
 - **Proxies.** A session opens the original; choosing `PreviewSource::Proxy`
   when one is attached belongs with seek (#29) and the edit graph (#30).
 - **HDR.** Frames are converted to 8-bit RGBA; v1 previews in SDR (Epic #4, out

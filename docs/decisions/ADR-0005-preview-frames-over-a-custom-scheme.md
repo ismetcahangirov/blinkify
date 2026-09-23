@@ -108,3 +108,13 @@ prompt on first run.
 
 - A frame that is superseded before the renderer asks for it is never sent.
   That is the intended drop policy, and the engine counts every one of them.
+
+## Later changes
+
+Recorded here without changing the decision above.
+
+- 2026-09-23, [#28](https://github.com/ismetcahangirov/blinkify/issues/28): the
+  header grew to 48 bytes (magic `BKF2`) to carry the rotation, a "black"
+  flag for gaps, the timeline position and the timeline frame number. The
+  layout is documented in
+  [`preview-pipeline.md`](../architecture/preview-pipeline.md).

@@ -1,3 +1,5 @@
+import type { PlaybackStatus } from "@blinkify/types";
+import { TooltipProvider } from "@blinkify/ui";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { invoke } from "@tauri-apps/api/core";
@@ -5,6 +7,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { usePreviewStore } from "../../player/preview.store.js";
 import { PlayerZone } from "./PlayerZone.js";
+
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: vi.fn(() => Promise.resolve(() => undefined)),
+}));
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -14,18 +20,19 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 const invoked = vi.mocked(invoke);
 
-const PREVIEW = {
-  session: 7,
-  info: {
-    frame: { width: 1280, height: 720 },
-    rotation: 90,
-    displayWidth: 720,
-    displayHeight: 1280,
-    timeBase: { num: 1, den: 15360 },
-    durationSeconds: 4,
-    stream: 0,
-  },
+const PLAYBACK: PlaybackStatus = {
+  state: "paused",
+  position: 0,
+  duration: 4_000_000,
+  frameRate: { num: 30, den: 1 },
+  timecode: "00:00:00:00",
+  durationTimecode: "00:00:04:00",
+  speed: "normal",
+  loopRange: null,
+  audio: { kind: "device", name: "Speakers" },
 };
+
+const OPEN = { status: "open" as const, session: 7, playback: PLAYBACK };
 
 beforeEach(() => {
   invoked.mockReset();
@@ -34,7 +41,9 @@ beforeEach(() => {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   usePreviewStore.setState({
     status: "empty",
-    preview: null,
+    session: null,
+    playback: null,
+    frameNumber: null,
     path: null,
     error: null,
     stats: null,
@@ -52,9 +61,16 @@ describe("PlayerZone", () => {
   });
 
   it("shows the video surface for an open preview", () => {
-    usePreviewStore.setState({ status: "playing", preview: PREVIEW });
-    render(<PlayerZone />);
+    usePreviewStore.setState(OPEN);
+    render(
+      <TooltipProvider>
+        <PlayerZone />
+      </TooltipProvider>,
+    );
     expect(screen.getByTestId("preview-canvas")).toBeInTheDocument();
+    expect(
+      screen.getByRole("toolbar", { name: "Transport" }),
+    ).toBeInTheDocument();
   });
 
   it("states why a preview could not open", () => {
@@ -78,11 +94,14 @@ describe("PlayerZone", () => {
       presentedFrames: 290,
       decodeFps: 58.5,
       resyncs: 0,
-      ended: false,
       error: null,
     });
-    usePreviewStore.setState({ status: "playing", preview: PREVIEW });
-    render(<PlayerZone />);
+    usePreviewStore.setState(OPEN);
+    render(
+      <TooltipProvider>
+        <PlayerZone />
+      </TooltipProvider>,
+    );
     await userEvent.click(screen.getByRole("button", { name: "Stats" }));
     const stats = await screen.findByTestId("decode-stats");
     expect(invoked).toHaveBeenCalledWith("preview_stats", { session: 7 });

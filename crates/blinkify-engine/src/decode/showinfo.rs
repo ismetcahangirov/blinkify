@@ -41,34 +41,6 @@ pub(crate) fn parse(line: &str) -> Option<Line> {
     Some(Line::Frame { n, pts })
 }
 
-/// `pts` in time base `from`, expressed in time base `to`, rounded to the
-/// nearest tick. Exact when the two are equal, which is the usual case.
-pub(crate) fn rescale(pts: i64, from: Rational, to: Rational) -> Option<i64> {
-    if from == to {
-        return Some(pts);
-    }
-    // pts * from.num / from.den * to.den / to.num, in 128 bits so no product
-    // of two 64-bit values can overflow.
-    let mut numerator = i128::from(pts) * i128::from(from.num) * i128::from(to.den);
-    let mut denominator = i128::from(from.den) * i128::from(to.num);
-    if denominator == 0 {
-        return None;
-    }
-    if denominator < 0 {
-        numerator = -numerator;
-        denominator = -denominator;
-    }
-    // Division truncates towards zero, so round half away from zero by
-    // moving the numerator half a tick away from zero first.
-    let half = denominator >> 1;
-    let biased = if numerator < 0 {
-        numerator - half
-    } else {
-        numerator + half
-    };
-    i64::try_from(biased.checked_div(denominator)?).ok()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -118,15 +90,5 @@ mod tests {
             None
         );
         assert_eq!(parse("[Parsed_showinfo_3 @ 0] color_range:tv"), None);
-    }
-
-    #[test]
-    fn rescaling_rounds_to_the_nearest_tick() {
-        let ms = Rational { num: 1, den: 1000 };
-        let ninety_k = Rational { num: 1, den: 90000 };
-        assert_eq!(rescale(3003, ninety_k, ninety_k), Some(3003));
-        assert_eq!(rescale(3003, ninety_k, ms), Some(33));
-        assert_eq!(rescale(-3003, ninety_k, ms), Some(-33));
-        assert_eq!(rescale(1, ms, Rational { num: 0, den: 1 }), None);
     }
 }

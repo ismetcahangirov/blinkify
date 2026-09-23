@@ -1,19 +1,27 @@
+import type { PlaybackUpdate } from "@blinkify/types";
 import { Button } from "@blinkify/ui";
-import { memo, useCallback, useRef, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 import { DecodeStatsOverlay } from "../../player/DecodeStatsOverlay.js";
 import { PreviewCanvas } from "../../player/PreviewCanvas.js";
 import { usePreviewStore } from "../../player/preview.store.js";
+import { TransportBar } from "../../player/TransportBar.js";
 import { useFileDrop } from "../../player/useFileDrop.js";
+import { useTransportShortcuts } from "../../player/useTransportShortcuts.js";
 import { useShellStore } from "../../shell.store.js";
+
+/** The engine's transport event: see `media::PLAYBACK_EVENT` in the shell. */
+const PLAYBACK_EVENT = "media://playback";
 
 /**
  * The preview player.
  *
- * #27 fills it with the video surface: drop a file on it and the engine
- * decodes it into raw frames this zone draws. Transport controls arrive with
- * #28, seek and scrub with #29, and the edit graph with #30 — until then a
- * dropped file plays from its start.
+ * #27 filled it with the video surface: drop a file on it and the engine
+ * decodes it into raw frames this zone draws. #28 added the transport — play,
+ * pause, stop, frame steps, jumps, speed, loop, and the keys that drive them.
+ * Seek and scrub arrive with #29, and the edit graph with #30; until then a
+ * dropped file is the whole timeline.
  *
  * `memo` is not an optimisation guess here — it is the boundary the shell asks
  * for: "each zone is an independent React subtree, so a re-render in one does
@@ -28,10 +36,11 @@ import { useShellStore } from "../../shell.store.js";
 export const PlayerZone = memo(function PlayerZone() {
   const engineStatus = useShellStore((state) => state.engineStatus);
   const status = usePreviewStore((state) => state.status);
-  const preview = usePreviewStore((state) => state.preview);
+  const session = usePreviewStore((state) => state.session);
   const path = usePreviewStore((state) => state.path);
   const error = usePreviewStore((state) => state.error);
   const open = usePreviewStore((state) => state.open);
+  const transport = usePreviewStore((state) => state.transport);
   const [showStats, setShowStats] = useState(false);
   const surface = useRef<HTMLDivElement>(null);
 
@@ -51,11 +60,45 @@ export const PlayerZone = memo(function PlayerZone() {
   );
   useFileDrop(surface, openDropped);
 
+  const sendTransport = useCallback(
+    (command: Parameters<typeof transport>[0]) => {
+      void transport(command);
+    },
+    [transport],
+  );
+  useTransportShortcuts(session !== null, sendTransport);
+
+  // What the engine changes on its own — reaching the end, a new audio
+  // device — arrives as an event rather than as an answer.
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let disposed = false;
+    let listening: Promise<() => void>;
+    try {
+      listening = listen<PlaybackUpdate>(PLAYBACK_EVENT, (event) => {
+        usePreviewStore.getState().applyUpdate(event.payload);
+      });
+    } catch {
+      // Outside the application window there is no engine to hear from.
+      return undefined;
+    }
+    listening
+      .then((stop) => {
+        if (disposed) stop();
+        else unlisten = stop;
+      })
+      .catch(() => undefined);
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, []);
+
   return (
     <div className="zone player">
       <div className="player__header">
         <h2 className="zone__title">Player</h2>
-        {preview && (
+        {session !== null && (
           <Button
             size="sm"
             variant="ghost"
@@ -73,12 +116,8 @@ export const PlayerZone = memo(function PlayerZone() {
         className="player__surface"
         data-testid="player-surface"
       >
-        {preview ? (
-          <PreviewCanvas
-            key={preview.session}
-            session={preview.session}
-            rotation={preview.info.rotation}
-          />
+        {session !== null ? (
+          <PreviewCanvas key={session} session={session} />
         ) : (
           <p className="zone__placeholder">
             {status === "opening"
@@ -86,8 +125,9 @@ export const PlayerZone = memo(function PlayerZone() {
               : "Drop a video file here to preview it."}
           </p>
         )}
-        {preview && showStats && <DecodeStatsOverlay />}
+        {session !== null && showStats && <DecodeStatsOverlay />}
       </div>
+      {session !== null && <TransportBar />}
       {status === "failed" && error !== null && (
         <p className="player__error" role="alert">
           {error}

@@ -2,6 +2,6 @@
 import type { PlaybackStatus } from "./PlaybackStatus";
 
 /**
- * A preview session, as the renderer receives it when one opens.
+ * The payload of [`PLAYBACK_EVENT`].
  */
-export type PreviewOpened = { session: number, status: PlaybackStatus, };
+export type PlaybackUpdate = { session: number, status: PlaybackStatus, };

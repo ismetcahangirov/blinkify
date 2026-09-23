@@ -44,15 +44,10 @@ use crate::orchestrator::{
     CancelToken, Flow, JobError, JobOptions, Orchestrator, Priority, SidecarCommand,
 };
 use crate::probe::{Rational, VideoInfo};
+use crate::time::{Rounding, rescale};
 
 /// Bytes per pixel of the RGBA frames the decoder delivers.
 pub const BYTES_PER_PIXEL: usize = 4;
-
-/// Bytes in front of the pixels of a frame on the wire: see [`wire_frame`].
-pub const WIRE_HEADER_BYTES: usize = 32;
-
-/// The magic number that opens a frame on the wire.
-pub const WIRE_MAGIC: [u8; 4] = *b"BKF1";
 
 /// How long a complete frame on standard output may wait for its timestamp on
 /// standard error before the decode is declared broken.
@@ -78,33 +73,6 @@ impl std::fmt::Debug for VideoFrame {
             .field("bytes", &self.pixels.len())
             .finish()
     }
-}
-
-/// A frame as the renderer receives it: a 32-byte little-endian header, then
-/// the pixels.
-///
-/// | offset | size | field                           |
-/// | ------ | ---- | ------------------------------- |
-/// | 0      | 4    | magic `BKF1`                    |
-/// | 4      | 4    | width, `u32`                    |
-/// | 8      | 4    | height, `u32`                   |
-/// | 12     | 4    | reserved, zero                  |
-/// | 16     | 8    | sequence number, `u64`          |
-/// | 24     | 8    | presentation timestamp, `i64`   |
-///
-/// Binary, not base64 and not JSON: a 1080p frame is 8 MB, thirty times a
-/// second, and anything that inflates or parses it cannot keep up.
-#[must_use]
-pub fn wire_frame(seq: u64, frame: &VideoFrame) -> Vec<u8> {
-    let mut bytes = Vec::with_capacity(WIRE_HEADER_BYTES + frame.pixels.len());
-    bytes.extend_from_slice(&WIRE_MAGIC);
-    bytes.extend_from_slice(&frame.width.to_le_bytes());
-    bytes.extend_from_slice(&frame.height.to_le_bytes());
-    bytes.extend_from_slice(&0_u32.to_le_bytes());
-    bytes.extend_from_slice(&seq.to_le_bytes());
-    bytes.extend_from_slice(&frame.pts.to_le_bytes());
-    bytes.extend_from_slice(&frame.pixels);
-    bytes
 }
 
 /// The size, in pixels, of the frames a decode delivers.
@@ -289,7 +257,8 @@ impl Timestamps {
             showinfo::Line::TimeBase(time_base) => queue.link_time_base = Some(time_base),
             showinfo::Line::Frame { pts, .. } => {
                 let from = queue.link_time_base.unwrap_or(stream_time_base);
-                let pts = pts.and_then(|pts| showinfo::rescale(pts, from, stream_time_base));
+                let pts =
+                    pts.and_then(|pts| rescale(pts, from, stream_time_base, Rounding::Nearest));
                 queue.pts.push_back(pts);
             }
         }
@@ -627,23 +596,6 @@ mod tests {
             seconds_at_or_after(-4608, Rational { num: 1, den: 15360 }),
             "-0.300000"
         );
-    }
-
-    #[test]
-    fn the_wire_header_is_little_endian_and_32_bytes() {
-        let frame = VideoFrame {
-            pts: -2,
-            width: 3,
-            height: 1,
-            pixels: vec![7; 12],
-        };
-        let bytes = wire_frame(5, &frame);
-        assert_eq!(bytes.len(), WIRE_HEADER_BYTES + 12);
-        assert_eq!(bytes.get(..4), Some(&WIRE_MAGIC[..]));
-        assert_eq!(bytes.get(4..8), Some(&3_u32.to_le_bytes()[..]));
-        assert_eq!(bytes.get(16..24), Some(&5_u64.to_le_bytes()[..]));
-        assert_eq!(bytes.get(24..32), Some(&(-2_i64).to_le_bytes()[..]));
-        assert_eq!(bytes.get(32..), Some(&[7_u8; 12][..]));
     }
 
     #[test]

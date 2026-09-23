@@ -24,6 +24,9 @@ How Blinkify is put together and why the structure holds under change.
 - [`preview-pipeline.md`](./preview-pipeline.md) — the decode process, the
   bounded frame ring, presentation by timestamp, rotation at draw time, and
   teardown (#27)
+- [`playback.md`](./playback.md) — the audio master clock, anchors and
+  generations, seamless clip boundaries, exact frame steps, the transport, and
+  playback without an audio device (#28)
 
 ## What does not belong here
 

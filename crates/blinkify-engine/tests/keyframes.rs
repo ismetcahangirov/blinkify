@@ -340,3 +340,78 @@ fn indexing_two_hours_in_the_background_never_blocks_a_query() {
     assert!((progress.last().copied().unwrap_or_default() - 1.0).abs() < f64::EPSILON);
     assert_eq!(index.keyframes(stream).expect("k").len(), 7200);
 }
+
+/// Every shown frame's presentation timestamp, as `ffprobe` decodes them.
+fn reference_frames(path: &Path) -> Vec<i64> {
+    let output = orchestrator()
+        .run_to_end(
+            SidecarCommand::ffprobe()
+                .option("-v", "error")
+                .option("-select_streams", "v:0")
+                .option("-show_entries", "frame=pts")
+                .option("-of", "csv=p=0")
+                .input(path),
+            Priority::Foreground,
+        )
+        .expect("ffprobe frames");
+    let mut pts: Vec<i64> = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| line.trim().trim_end_matches(',').parse().ok())
+        .collect();
+    pts.sort_unstable();
+    pts
+}
+
+#[test]
+fn the_frame_table_walks_every_shown_frame_in_both_directions() {
+    // One-second regions, so the walk crosses region boundaries — where a
+    // frame shown before the limit but decoded after it would go missing.
+    for name in [
+        "h264-high-closed-gop.mp4",
+        "hevc-open-gop.mp4",
+        "vfr-screen.mp4",
+        "edit-list.mp4",
+    ] {
+        let path = common::corpus(name);
+        let index = open(&path, None).with_chunk_seconds(1.0);
+        let stream = video_stream(&index);
+        let expected = reference_frames(&path);
+
+        let mut forwards = vec![
+            index
+                .frame_at_or_before(stream, expected[0])
+                .expect("index")
+                .unwrap_or_else(|| {
+                    panic!(
+                        "{name}: the first frame {} is not in the table",
+                        expected[0]
+                    )
+                }),
+        ];
+        while let Some(next) = index
+            .frame_after(stream, *forwards.last().expect("a frame"))
+            .expect("index")
+        {
+            forwards.push(next);
+        }
+        assert_eq!(forwards, expected, "{name}: forwards");
+
+        let mut backwards = vec![*expected.last().expect("frames")];
+        while let Some(previous) = index
+            .frame_before(stream, *backwards.last().expect("a frame"))
+            .expect("index")
+        {
+            backwards.push(previous);
+        }
+        backwards.reverse();
+        assert_eq!(backwards, expected, "{name}: backwards");
+
+        // Between two frames, the frame shown is the earlier one.
+        let between = expected[10] + (expected[11] - expected[10]).div_euclid(2);
+        assert_eq!(
+            index.frame_at_or_before(stream, between).expect("index"),
+            Some(expected[10]),
+            "{name}: between frames"
+        );
+    }
+}

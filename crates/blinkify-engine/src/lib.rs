@@ -14,17 +14,19 @@
 //! stop being tested. `cargo test -p blinkify-engine` runs with no window, no
 //! `WebView2` and no renderer, and CI asserts the dependency is absent.
 
+pub mod audio;
 pub mod cache;
 pub mod capability;
 pub mod decode;
 pub mod filmstrip;
 pub mod keyframes;
 pub mod orchestrator;
-pub mod preview;
+pub mod playback;
 pub mod probe;
 pub mod proxy;
 pub mod sidecar;
 pub mod tier;
+pub mod time;
 pub mod waveform;
 
 pub use capability::{EncoderCapabilities, VideoCodec};

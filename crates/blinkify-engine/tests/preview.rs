@@ -1,7 +1,8 @@
 //! The preview decode pipeline against the real sidecar (#27): real
 //! timestamps, frame-exact starts, bounded memory under a throttled consumer,
 //! frames dropped rather than shown late, rotation, teardown, and a source
-//! that disappears.
+//! that disappears. Presentation runs through the player (#28), with its
+//! audio played into silence.
 
 #![allow(
     clippy::expect_used,
@@ -24,7 +25,9 @@ use blinkify_engine::keyframes::KeyframeIndex;
 use blinkify_engine::orchestrator::{
     Flow, JobOptions, Limits, Orchestrator, Priority, SidecarCommand,
 };
-use blinkify_engine::preview::PreviewSession;
+use blinkify_engine::playback::{
+    AudioChoice, PlaybackPlan, Player, PlayerOptions, ShownFrame, SourceMedia, TransportCommand,
+};
 use blinkify_engine::probe::{MediaInfo, Prober, Rational};
 
 fn orchestrator() -> Orchestrator {
@@ -286,48 +289,76 @@ fn a_throttled_consumer_bounds_memory_and_stalls_the_decoder() {
     assert!(!process_exists(pid));
 }
 
+/// The whole of `path` as a plan.
+fn whole(orchestrator: &Orchestrator, path: &Path) -> PlaybackPlan {
+    let info = probe(orchestrator, path);
+    let index = index(orchestrator, path, &info);
+    let source = SourceMedia::new(path, info, index).expect("playable");
+    PlaybackPlan::whole(Arc::new(source)).expect("plan")
+}
+
+/// A paused player for `plan`, playing its audio into silence.
+fn player_of(
+    orchestrator: &Orchestrator,
+    plan: PlaybackPlan,
+    max_width: u32,
+    max_height: u32,
+) -> Player {
+    Player::new(
+        orchestrator.clone(),
+        plan,
+        &PlayerOptions {
+            audio: AudioChoice::Silent,
+            max_width,
+            max_height,
+        },
+    )
+}
+
+fn player(orchestrator: &Orchestrator, path: &Path, max_width: u32, max_height: u32) -> Player {
+    player_of(
+        orchestrator,
+        whole(orchestrator, path),
+        max_width,
+        max_height,
+    )
+}
+
+fn seconds_of(frame: &ShownFrame) -> f64 {
+    frame.position as f64 / 1_000_000.0
+}
+
 #[test]
 fn a_consumer_that_cannot_keep_up_sees_frames_dropped_not_delayed() {
     let orchestrator = orchestrator();
     let dir = common::scratch("preview-drops");
     let path = dir.join("intra 30fps.avi");
     intra_clip(&orchestrator, &path, "320x180", 20);
-    let info = probe(&orchestrator, &path);
-    let session = PreviewSession::open(
-        orchestrator.clone(),
-        &path,
-        &info,
-        index(&orchestrator, &path, &info),
-        0,
-        0,
-    )
-    .expect("session");
-    session.play_from(0).expect("play");
-    let tick = session.info().time_base.value().expect("time base");
+    let player = player(&orchestrator, &path, 0, 0);
+    player.command(TransportCommand::Play);
     let started = Instant::now();
     let mut after = 0;
     let mut lateness = Vec::new();
     // A renderer managing five frames a second against a 30 fps source.
     while started.elapsed() < Duration::from_secs(3) {
-        if let Some((seq, frame)) = session.next_frame(after, Duration::from_millis(100)) {
-            after = seq;
-            let media_now = started.elapsed().as_secs_f64();
-            lateness.push(media_now - frame.pts as f64 * tick);
+        if let Some(frame) = player.next_frame(after, Duration::from_millis(100)) {
+            after = frame.seq;
+            lateness.push((frame.chosen_at - frame.position) as f64 / 1_000_000.0);
         }
         std::thread::sleep(Duration::from_millis(200));
     }
-    let stats = session.stats();
+    let stats = player.stats();
     assert!(
         stats.dropped_frames > 50,
         "late frames are dropped: {stats:?}"
     );
-    // Every frame shown was current when it was shown — within one of the
-    // renderer's own intervals plus pre-roll — never a backlog replayed.
+    // Every frame shown was the one due when it was chosen — less than a
+    // frame behind the clock — never a backlog replayed.
     assert!(
-        lateness.iter().all(|late| *late < 0.35),
+        lateness.iter().all(|late| *late < 1.0 / 30.0),
         "a frame was shown late: {lateness:?}"
     );
-    session.close();
+    player.close();
 }
 
 #[test]
@@ -336,97 +367,70 @@ fn a_decoder_left_far_behind_restarts_ahead_of_the_clock() {
     let dir = common::scratch("preview-resync");
     let path = dir.join("intra 30fps.avi");
     intra_clip(&orchestrator, &path, "320x180", 30);
-    let info = probe(&orchestrator, &path);
-    let session = PreviewSession::open(
-        orchestrator.clone(),
-        &path,
-        &info,
-        index(&orchestrator, &path, &info),
-        0,
-        0,
-    )
-    .expect("session");
-    session.play_from(0).expect("play");
+    let player = player(&orchestrator, &path, 0, 0);
+    player.command(TransportCommand::Play);
     // The renderer stalls — the ring fills, the decoder blocks, the clock
     // runs on — then asks again.
     std::thread::sleep(Duration::from_millis(2500));
-    let (_, first) = session
+    let first = player
         .next_frame(0, Duration::from_millis(500))
         .expect("a frame");
-    let tick = session.info().time_base.value().expect("time base");
-    let (_, later) = {
-        let mut result = None;
-        let deadline = Instant::now() + Duration::from_secs(5);
-        while Instant::now() < deadline {
-            if let Some((seq, frame)) = session.next_frame(1, Duration::from_millis(100))
-                && frame.pts as f64 * tick > 2.5
-            {
-                result = Some((seq, frame));
-                break;
-            }
+    let mut later = None;
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while Instant::now() < deadline {
+        if let Some(frame) = player.next_frame(first.seq, Duration::from_millis(100))
+            && seconds_of(&frame) > 2.5
+        {
+            later = Some(frame);
+            break;
         }
-        result.expect("playback caught up with the clock")
-    };
-    assert!(session.stats().resyncs >= 1, "{:?}", session.stats());
-    assert!(later.pts > first.pts);
-    session.close();
+    }
+    let later = later.expect("playback caught up with the clock");
+    assert!(player.stats().resyncs >= 1, "{:?}", player.stats());
+    assert!(later.position > first.position);
+    player.close();
 }
 
 #[test]
-fn closing_a_session_terminates_its_decode_process() {
+fn closing_a_player_terminates_its_decode_processes() {
     let orchestrator = orchestrator();
     let path = common::corpus("h264-high-closed-gop.mp4");
-    let info = probe(&orchestrator, &path);
-    let session = PreviewSession::open(
-        orchestrator.clone(),
-        &path,
-        &info,
-        index(&orchestrator, &path, &info),
-        320,
-        180,
-    )
-    .expect("session");
-    session.play_from(0).expect("play");
-    let pid = session.decoder_pid().expect("a decoder process");
-    assert!(process_exists(pid));
-    session.close();
-    assert!(!process_exists(pid), "the decoder outlived its session");
-    assert_eq!(session.decoder_pid(), None);
-    assert!(session.next_frame(0, Duration::from_millis(50)).is_none());
+    let player = player(&orchestrator, &path, 320, 180);
+    player.command(TransportCommand::Play);
+    wait_until("a decoder to start", Duration::from_secs(5), || {
+        !player.decoder_pids().is_empty()
+    });
+    let pids = player.decoder_pids();
+    assert!(pids.iter().all(|pid| process_exists(*pid)));
+    player.close();
+    for pid in pids {
+        assert!(!process_exists(pid), "decoder {pid} outlived its player");
+    }
+    assert!(player.decoder_pids().is_empty());
+    assert!(player.next_frame(0, Duration::from_millis(50)).is_none());
 }
 
 #[test]
 fn a_portrait_video_arrives_as_coded_and_turns_upright_by_its_rotation() {
     let orchestrator = orchestrator();
     let path = common::corpus("portrait-phone.mp4");
-    let info = probe(&orchestrator, &path);
-    let session = PreviewSession::open(
-        orchestrator.clone(),
-        &path,
-        &info,
-        index(&orchestrator, &path, &info),
-        0,
-        0,
-    )
-    .expect("session");
-    let preview = session.info();
-    assert_eq!(preview.rotation, 90);
+    let player = player(&orchestrator, &path, 0, 0);
+    let shown = player
+        .next_frame(0, Duration::from_secs(5))
+        .expect("the first frame, paused");
+    player.close();
+    assert_eq!(shown.rotation, 90);
+    let frame = shown.picture.as_ref().expect("a picture");
     assert_eq!(
-        (preview.frame.width, preview.frame.height),
+        (frame.width, frame.height),
         (1280, 720),
         "delivered unrotated"
     );
-    assert_eq!((preview.display_width, preview.display_height), (720, 1280));
-    session.play_from(0).expect("play");
-    let (_, frame) = session
-        .next_frame(0, Duration::from_secs(2))
-        .expect("first frame");
-    session.close();
 
     // The renderer's rule — rotate counter-clockwise by `rotation` — applied
     // here to the delivered frame must give exactly what FFmpeg's own
     // autorotation gives.
-    let upright = rotate_counter_clockwise(&frame, preview.rotation);
+    let upright = rotate_counter_clockwise(frame, shown.rotation);
     let reference = {
         let bytes = Arc::new(Mutex::new(Vec::new()));
         let sink = Arc::clone(&bytes);
@@ -486,30 +490,29 @@ fn a_source_that_disappears_is_reported_rather_than_panicking() {
     let dir = common::scratch("preview-deleted");
     let path = dir.join("going away.avi");
     intra_clip(&orchestrator, &path, "160x90", 6);
-    let info = probe(&orchestrator, &path);
-    let index = index(&orchestrator, &path, &info);
 
-    let playing =
-        PreviewSession::open(orchestrator.clone(), &path, &info, Arc::clone(&index), 0, 0)
-            .expect("session");
-    playing.play_from(0).expect("play");
-    assert!(playing.next_frame(0, Duration::from_secs(2)).is_some());
+    // Probed and indexed while it exists, as a project would have it.
+    let plan = whole(&orchestrator, &path);
+    let playing = player_of(&orchestrator, plan.clone(), 0, 0);
+    playing.command(TransportCommand::Play);
+    let first = playing
+        .next_frame(0, Duration::from_secs(2))
+        .expect("a frame");
     // While a decoder holds it, Windows refuses the delete, and playback is
     // unaffected.
     assert!(std::fs::remove_file(&path).is_err());
-    assert!(playing.next_frame(1, Duration::from_secs(2)).is_some());
+    assert!(
+        playing
+            .next_frame(first.seq, Duration::from_secs(2))
+            .is_some()
+    );
     playing.close();
 
-    // Once nothing holds it, it can go; a preview of it then says so.
-    std::fs::remove_file(&path).expect("deletable once the preview closed");
-    let orphan =
-        PreviewSession::open(orchestrator.clone(), &path, &info, index, 0, 0).expect("session");
-    orphan
-        .play_from(0)
-        .expect("the keyframe index still answers");
-    assert!(orphan.next_frame(0, Duration::from_millis(500)).is_none());
+    // Once nothing holds it, it can go; previewing it then says so.
+    std::fs::remove_file(&path).expect("deletable once nothing holds it");
+    let orphan = player_of(&orchestrator, plan, 0, 0);
     wait_until("the error to surface", Duration::from_secs(5), || {
-        orphan.next_frame(0, Duration::from_millis(10));
+        let _ = orphan.next_frame(u64::MAX, Duration::from_millis(10));
         orphan.stats().error.is_some()
     });
     let error = orphan.stats().error.expect("an error");
@@ -538,36 +541,27 @@ fn ten_minutes_of_1080p30_plays_at_full_rate_with_stable_memory() {
             Priority::Foreground,
         )
         .expect("source");
-    let info = probe(&orchestrator, &path);
-    let session = PreviewSession::open(
-        orchestrator.clone(),
-        &path,
-        &info,
-        index(&orchestrator, &path, &info),
-        1920,
-        1080,
-    )
-    .expect("session");
-    session.play_from(0).expect("play");
+    let player = player(&orchestrator, &path, 1920, 1080);
+    player.command(TransportCommand::Play);
 
     let started = Instant::now();
     let mut after = 0;
     let mut memory = Vec::new();
     let mut next_sample = Duration::from_secs(30);
     while started.elapsed() < Duration::from_secs(600) {
-        if let Some((seq, frame)) = session.next_frame(after, Duration::from_millis(50)) {
-            after = seq;
-            // What the renderer does with it: one copy onto the wire.
-            let wire = blinkify_engine::decode::wire_frame(seq, &frame);
-            assert_eq!(wire.len(), 32 + 1920 * 1080 * 4);
+        if let Some(frame) = player.next_frame(after, Duration::from_millis(50)) {
+            after = frame.seq;
+            // What the shell does with it: one copy onto the wire.
+            let wire = frame.wire();
+            assert_eq!(wire.len(), 48 + 1920 * 1080 * 4);
         }
         if started.elapsed() >= next_sample {
             memory.push(working_set_bytes());
             next_sample += Duration::from_secs(30);
         }
     }
-    let stats = session.stats();
-    session.close();
+    let stats = player.stats();
+    player.close();
     let presented_fps = stats.presented_frames as f64 / 600.0;
     println!("stats {stats:?}; presented {presented_fps:.2} fps; working set {memory:?}");
     assert!(

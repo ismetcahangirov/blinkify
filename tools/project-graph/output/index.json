@@ -5,18 +5,19 @@
     "tools"
   ],
   "totals": {
-    "files": 146,
-    "tests": 16,
+    "files": 158,
+    "tests": 18,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 34,
-      "tests": 10,
+      "files": 40,
+      "tests": 12,
       "untested": [
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
+        "apps/desktop/src/player/transportGlyphs.tsx",
         "apps/desktop/src/shell.store.ts",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/Splitter.tsx",
@@ -29,10 +30,11 @@
       ]
     },
     "packages/types": {
-      "files": 49,
+      "files": 55,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/AudioInfo.ts",
+        "packages/types/src/generated/AudioOutputState.ts",
         "packages/types/src/generated/Chapter.ts",
         "packages/types/src/generated/Chroma.ts",
         "packages/types/src/generated/ChromaSubsampling.ts",
@@ -58,11 +60,15 @@
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/JobProgress.ts",
         "packages/types/src/generated/Keyframe.ts",
+        "packages/types/src/generated/LoopRange.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
         "packages/types/src/generated/MediaInfo.ts",
         "packages/types/src/generated/PictureKind.ts",
-        "packages/types/src/generated/PreviewInfo.ts",
+        "packages/types/src/generated/PlaybackState.ts",
+        "packages/types/src/generated/PlaybackStatus.ts",
+        "packages/types/src/generated/PlaybackUpdate.ts",
         "packages/types/src/generated/PreviewOpened.ts",
+        "packages/types/src/generated/PreviewSpeed.ts",
         "packages/types/src/generated/ProfileCapability.ts",
         "packages/types/src/generated/Progress.ts",
         "packages/types/src/generated/Proxy.ts",
@@ -74,13 +80,13 @@
         "packages/types/src/generated/SheetReady.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/StreamKind.ts",
+        "packages/types/src/generated/TransportCommand.ts",
         "packages/types/src/generated/UpdateOffer.ts",
         "packages/types/src/generated/VideoCodec.ts",
         "packages/types/src/generated/VideoInfo.ts",
         "packages/types/src/generated/WaveformStatus.ts",
         "packages/types/src/generated/WaveformUpdate.ts",
-        "packages/types/src/generated/index.ts",
-        "packages/types/src/index.ts"
+        "packages/types/src/generated/index.ts"
       ]
     },
     "packages/ui": {
@@ -252,6 +258,42 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "apps/desktop/src/player/TransportBar.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/player/useTransportShortcuts.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/player/TransportBar.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/player/timecode.ts",
+        "apps/desktop/src/player/transportGlyphs.tsx",
+        "apps/desktop/src/player/useTransportShortcuts.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/player/TransportBar.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/player/framePump.test.ts": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -338,7 +380,8 @@
       "isTest": true,
       "dependsOn": [
         "apps/desktop/src/player/preview.store.ts",
-        "apps/desktop/src/player/useFileDrop.ts"
+        "apps/desktop/src/player/useFileDrop.ts",
+        "packages/types/src/index.ts"
       ],
       "dependedOnBy": [],
       "coveredByTests": [],
@@ -354,14 +397,55 @@
       "dependedOnBy": [
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
+        "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
       "coveredByTests": [
+        "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx"
       ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/player/timecode.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/player/timecode.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/player/timecode.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/player/timecode.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/player/timecode.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/player/transportGlyphs.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "apps/desktop/src/player/TransportBar.tsx"
+      ],
+      "coveredByTests": [],
       "hasNoDependents": false
     },
     "apps/desktop/src/player/useFileDrop.ts": {
@@ -375,6 +459,23 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/player/preview.store.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/player/useTransportShortcuts.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/player/TransportBar.test.tsx"
       ],
       "hasNoDependents": false
     },
@@ -535,7 +636,9 @@
       "isTest": true,
       "dependsOn": [
         "apps/desktop/src/player/preview.store.ts",
-        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+        "apps/desktop/src/shell/zones/PlayerZone.tsx",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [],
       "coveredByTests": [],
@@ -548,9 +651,12 @@
       "dependsOn": [
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
+        "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/player/useFileDrop.ts",
+        "apps/desktop/src/player/useTransportShortcuts.ts",
         "apps/desktop/src/shell.store.ts",
+        "packages/types/src/index.ts",
         "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
@@ -616,6 +722,18 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/StreamKind.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/AudioOutputState.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -846,7 +964,6 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
-        "packages/types/src/generated/PreviewInfo.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -943,6 +1060,19 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/LoopRange.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/PlaybackStatus.ts",
+        "packages/types/src/generated/TransportCommand.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/MasteringDisplay.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -981,16 +1111,45 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
-    "packages/types/src/generated/PreviewInfo.ts": {
+    "packages/types/src/generated/PlaybackState.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/PlaybackStatus.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/PlaybackStatus.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
-        "packages/types/src/generated/FrameSize.ts",
+        "packages/types/src/generated/AudioOutputState.ts",
+        "packages/types/src/generated/LoopRange.ts",
+        "packages/types/src/generated/PlaybackState.ts",
+        "packages/types/src/generated/PreviewSpeed.ts",
         "packages/types/src/generated/Rational.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/PlaybackUpdate.ts",
         "packages/types/src/generated/PreviewOpened.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/PlaybackUpdate.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/PlaybackStatus.ts"
+      ],
+      "dependedOnBy": [
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -1001,9 +1160,22 @@
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
-        "packages/types/src/generated/PreviewInfo.ts"
+        "packages/types/src/generated/PlaybackStatus.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/PreviewSpeed.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/PlaybackStatus.ts",
+        "packages/types/src/generated/TransportCommand.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -1078,7 +1250,7 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/FrameRate.ts",
-        "packages/types/src/generated/PreviewInfo.ts",
+        "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/VideoInfo.ts",
         "packages/types/src/generated/index.ts"
@@ -1146,6 +1318,20 @@
       ],
       "dependedOnBy": [
         "packages/types/src/generated/StreamInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/TransportCommand.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/LoopRange.ts",
+        "packages/types/src/generated/PreviewSpeed.ts"
+      ],
+      "dependedOnBy": [
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -1223,6 +1409,7 @@
       "isTest": false,
       "dependsOn": [
         "packages/types/src/generated/AudioInfo.ts",
+        "packages/types/src/generated/AudioOutputState.ts",
         "packages/types/src/generated/Chapter.ts",
         "packages/types/src/generated/Chroma.ts",
         "packages/types/src/generated/ChromaSubsampling.ts",
@@ -1248,11 +1435,15 @@
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/JobProgress.ts",
         "packages/types/src/generated/Keyframe.ts",
+        "packages/types/src/generated/LoopRange.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
         "packages/types/src/generated/MediaInfo.ts",
         "packages/types/src/generated/PictureKind.ts",
-        "packages/types/src/generated/PreviewInfo.ts",
+        "packages/types/src/generated/PlaybackState.ts",
+        "packages/types/src/generated/PlaybackStatus.ts",
+        "packages/types/src/generated/PlaybackUpdate.ts",
         "packages/types/src/generated/PreviewOpened.ts",
+        "packages/types/src/generated/PreviewSpeed.ts",
         "packages/types/src/generated/ProfileCapability.ts",
         "packages/types/src/generated/Progress.ts",
         "packages/types/src/generated/Proxy.ts",
@@ -1264,6 +1455,7 @@
         "packages/types/src/generated/SheetReady.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/StreamKind.ts",
+        "packages/types/src/generated/TransportCommand.ts",
         "packages/types/src/generated/UpdateOffer.ts",
         "packages/types/src/generated/VideoCodec.ts",
         "packages/types/src/generated/VideoInfo.ts",
@@ -1284,10 +1476,21 @@
         "packages/types/src/generated/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/player/timecode.ts",
+        "apps/desktop/src/player/useTransportShortcuts.ts",
+        "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/update.store.ts"
       ],
-      "coveredByTests": [],
+      "coveredByTests": [
+        "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/player/preview.store.test.ts",
+        "apps/desktop/src/shell/zones/PlayerZone.test.tsx"
+      ],
       "hasNoDependents": false
     },
     "packages/ui/.storybook/main.ts": {
@@ -1822,13 +2025,18 @@
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
         "apps/desktop/src/main.tsx",
+        "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
       "coveredByTests": [
         "apps/desktop/src/App.test.tsx",
-        "apps/desktop/src/shell/AppShell.test.tsx"
+        "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/shell/AppShell.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.test.tsx"
       ],
       "hasNoDependents": false
     },
