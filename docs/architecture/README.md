@@ -34,6 +34,8 @@ How Blinkify is put together and why the structure holds under change.
   from clip gain, the BS.1770 meter and clip latch, sound-only tracks with solo
   and mute, the filter-chain insertion point, and following the default device
   (#31)
+- [`project-file.md`](./project-file.md) — the edit graph, integer time,
+  source fingerprints and relinking, the project file and its migrations (#32)
 
 ## What does not belong here
 

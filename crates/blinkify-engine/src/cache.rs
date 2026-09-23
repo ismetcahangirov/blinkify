@@ -48,24 +48,7 @@ impl ContentKey {
             .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
             .map_or(0, |since| since.as_nanos());
 
-        let mut hasher = Sha256::new();
-        hasher.update(size.to_le_bytes());
-        let mut buffer = Vec::new();
-        Read::by_ref(&mut file)
-            .take(SAMPLE)
-            .read_to_end(&mut buffer)?;
-        hasher.update(&buffer);
-        if size > SAMPLE {
-            buffer.clear();
-            file.seek(SeekFrom::Start(size.saturating_sub(SAMPLE).max(SAMPLE)))?;
-            file.take(SAMPLE).read_to_end(&mut buffer)?;
-            hasher.update(&buffer);
-        }
-        let digest = hasher.finalize();
-        let hex = digest.iter().take(16).fold(String::new(), |mut hex, byte| {
-            let _ = std::fmt::Write::write_fmt(&mut hex, format_args!("{byte:02x}"));
-            hex
-        });
+        let hex = sampled_hash(&mut file, size)?;
         Ok(Self(format!("{hex}-{size}-{modified}")))
     }
 
@@ -73,6 +56,29 @@ impl ContentKey {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+}
+
+/// A hash of `file`'s size and its first and last mebibyte: the part of a
+/// content key that does not depend on the file system. The project file
+/// (#32) stores it on its own, so a touched but unchanged source still
+/// matches.
+pub(crate) fn sampled_hash(file: &mut File, size: u64) -> std::io::Result<String> {
+    let mut hasher = Sha256::new();
+    hasher.update(size.to_le_bytes());
+    let mut buffer = Vec::new();
+    Read::by_ref(file).take(SAMPLE).read_to_end(&mut buffer)?;
+    hasher.update(&buffer);
+    if size > SAMPLE {
+        buffer.clear();
+        file.seek(SeekFrom::Start(size.saturating_sub(SAMPLE).max(SAMPLE)))?;
+        Read::by_ref(file).take(SAMPLE).read_to_end(&mut buffer)?;
+        hasher.update(&buffer);
+    }
+    let digest = hasher.finalize();
+    Ok(digest.iter().take(16).fold(String::new(), |mut hex, byte| {
+        let _ = std::fmt::Write::write_fmt(&mut hex, format_args!("{byte:02x}"));
+        hex
+    }))
 }
 
 /// A cache directory with a size budget.

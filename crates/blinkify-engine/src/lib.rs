@@ -23,6 +23,7 @@ pub mod keyframes;
 pub mod orchestrator;
 pub mod playback;
 pub mod probe;
+pub mod project;
 pub mod proxy;
 pub mod seek;
 pub mod sidecar;

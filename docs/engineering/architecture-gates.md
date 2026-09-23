@@ -164,7 +164,10 @@ gate stays green.
 
 `packages/types` is the mitigation, not the graph: the contract is generated
 from the Rust types by `pnpm types:generate`, so the two sides cannot disagree
-about the _shape_ of a message. They can still disagree about its _name_.
+about the _shape_ of a message — provided the generated files are current,
+which `pnpm types:check` enforces (#32): it regenerates the contract into a
+scratch directory and fails on any difference, including a file for a type
+that no longer exists. They can still disagree about its _name_.
 `query.mjs` prints a reminder when you ask it about a file on either side of
 that edge. Grep the command name as well.
 
@@ -200,6 +203,7 @@ pnpm gates:prove
 | `pnpm colours:check:test`   | The colour gate catches a hex, an `rgb()` and a named colour, and does not catch a `var()` reference or a comment                                                                                                                                                            |
 | `pnpm offline:check:test`   | The offline gate catches a font-service `<link>`, a remote `url()`, a remote `@import` and a remote `src`, and does not catch a URL in a comment or an `<a href>` a user clicks                                                                                              |
 | `pnpm sidecar:check:test`   | The sidecar gate rejects a GPL build, a non-free build, a distributor's "LGPL" build carrying `openh264`, a build missing `arnndn` or `hevc_nvenc`, a binary whose hash differs from the lock, and a committed `ffmpeg.exe` — see [`ffmpeg-sidecar.md`](./ffmpeg-sidecar.md) |
+| `pnpm types:check:test`     | The IPC contract gate catches a type changed without regenerating, a new type not committed, and a removed type still committed                                                                                                                                              |
 | `pnpm tokens:check:test`    | The design-token gate catches a pixel padding, a rem radius, a millisecond duration, a numeric font weight and a length in an inline style, and does not catch a percentage, a `calc()` over tokens, zero, or the token files themselves                                     |
 
 Asserting on the rule _name_ rather than on a non-zero exit code is the point.

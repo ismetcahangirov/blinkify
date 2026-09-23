@@ -185,6 +185,12 @@ jobs:
       - name: Test (cargo test)
         run: cargo test --workspace
 
+      # #32: the TypeScript contract cannot drift from the Rust types. The
+      # tests just compiled, so regenerating into a scratch directory costs
+      # seconds; node is on the runner already (fetch-sidecar uses it).
+      - name: IPC contract is current (types:check)
+        run: node tools/types-gate.mjs
+
   boundaries:
     name: Boundaries and licences (Rust)
     runs-on: windows-latest

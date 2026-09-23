@@ -6,7 +6,7 @@
  * this the TypeScript side would need a hand-maintained list — which is exactly
  * the drift the generation step exists to remove.
  *
- * Run by `pnpm types:generate`, after `cargo test`.
+ * Run by `pnpm types:generate`, after `cargo test`, and by `pnpm types:check`.
  *
  * Deterministic: the file list is sorted and no clock is read, so regenerating
  * on an unchanged tree produces a byte-identical file (the same property the
@@ -22,7 +22,10 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const GENERATED_DIR = join(HERE, "..", "packages", "types", "src", "generated");
+// A directory argument writes the barrel somewhere else: `pnpm types:check`
+// regenerates the whole contract into a scratch directory and compares.
+const GENERATED_DIR =
+  process.argv[2] ?? join(HERE, "..", "packages", "types", "src", "generated");
 const INDEX = join(GENERATED_DIR, "index.ts");
 
 mkdirSync(GENERATED_DIR, { recursive: true });
