@@ -296,6 +296,14 @@ fn run_silent(
     }
 }
 
+/// The identity of the system's default output device, or `None` when there
+/// is none.
+#[must_use]
+pub fn default_device_id() -> Option<String> {
+    let device = cpal::default_host().default_output_device()?;
+    device.id().ok().map(|id| id.to_string())
+}
+
 /// Either kind of sink.
 #[derive(Debug)]
 pub enum Sink {

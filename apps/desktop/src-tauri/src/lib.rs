@@ -66,6 +66,8 @@ pub fn run() {
             media::cancel_proxy,
             media::open_preview,
             media::transport,
+            media::monitor,
+            media::monitor_levels,
             media::close_preview,
             media::close_all_previews,
             media::preview_stats,

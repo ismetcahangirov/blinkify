@@ -14,6 +14,7 @@ use std::sync::{Condvar, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
 use super::CHANNELS;
+use super::meter::{Meter, MonitorLevels};
 
 #[derive(Debug, Clone, Copy)]
 struct Timing {
@@ -23,8 +24,12 @@ struct Timing {
     at: Instant,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct State {
+    meter: Meter,
+    /// The monitor volume, applied as the sink takes each sample — after the
+    /// meter, so it changes what is heard and nothing else.
+    gain: f32,
     /// Interleaved stereo samples, oldest first.
     queue: VecDeque<f32>,
     /// Frames the sink has taken from the queue, ever.
@@ -46,7 +51,13 @@ impl OutputBuffer {
     pub fn new(sample_rate: u32) -> Self {
         Self {
             sample_rate: sample_rate.max(1),
-            state: Mutex::new(State::default()),
+            state: Mutex::new(State {
+                meter: Meter::new(sample_rate),
+                gain: 1.0,
+                queue: VecDeque::new(),
+                consumed: 0,
+                timing: None,
+            }),
             drained: Condvar::new(),
         }
     }
@@ -90,8 +101,9 @@ impl OutputBuffer {
         let mut state = self.lock();
         state.queue.clear();
         // What was heard before the clear says nothing about when the next
-        // written frame will be heard.
+        // written frame will be heard, nor about the loudness after it.
         state.timing = None;
+        state.meter.restart();
         let next = state.consumed;
         drop(state);
         self.drained.notify_all();
@@ -114,6 +126,8 @@ impl OutputBuffer {
                 continue;
             };
             taken += 1;
+            state.meter.frame(left, right);
+            let (left, right) = (left * state.gain, right * state.gain);
             match frame {
                 [mono] => *mono = f32::midpoint(left, right),
                 [l, r, rest @ ..] => {
@@ -155,6 +169,23 @@ impl OutputBuffer {
             base - timing.at.duration_since(now).as_secs_f64() * rate
         };
         heard.clamp(0.0, consumed)
+    }
+
+    /// Set the monitor volume: a linear gain on what is heard, from the next
+    /// sample the sink takes.
+    pub fn set_gain(&self, gain: f32) {
+        self.lock().gain = gain.clamp(0.0, 1.0);
+    }
+
+    /// What the meter shows now.
+    #[must_use]
+    pub fn levels(&self) -> MonitorLevels {
+        self.lock().meter.levels()
+    }
+
+    /// Put the clip indication out.
+    pub fn reset_clip(&self) {
+        self.lock().meter.reset_clip();
     }
 
     /// Frames the sink has taken, ever.
@@ -205,6 +236,20 @@ mod tests {
         buffer.pull(&mut out, 2, Instant::now());
         assert_eq!(out, [1.0, -1.0, 0.0, 0.0, 0.0, 0.0]);
         assert_eq!(buffer.consumed(), 1);
+    }
+
+    #[test]
+    fn the_monitor_volume_scales_what_is_heard_and_not_what_is_metered() {
+        let loud = OutputBuffer::new(1000);
+        let quiet = OutputBuffer::new(1000);
+        quiet.set_gain(0.25);
+        for (buffer, expected) in [(&loud, 0.8), (&quiet, 0.2)] {
+            buffer.push(&vec![0.8; 2 * 3000]);
+            let mut out = vec![0.0; 2 * 3000];
+            buffer.pull(&mut out, 2, Instant::now());
+            assert!(out.iter().all(|s| (s - expected).abs() < 1e-6));
+        }
+        assert_eq!(loud.levels(), quiet.levels());
     }
 
     #[test]

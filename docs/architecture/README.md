@@ -30,6 +30,10 @@ How Blinkify is put together and why the structure holds under change.
 - [`seek-and-scrub.md`](./seek-and-scrub.md) — the shared two-stage seek,
   coalesced scrubbing with a bounded prefetch cache, the resolving indication,
   and previewing from a proxy without changing the frame shown (#29)
+- [`audio-monitoring.md`](./audio-monitoring.md) — monitor volume kept apart
+  from clip gain, the BS.1770 meter and clip latch, sound-only tracks with solo
+  and mute, the filter-chain insertion point, and following the default device
+  (#31)
 
 ## What does not belong here
 

@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 160,
-    "tests": 19,
+    "files": 165,
+    "tests": 20,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 42,
-      "tests": 13,
+      "files": 44,
+      "tests": 14,
       "untested": [
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
@@ -30,7 +30,7 @@
       ]
     },
     "packages/types": {
-      "files": 55,
+      "files": 58,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/AudioInfo.ts",
@@ -63,6 +63,9 @@
         "packages/types/src/generated/LoopRange.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
         "packages/types/src/generated/MediaInfo.ts",
+        "packages/types/src/generated/MonitorCommand.ts",
+        "packages/types/src/generated/MonitorLevels.ts",
+        "packages/types/src/generated/MonitorStatus.ts",
         "packages/types/src/generated/PictureKind.ts",
         "packages/types/src/generated/PlaybackState.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
@@ -241,6 +244,38 @@
         "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
       "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/player/MonitorControls.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/player/MonitorControls.tsx",
+        "apps/desktop/src/player/preview.store.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/player/MonitorControls.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/player/preview.store.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/player/MonitorControls.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/player/MonitorControls.test.tsx"
+      ],
       "hasNoDependents": false
     },
     "apps/desktop/src/player/PreviewCanvas.tsx": {
@@ -427,6 +462,8 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
+        "apps/desktop/src/player/MonitorControls.test.tsx",
+        "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/ScrubBar.tsx",
@@ -437,6 +474,7 @@
         "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
       "coveredByTests": [
+        "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
@@ -685,6 +723,7 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
+        "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
         "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
@@ -1135,6 +1174,39 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/MonitorCommand.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/MonitorLevels.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/MonitorStatus.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/PictureKind.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -1474,6 +1546,9 @@
         "packages/types/src/generated/LoopRange.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
         "packages/types/src/generated/MediaInfo.ts",
+        "packages/types/src/generated/MonitorCommand.ts",
+        "packages/types/src/generated/MonitorLevels.ts",
+        "packages/types/src/generated/MonitorStatus.ts",
         "packages/types/src/generated/PictureKind.ts",
         "packages/types/src/generated/PlaybackState.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
@@ -1512,6 +1587,8 @@
         "packages/types/src/generated/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/player/MonitorControls.test.tsx",
+        "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
@@ -1524,6 +1601,7 @@
         "apps/desktop/src/update.store.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
@@ -2063,6 +2141,8 @@
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
         "apps/desktop/src/main.tsx",
+        "apps/desktop/src/player/MonitorControls.test.tsx",
+        "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
@@ -2073,6 +2153,7 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/App.test.tsx",
+        "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx"

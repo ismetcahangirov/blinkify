@@ -8,10 +8,12 @@
 
 mod buffer;
 pub mod decoder;
+mod meter;
 pub mod sink;
 
 pub use buffer::OutputBuffer;
 pub use decoder::{AudioDecoder, AudioEnd, AudioRequest, SampleRing};
+pub use meter::MonitorLevels;
 pub use sink::{AudioOutputState, BufferSlot, Sink};
 
 /// Interleaved channels in every buffer on this path.
