@@ -20,3 +20,29 @@ pub fn sidecar() -> Sidecar {
     );
     Sidecar::in_dir(&dir).expect("the FFmpeg sidecar is missing; run `pnpm sidecar:fetch`")
 }
+
+/// A file from the generated test corpus. `pnpm corpus` makes it; the corpus
+/// is never committed (`CLAUDE.md` forbidden behaviour 12).
+pub fn corpus(name: &str) -> PathBuf {
+    let dir = std::env::var_os("BLINKIFY_CORPUS_DIR").map_or_else(
+        || PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../corpus"),
+        PathBuf::from,
+    );
+    let path = dir.join(name);
+    assert!(
+        path.is_file(),
+        "{} is missing from the test corpus; run `pnpm corpus`",
+        path.display()
+    );
+    path
+}
+
+/// A scratch directory for one test, emptied first.
+pub fn scratch(name: &str) -> PathBuf {
+    let dir = std::env::temp_dir()
+        .join("blinkify-engine-tests")
+        .join(name);
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).expect("scratch dir");
+    dir
+}

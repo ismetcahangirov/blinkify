@@ -14,6 +14,8 @@ How to work on Blinkify day to day.
   the unsigned-binary gap
 - [`ffmpeg-sidecar.md`](./ffmpeg-sidecar.md) — where the bundled FFmpeg comes
   from, how to fetch it, and how to rebuild or upgrade it
+- [`test-corpus.md`](./test-corpus.md) — the generated media test corpus, and
+  why the tool that makes it is not the sidecar
 - Local environment setup: toolchain versions, WebView2, MSVC build tools
 - Debugging guides — the Tauri IPC boundary, the FFmpeg sidecar, the timeline
   canvas

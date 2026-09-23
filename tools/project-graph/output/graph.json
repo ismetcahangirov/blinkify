@@ -744,10 +744,40 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/AudioInfo.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/StreamKind.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Chapter.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/ContainerInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/Chroma.ts",
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/ProfileCapability.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/ChromaSubsampling.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/VideoInfo.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -795,6 +825,112 @@
       ],
       "dependents": [
         "packages/types/src/generated/EncoderCapabilities.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Color.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/ContainerInfo.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Chapter",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Chapter.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./EditList",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/EditList.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/MediaInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/ContentLight.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/EditList.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./EditListEntry",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/EditListEntry.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/ContainerInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/EditListEntry.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/EditList.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -932,6 +1068,138 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/FrameRate.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./FrameRateMode",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/FrameRateMode.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/FrameRateMode.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/FrameRate.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Hdr.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ContentLight",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ContentLight.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./HdrTransfer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/HdrTransfer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MasteringDisplay",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/MasteringDisplay.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/HdrTransfer.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/JobId.ts",
       "dependencies": [],
       "dependents": [
@@ -988,6 +1256,62 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/MasteringDisplay.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/MediaInfo.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ContainerInfo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ContainerInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./StreamInfo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/StreamInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/ProfileCapability.ts",
       "dependencies": [
         {
@@ -1027,6 +1351,18 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Rational.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/FrameRate.ts",
+        "packages/types/src/generated/StreamInfo.ts",
+        "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/ReEncodeReason.ts",
       "dependencies": [],
       "dependents": [
@@ -1041,6 +1377,100 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/StreamInfo.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./StreamKind",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/StreamKind.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/MediaInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/StreamKind.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AudioInfo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/AudioInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VideoInfo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/VideoInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -1066,8 +1496,143 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/VideoInfo.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ChromaSubsampling",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ChromaSubsampling.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Color",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Color.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./FrameRate",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/FrameRate.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Hdr",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Hdr.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/StreamKind.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/index.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AudioInfo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/AudioInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Chapter",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Chapter.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./Chroma",
@@ -1087,6 +1652,23 @@
         },
         {
           "dynamic": false,
+          "module": "./ChromaSubsampling",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ChromaSubsampling.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./CodecCapability",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1095,6 +1677,91 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/CodecCapability.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Color",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Color.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ContainerInfo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ContainerInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ContentLight",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ContentLight.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./EditList",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/EditList.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./EditListEntry",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/EditListEntry.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1172,6 +1839,74 @@
         },
         {
           "dynamic": false,
+          "module": "./FrameRate",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/FrameRate.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./FrameRateMode",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/FrameRateMode.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Hdr",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Hdr.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./HdrTransfer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/HdrTransfer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./JobId",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1197,6 +1932,40 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/JobProgress.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MasteringDisplay",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/MasteringDisplay.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./MediaInfo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/MediaInfo.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1240,6 +2009,23 @@
         },
         {
           "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./ReEncodeReason",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1274,6 +2060,40 @@
         },
         {
           "dynamic": false,
+          "module": "./StreamInfo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/StreamInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./StreamKind",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/StreamKind.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./UpdateOffer",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1299,6 +2119,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/VideoCodec.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VideoInfo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/VideoInfo.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3091,6 +3928,13 @@
       "valid": true
     },
     {
+      "source": "tools/corpus/generate.mjs",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "tools/crate-boundaries-test.mjs",
       "dependencies": [],
       "dependents": [],
@@ -3270,8 +4114,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 100,
-    "totalDependenciesCruised": 135,
+    "totalCruised": 119,
+    "totalDependenciesCruised": 172,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

@@ -1,0 +1,23 @@
+name: Generate the media test corpus
+description: >
+  Generate corpus/ with tools/corpus/generate.mjs. The corpus is never
+  committed (CLAUDE.md forbidden behaviour 12); it is regenerated from its
+  recipes, and cached on them, so a runner rebuilds it only when a recipe or
+  the pinned corpus tool changes. See docs/engineering/test-corpus.md.
+
+runs:
+  using: composite
+  steps:
+    - name: Restore the corpus and the corpus tool
+      uses: actions/cache@v4
+      with:
+        path: |
+          corpus
+          target/corpus-tool
+        key: media-corpus-${{ hashFiles('tools/corpus/**') }}
+
+    # A cache hit is checked against the recipe hash in corpus/manifest.json;
+    # anything missing or stale is regenerated.
+    - name: Generate what is missing
+      shell: pwsh
+      run: node tools/corpus/generate.mjs

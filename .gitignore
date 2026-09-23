@@ -24,7 +24,8 @@ tools/ffmpeg-sidecar/dist/
 
 # Media test corpus — CLAUDE.md forbidden behaviour 12. Binary blobs in git
 # history are permanent. The corpus is fetched or generated, never committed.
-corpus/
+# Anchored: `tools/corpus/` is the generator, and it is committed.
+/corpus/
 *.mp4
 *.mov
 *.mkv

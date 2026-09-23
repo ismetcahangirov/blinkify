@@ -16,6 +16,7 @@
 
 pub mod capability;
 pub mod orchestrator;
+pub mod probe;
 pub mod sidecar;
 pub mod tier;
 

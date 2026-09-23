@@ -47,6 +47,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             tier_is_lossless,
             media::encoder_capabilities,
+            media::probe_media,
             updater::pending_update,
             updater::install_update
         ])

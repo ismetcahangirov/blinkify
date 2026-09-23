@@ -11,6 +11,7 @@ use std::time::Duration;
 
 use blinkify_engine::capability;
 use blinkify_engine::orchestrator::{JobProgress, Limits, Orchestrator};
+use blinkify_engine::probe::{MediaInfo, Prober};
 use blinkify_engine::{EncoderCapabilities, Sidecar};
 use tauri::{AppHandle, Emitter};
 
@@ -30,6 +31,7 @@ const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(3);
 #[derive(Debug)]
 pub struct MediaEngine {
     orchestrator: Result<Orchestrator, String>,
+    prober: Option<Prober>,
     capabilities: Arc<Mutex<Option<EncoderCapabilities>>>,
 }
 
@@ -39,10 +41,12 @@ impl MediaEngine {
     /// as an error and reported the first time anything asks for media work.
     #[must_use]
     pub fn locate() -> Self {
+        let orchestrator = Sidecar::beside_current_exe()
+            .map(|sidecar| Orchestrator::new(sidecar, Limits::for_this_machine()))
+            .map_err(|error| error.to_string());
         Self {
-            orchestrator: Sidecar::beside_current_exe()
-                .map(|sidecar| Orchestrator::new(sidecar, Limits::for_this_machine()))
-                .map_err(|error| error.to_string()),
+            prober: orchestrator.as_ref().ok().cloned().map(Prober::new),
+            orchestrator,
             capabilities: Arc::new(Mutex::new(None)),
         }
     }
@@ -111,4 +115,34 @@ pub fn encoder_capabilities(
         .lock()
         .unwrap_or_else(PoisonError::into_inner)
         .clone())
+}
+
+/// Everything the engine can tell about a media file: streams, codecs,
+/// rotation, frame-rate mode, colour and HDR, edit lists, chapters.
+///
+/// `async` so Tauri runs it off the main thread: a probe is several `ffprobe`
+/// processes, and `CLAUDE.md` section 12 allows no media work on the UI
+/// thread.
+///
+/// # Errors
+///
+/// The sidecar is missing, or the file could not be read — the message names
+/// the reason in terms the user can act on.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn probe_media(
+    engine: tauri::State<'_, MediaEngine>,
+    path: std::path::PathBuf,
+) -> Result<MediaInfo, String> {
+    engine.orchestrator()?;
+    let prober = engine
+        .prober
+        .as_ref()
+        .ok_or_else(|| "the media engine is not available".to_owned())?;
+    prober
+        .probe(&path)
+        .map(|info| (*info).clone())
+        .map_err(|error| error.to_string())
 }
