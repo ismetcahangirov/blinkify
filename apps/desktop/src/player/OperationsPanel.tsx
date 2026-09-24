@@ -91,6 +91,10 @@ export function describe({ operation }: DiagnosticOperation): string {
       return `Denoise ${String(Math.round(operation.strength * 100))} %`;
     case "normalise":
       return `Normalise to ${minus(operation.targetLufs)} LUFS`;
+    case "freeze":
+      return `Freeze frame: ${String(operation.frames)} frames (re-encoded)`;
+    case "reverse":
+      return "Reverse (re-encoded)";
   }
 }
 

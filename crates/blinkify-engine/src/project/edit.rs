@@ -34,8 +34,9 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
 
-use super::evaluate::{EvaluatedTrack, Placement, Timeline, evaluate};
+use super::evaluate::{EvaluatedTrack, Motion, Placement, Timeline, evaluate};
 use super::settings::{CopyEligibility, SettingsError, StreamGeometry, copy_eligibility};
+use super::split::halves;
 use super::trim::{Edge, StreamExtent, reach, retimed, trim};
 use super::{
     Clip, ClipId, Operation, Project, ProjectError, SequenceSettings, SourceId, SourceRef, Track,
@@ -138,6 +139,38 @@ pub enum Edit {
     RippleDelete {
         clips: Vec<ClipId>,
     },
+    /// Cut clips in two at sequence frame `at` (#35): the listed clips, or
+    /// with none listed every clip under `at`. The left half keeps the id.
+    Split {
+        clips: Vec<ClipId>,
+        #[ts(type = "number")]
+        at: i64,
+    },
+    /// Put two halves of one cut back together: `right` must continue
+    /// `left` in the source and on the timeline.
+    Join {
+        left: ClipId,
+        right: ClipId,
+    },
+    /// Copy clips, each right after itself; later clips on the track move to
+    /// make room.
+    Duplicate {
+        clips: Vec<ClipId>,
+    },
+    /// Hold the frame at `at` for `frames` sequence frames, inserted there;
+    /// the rest of the track moves later by as much (#35).
+    FreezeFrame {
+        clip: ClipId,
+        #[ts(type = "number")]
+        at: i64,
+        #[ts(type = "number")]
+        frames: i64,
+    },
+    /// Play clips backwards, or forwards again (#35).
+    SetReverse {
+        clips: Vec<ClipId>,
+        reverse: bool,
+    },
     /// Choose the sequence settings (#57): it stops waiting for a first clip.
     SetSettings {
         settings: SequenceSettings,
@@ -167,6 +200,12 @@ impl Edit {
             Self::TrimEdge { ripple: true, .. } => "Ripple trim".to_owned(),
             Self::Roll { .. } => "Roll edit".to_owned(),
             Self::RippleDelete { clips: ids } => clips(ids.len(), "Ripple delete", "Ripple delete"),
+            Self::Split { .. } => "Split".to_owned(),
+            Self::Join { .. } => "Join clips".to_owned(),
+            Self::Duplicate { clips: ids } => clips(ids.len(), "Duplicate clip", "Duplicate"),
+            Self::FreezeFrame { .. } => "Freeze frame".to_owned(),
+            Self::SetReverse { reverse: true, .. } => "Reverse".to_owned(),
+            Self::SetReverse { reverse: false, .. } => "Play forwards".to_owned(),
             Self::SetSpeed { clips: ids, .. } => {
                 clips(ids.len(), "Change speed", "Change speed of")
             }
@@ -443,6 +482,12 @@ fn compile(
             frames,
         } => return roll(project, facts, *left, *right, *frames, kept),
         Edit::RippleDelete { clips } => return ripple_delete(project, clips, kept),
+        Edit::Split { clips, at } => return split(project, clips, *at),
+        Edit::Join { left, right } => return join(project, *left, *right, kept),
+        Edit::Duplicate { clips } => return duplicate(project, clips),
+        Edit::FreezeFrame { clip, at, frames } => {
+            return freeze_frame(project, *clip, *at, *frames);
+        }
         _ => {}
     }
     Ok(Compiled::from(match edit {
@@ -510,9 +555,14 @@ fn compile(
             let remaining = kept.into_iter().filter(|c| !clips.contains(c)).collect();
             (changes, remaining)
         }
-        Edit::TrimEdge { .. } | Edit::Roll { .. } | Edit::RippleDelete { .. } => {
-            unreachable!("compiled above")
-        }
+        Edit::SetReverse { clips, reverse } => (set_reverse(project, clips, *reverse)?, kept),
+        Edit::TrimEdge { .. }
+        | Edit::Roll { .. }
+        | Edit::RippleDelete { .. }
+        | Edit::Split { .. }
+        | Edit::Join { .. }
+        | Edit::Duplicate { .. }
+        | Edit::FreezeFrame { .. } => unreachable!("compiled above"),
     }))
 }
 
@@ -541,6 +591,23 @@ fn too_long(clip: ClipId) -> EditError {
     EditError::Refused(format!("clip {clip}'s timing does not fit in 64 bits"))
 }
 
+/// `clip` with a held frame lasting `frames` instead: its `Freeze`
+/// operation is the length.
+fn held(clip: &Clip, frames: i64) -> Clip {
+    let operations = clip
+        .operations
+        .iter()
+        .map(|operation| match operation {
+            Operation::Freeze { .. } => Operation::Freeze { frames },
+            other => *other,
+        })
+        .collect();
+    Clip {
+        operations,
+        ..clip.clone()
+    }
+}
+
 /// Replace `id` with its new source range and start, and move every later
 /// clip of `track` (at or after `after`) by `shift` frames — how a ripple
 /// keeps the rest of the track butted up.
@@ -554,18 +621,287 @@ fn retime_and_shift(
 ) -> Result<Vec<Change>, EditError> {
     let (_, current) = find(project, id)?;
     let mut changes = vec![Change::ReplaceClip(retimed(current, from, to, start))];
-    if shift != 0 {
-        for later in track
-            .placements
-            .iter()
-            .filter(|p| p.clip != id && p.start >= after)
-        {
-            let (_, clip) = find(project, later.clip)?;
-            changes.push(Change::ReplaceClip(Clip {
-                start: later.start + shift,
-                ..clip.clone()
-            }));
+    changes.extend(shift_after(project, track, id, after, shift)?);
+    Ok(changes)
+}
+
+/// Every clip of `track` but `id` starting at or after `after`, moved by
+/// `shift` frames.
+fn shift_after(
+    project: &Project,
+    track: &EvaluatedTrack,
+    id: ClipId,
+    after: i64,
+    shift: i64,
+) -> Result<Vec<Change>, EditError> {
+    let mut changes = Vec::new();
+    if shift == 0 {
+        return Ok(changes);
+    }
+    for later in track
+        .placements
+        .iter()
+        .filter(|p| p.clip != id && p.start >= after)
+    {
+        let (_, clip) = find(project, later.clip)?;
+        changes.push(Change::ReplaceClip(Clip {
+            start: later.start + shift,
+            ..clip.clone()
+        }));
+    }
+    Ok(changes)
+}
+
+/// The next free clip id.
+fn next_id(project: &Project) -> ClipId {
+    project.clips().map(|(_, c)| c.id).max().unwrap_or(0) + 1
+}
+
+/// `clip` as one half of a split: its trim, its start, and — if it holds a
+/// frame — its length.
+fn half_of(clip: &Clip, placement: &Placement, half: super::split::Half) -> Clip {
+    let retimed = retimed(clip, half.from, half.to, half.start);
+    if placement.motion == Some(Motion::Hold) {
+        held(&retimed, half.length)
+    } else {
+        retimed
+    }
+}
+
+fn split(project: &Project, clips: &[ClipId], at: i64) -> Result<Compiled, EditError> {
+    let timeline = timeline_of(project)?;
+    let wanted: BTreeSet<ClipId> = clips.iter().copied().collect();
+    for &id in &wanted {
+        placed(&timeline, id)?;
+    }
+    let mut changes = Vec::new();
+    let mut selection = Vec::new();
+    let mut id = next_id(project);
+    for track in &timeline.tracks {
+        for placement in &track.placements {
+            if !wanted.is_empty() && !wanted.contains(&placement.clip) {
+                continue;
+            }
+            let Some((left, right)) = halves(placement, at) else {
+                continue;
+            };
+            let (_, clip) = find(project, placement.clip)?;
+            changes.push(Change::ReplaceClip(half_of(clip, placement, left)));
+            changes.push(Change::InsertClip {
+                track: track.id,
+                index: None,
+                clip: Clip {
+                    id,
+                    ..half_of(clip, placement, right)
+                },
+            });
+            selection.push(id);
+            id += 1;
         }
+    }
+    if changes.is_empty() {
+        return Err(EditError::Refused(format!(
+            "nothing to split at frame {at}: no clip runs across it"
+        )));
+    }
+    Ok(Compiled {
+        changes,
+        selection,
+        clamped: false,
+    })
+}
+
+fn join(
+    project: &Project,
+    left: ClipId,
+    right: ClipId,
+    kept: Vec<ClipId>,
+) -> Result<Compiled, EditError> {
+    let timeline = timeline_of(project)?;
+    let (left_track, a) = placed(&timeline, left)?;
+    let (right_track, b) = placed(&timeline, right)?;
+    let (_, a_clip) = find(project, left)?;
+    let (_, b_clip) = find(project, right)?;
+    let refused = || {
+        Err(EditError::Refused(format!(
+            "clips {left} and {right} are not two halves of one cut"
+        )))
+    };
+    let same = left_track.id == right_track.id
+        && a.end() == b.start
+        && a.source == b.source
+        && a.stream == b.stream
+        && a.time_base == b.time_base
+        && a.speed == b.speed
+        && a.motion == b.motion
+        && a.audio == b.audio;
+    if !same {
+        return refused();
+    }
+    let joined = match a.motion {
+        Some(Motion::Hold) if a.source_in == b.source_in => held(a_clip, a.length + b.length),
+        // Backwards, the right half plays the source before the left.
+        Some(Motion::Reverse) if b.source_out == a.source_in => {
+            retimed(a_clip, b.source_in, a.source_out, a.start)
+        }
+        None if a.source_out == b.source_in => retimed(a_clip, a.source_in, b.source_out, a.start),
+        _ => return refused(),
+    };
+    let selection = kept.into_iter().filter(|&c| c != right).collect();
+    let _ = b_clip;
+    Ok(Compiled {
+        changes: vec![Change::RemoveClip(right), Change::ReplaceClip(joined)],
+        selection,
+        clamped: false,
+    })
+}
+
+fn duplicate(project: &Project, clips: &[ClipId]) -> Result<Compiled, EditError> {
+    let timeline = timeline_of(project)?;
+    let wanted: BTreeSet<ClipId> = clips.iter().copied().collect();
+    for &id in &wanted {
+        placed(&timeline, id)?;
+    }
+    let mut changes = Vec::new();
+    let mut copies = Vec::new();
+    let mut id = next_id(project);
+    for track in &timeline.tracks {
+        // Walk the track in order: each copy goes right after its original,
+        // and everything after moves by the copies placed before it.
+        let mut shift = 0;
+        let mut inserts = Vec::new();
+        for placement in &track.placements {
+            let (_, clip) = find(project, placement.clip)?;
+            if shift != 0 {
+                changes.push(Change::ReplaceClip(Clip {
+                    start: placement.start + shift,
+                    ..clip.clone()
+                }));
+            }
+            if wanted.contains(&placement.clip) {
+                inserts.push(Change::InsertClip {
+                    track: track.id,
+                    index: None,
+                    clip: Clip {
+                        id,
+                        start: placement.end() + shift,
+                        ..clip.clone()
+                    },
+                });
+                copies.push(id);
+                id += 1;
+                shift += placement.length;
+            }
+        }
+        changes.extend(inserts);
+    }
+    Ok(Compiled {
+        changes,
+        selection: copies,
+        clamped: false,
+    })
+}
+
+fn freeze_frame(
+    project: &Project,
+    id: ClipId,
+    at: i64,
+    frames: i64,
+) -> Result<Compiled, EditError> {
+    if frames < 1 {
+        return Err(EditError::Refused(
+            "a freeze frame lasts at least one frame".to_owned(),
+        ));
+    }
+    let timeline = timeline_of(project)?;
+    let (track, placement) = placed(&timeline, id)?;
+    if track.kind != TrackKind::Video {
+        return Err(EditError::Refused(
+            "only pictures can be frozen: this clip is on an audio track".to_owned(),
+        ));
+    }
+    let tick = placement
+        .source_at(at)
+        .ok_or_else(|| EditError::Refused(format!("clip {id} is not on screen at frame {at}")))?;
+    let (_, clip) = find(project, id)?;
+    let mut next = next_id(project);
+    let mut changes = shift_after(project, track, id, placement.end(), frames)?;
+    // The rest of the clip, after the hold.
+    if let Some((left, right)) = halves(placement, at) {
+        changes.push(Change::ReplaceClip(half_of(clip, placement, left)));
+        changes.push(Change::InsertClip {
+            track: track.id,
+            index: None,
+            clip: Clip {
+                id: next,
+                start: right.start + frames,
+                ..half_of(clip, placement, right)
+            },
+        });
+        next += 1;
+    } else {
+        // At the clip's first frame: the whole clip moves after the hold.
+        changes.push(Change::ReplaceClip(Clip {
+            start: placement.start + frames,
+            ..clip.clone()
+        }));
+    }
+    let hold = Clip::new(
+        next,
+        clip.source,
+        clip.stream,
+        clip.time_base,
+        at,
+        vec![
+            Operation::Trim {
+                from: tick,
+                to: tick + 1,
+            },
+            Operation::Freeze { frames },
+        ],
+    );
+    changes.push(Change::InsertClip {
+        track: track.id,
+        index: None,
+        clip: hold,
+    });
+    Ok(Compiled {
+        changes,
+        selection: vec![next],
+        clamped: false,
+    })
+}
+
+fn set_reverse(
+    project: &Project,
+    clips: &[ClipId],
+    reverse: bool,
+) -> Result<Vec<Change>, EditError> {
+    let mut changes = Vec::new();
+    for &id in &clips.iter().copied().collect::<BTreeSet<_>>() {
+        let (track, clip) = find(project, id)?;
+        if track.kind != TrackKind::Video {
+            return Err(EditError::Refused(format!(
+                "clip {id} is sound: reversing it is not supported"
+            )));
+        }
+        let has = clip.operations.contains(&Operation::Reverse);
+        if has == reverse {
+            continue;
+        }
+        let mut operations: Vec<Operation> = clip
+            .operations
+            .iter()
+            .filter(|operation| **operation != Operation::Reverse)
+            .copied()
+            .collect();
+        if reverse {
+            operations.push(Operation::Reverse);
+        }
+        changes.push(Change::ReplaceClip(Clip {
+            operations,
+            ..clip.clone()
+        }));
     }
     Ok(changes)
 }
@@ -601,8 +937,37 @@ fn trim_edge(
     } else {
         (Some(before), after)
     };
-    let trimmed = trim(placement, edge, frames, facts.extent_of(placement), room)
-        .ok_or_else(|| too_long(id))?;
+    let trimmed = trim_moving(placement, facts, edge, frames, room).ok_or_else(|| too_long(id))?;
+    if placement.motion == Some(Motion::Hold) {
+        let (_, current) = find(project, id)?;
+        let start = if ripple {
+            placement.start
+        } else {
+            trimmed.start
+        };
+        let mut changes = vec![Change::ReplaceClip(Clip {
+            start,
+            ..held(current, trimmed.length)
+        })];
+        if ripple {
+            changes.extend(shift_after(
+                project,
+                track,
+                id,
+                placement.end(),
+                trimmed.length - placement.length,
+            )?);
+        }
+        return Ok(Compiled {
+            changes: if trimmed.length == placement.length && start == placement.start {
+                Vec::new()
+            } else {
+                changes
+            },
+            selection: kept,
+            clamped: trimmed.clamped,
+        });
+    }
     let changes = if ripple {
         let shift = trimmed.length - placement.length;
         // The clip keeps its start; everything after it follows the change.
@@ -634,6 +999,86 @@ fn trim_edge(
     })
 }
 
+/// A trim of `placement` however it moves through its source: a hold changes
+/// only its length, a reverse trims the other edge of the source.
+fn trim_moving(
+    placement: &Placement,
+    facts: &Facts,
+    edge: Edge,
+    frames: i64,
+    room: (Option<i64>, Option<i64>),
+) -> Option<super::trim::Trimmed> {
+    match placement.motion {
+        Some(Motion::Hold) => Some(trim_hold(placement, edge, frames, room)),
+        Some(Motion::Reverse) => {
+            // Backwards, the timeline's start is the source's end: trim the
+            // other edge of the source, with the room mirrored to match.
+            let end = placement.end();
+            let (mirrored, room) = match edge {
+                Edge::Start => (
+                    Edge::End,
+                    (None, room.0.map(|b| end + (placement.start - b))),
+                ),
+                Edge::End => (
+                    Edge::Start,
+                    (room.1.map(|a| placement.start - (a - end)), None),
+                ),
+            };
+            trim(
+                placement,
+                mirrored,
+                -frames,
+                facts.extent_of(placement),
+                room,
+            )
+            .map(|t| super::trim::Trimmed {
+                start: match edge {
+                    Edge::Start => end - t.length,
+                    Edge::End => placement.start,
+                },
+                ..t
+            })
+        }
+        None => trim(placement, edge, frames, facts.extent_of(placement), room),
+    }
+}
+
+/// A trim of a held frame: only its length changes, never its source.
+fn trim_hold(
+    placement: &Placement,
+    edge: Edge,
+    frames: i64,
+    room: (Option<i64>, Option<i64>),
+) -> super::trim::Trimmed {
+    let (start, length) = match edge {
+        Edge::Start => {
+            let mut delta = frames.min(placement.length - 1);
+            if let Some(earliest) = room.0 {
+                delta = delta.max(earliest - placement.start);
+            }
+            (placement.start + delta, placement.length - delta)
+        }
+        Edge::End => {
+            let mut delta = frames.max(1 - placement.length);
+            if let Some(latest) = room.1 {
+                delta = delta.min(latest - placement.end());
+            }
+            (placement.start, placement.length + delta)
+        }
+    };
+    super::trim::Trimmed {
+        from: placement.source_in,
+        to: placement.source_out,
+        start,
+        length,
+        clamped: length - placement.length
+            != match edge {
+                Edge::Start => -frames,
+                Edge::End => frames,
+            },
+    }
+}
+
 fn roll(
     project: &Project,
     facts: &Facts,
@@ -645,6 +1090,11 @@ fn roll(
     let timeline = timeline_of(project)?;
     let (left_track, a) = placed(&timeline, left)?;
     let (right_track, b) = placed(&timeline, right)?;
+    if a.motion.is_some() || b.motion.is_some() {
+        return Err(EditError::Refused(
+            "a roll moves a cut between clips that play forwards".to_owned(),
+        ));
+    }
     if left_track.id != right_track.id || a.end() != b.start {
         return Err(EditError::Refused(format!(
             "clips {left} and {right} do not meet, so there is no cut between them to roll"
@@ -2019,6 +2469,252 @@ mod tests {
         assert_eq!(json(&dragged), json(&typed));
     }
 
+    fn placement_of(document: &Document, clip: ClipId) -> Placement {
+        evaluate(document.project())
+            .expect("evaluates")
+            .placements()
+            .find(|p| p.clip == clip)
+            .cloned()
+            .expect("placed")
+    }
+
+    #[test]
+    fn a_split_gives_two_clips_that_cover_the_original_exactly() {
+        let mut document = bounded();
+        let whole = placement_of(&document, 1);
+        let applied = document
+            .apply(
+                &Edit::Split {
+                    clips: vec![1],
+                    at: 11,
+                },
+                &at(&[1], 11),
+            )
+            .expect("split");
+        assert_eq!(applied.context.selection, vec![4], "the right half");
+        assert_eq!(spans(&document, 0)[..2], [(1, 0, 11), (4, 11, 30)]);
+        let (left, right) = (placement_of(&document, 1), placement_of(&document, 4));
+        // The halves meet in the source: no tick in neither, none in both.
+        assert_eq!(left.source_out, right.source_in);
+        assert_eq!(left.source_in, whole.source_in);
+        // The frame on screen at the cut is the one that was there.
+        assert_eq!(right.source_at(11), whole.source_at(11));
+        for frame in 0..11 {
+            assert_eq!(left.source_at(frame), whole.source_at(frame));
+        }
+        assert_eq!(document.history().entries, vec!["Split"]);
+    }
+
+    #[test]
+    fn split_then_join_is_the_original_byte_for_byte() {
+        // 1/15360 at 30 fps: 512 ticks a frame, as an MP4 stores it.
+        let fine = Rational {
+            num: 1,
+            den: 15_360,
+        };
+        for at_frame in 1..30 {
+            let mut document = document();
+            document
+                .apply(
+                    &Edit::AddClip {
+                        track: 2,
+                        source: 1,
+                        stream: 0,
+                        time_base: fine,
+                        start: 0,
+                        from: 1024,
+                        to: 1024 + 15_360,
+                    },
+                    &EditContext::default(),
+                )
+                .expect("add");
+            let original = json(&document);
+            document
+                .apply(
+                    &Edit::Split {
+                        clips: vec![4],
+                        at: at_frame,
+                    },
+                    &EditContext::default(),
+                )
+                .expect("split");
+            document
+                .apply(&Edit::Join { left: 4, right: 5 }, &EditContext::default())
+                .expect("join");
+            assert_eq!(json(&document), original, "at {at_frame}");
+        }
+    }
+
+    #[test]
+    fn split_then_join_shows_the_same_clip_whatever_the_time_base() {
+        // 1/1000 at 30 fps: 33⅓ ticks a frame. A sub-frame tail may be left
+        // off, but the clip on screen is the same, frame for frame.
+        for at_frame in 1..30 {
+            let mut document = bounded();
+            let whole = placement_of(&document, 1);
+            document
+                .apply(
+                    &Edit::Split {
+                        clips: vec![1],
+                        at: at_frame,
+                    },
+                    &EditContext::default(),
+                )
+                .expect("split");
+            document
+                .apply(&Edit::Join { left: 1, right: 4 }, &EditContext::default())
+                .expect("join");
+            let joined = placement_of(&document, 1);
+            assert_eq!((joined.start, joined.length), (whole.start, whole.length));
+            for frame in 0..30 {
+                assert_eq!(joined.source_at(frame), whole.source_at(frame), "{frame}");
+            }
+            assert!(whole.source_out - joined.source_out < 34);
+        }
+    }
+
+    #[test]
+    fn a_split_with_no_clip_named_cuts_everything_under_the_frame() {
+        let mut document = bounded();
+        document
+            .apply(
+                &Edit::AddClip {
+                    track: 2,
+                    source: 1,
+                    stream: 0,
+                    time_base: TB,
+                    start: 0,
+                    from: 0,
+                    to: 1000,
+                },
+                &EditContext::default(),
+            )
+            .expect("add");
+        document
+            .apply(
+                &Edit::Split {
+                    clips: Vec::new(),
+                    at: 15,
+                },
+                &EditContext::default(),
+            )
+            .expect("split");
+        assert_eq!(spans(&document, 0).len(), 4);
+        assert_eq!(spans(&document, 1).len(), 2);
+    }
+
+    #[test]
+    fn nothing_splits_at_a_clip_edge_or_on_an_empty_track() {
+        let mut document = bounded();
+        for (clips, frame) in [(vec![1], 0), (vec![1], 30), (vec![2], 75), (vec![], 75)] {
+            assert!(
+                matches!(
+                    document.apply(&Edit::Split { clips, at: frame }, &EditContext::default()),
+                    Err(EditError::Refused(_))
+                ),
+                "at {frame}"
+            );
+        }
+        assert!(document.history().entries.is_empty());
+    }
+
+    #[test]
+    fn a_duplicate_lands_right_after_its_original_and_pushes_the_rest() {
+        let mut document = bounded();
+        let applied = document
+            .apply(&Edit::Duplicate { clips: vec![1] }, &EditContext::default())
+            .expect("duplicate");
+        assert_eq!(applied.context.selection, vec![4]);
+        assert_eq!(
+            spans(&document, 0),
+            vec![(1, 0, 30), (4, 30, 60), (2, 60, 90), (3, 120, 150)]
+        );
+        document.undo();
+        assert_eq!(
+            spans(&document, 0),
+            vec![(1, 0, 30), (2, 30, 60), (3, 90, 120)]
+        );
+    }
+
+    #[test]
+    fn a_freeze_frame_holds_the_frame_and_is_marked_for_re_encoding() {
+        let mut document = bounded();
+        let shown = placement_of(&document, 2).source_at(40);
+        document
+            .apply(
+                &Edit::FreezeFrame {
+                    clip: 2,
+                    at: 40,
+                    frames: 90,
+                },
+                &EditContext::default(),
+            )
+            .expect("freeze");
+        // Clip 2 is cut at 40, the hold sits there, the rest follows it.
+        assert_eq!(
+            spans(&document, 0),
+            vec![
+                (1, 0, 30),
+                (2, 30, 40),
+                (5, 40, 130),
+                (4, 130, 150),
+                (3, 180, 210)
+            ]
+        );
+        let hold = placement_of(&document, 5);
+        assert_eq!(hold.motion, Some(Motion::Hold));
+        assert_eq!(hold.forced, Some(crate::tier::ReEncodeReason::FreezeFrame));
+        assert_eq!(hold.source_at(40), shown);
+        assert_eq!(hold.source_at(129), shown);
+        // Trimming a hold changes only how long it lasts.
+        document
+            .apply(&edge(5, Edge::End, -30, true), &EditContext::default())
+            .expect("trim hold");
+        assert_eq!(spans(&document, 0)[2], (5, 40, 100));
+        assert_eq!(spans(&document, 0)[3], (4, 100, 120));
+        assert_eq!(document.history().entries.len(), 2);
+    }
+
+    #[test]
+    fn a_reversed_clip_plays_its_source_backwards_and_is_marked() {
+        let mut document = bounded();
+        let forward: Vec<Option<i64>> = (30..60)
+            .map(|frame| placement_of(&document, 2).source_at(frame))
+            .collect();
+        document
+            .apply(
+                &Edit::SetReverse {
+                    clips: vec![2],
+                    reverse: true,
+                },
+                &EditContext::default(),
+            )
+            .expect("reverse");
+        let reversed = placement_of(&document, 2);
+        assert_eq!(reversed.forced, Some(crate::tier::ReEncodeReason::Reverse));
+        assert_eq!(reversed.source_at(30), Some(999));
+        assert!(reversed.source_at(59) <= forward[1]);
+        // Trimming the timeline start of a reversed clip trims its source's end.
+        document
+            .apply(&edge(2, Edge::Start, 10, false), &EditContext::default())
+            .expect("trim");
+        let trimmed = placement_of(&document, 2);
+        assert_eq!((trimmed.start, trimmed.end()), (40, 60));
+        assert_eq!(trimmed.source_in, 0);
+        assert!(trimmed.source_out < 1000);
+        document
+            .apply(
+                &Edit::SetReverse {
+                    clips: vec![2],
+                    reverse: false,
+                },
+                &EditContext::default(),
+            )
+            .expect("forwards");
+        assert_eq!(placement_of(&document, 2).motion, None);
+        assert_eq!(document.history().entries.len(), 3);
+    }
+
     /// xorshift64*, seeded, so a failing sequence reproduces.
     struct Random(u64);
 
@@ -2053,7 +2749,7 @@ mod tests {
         let tracks: Vec<TrackId> = project.sequence.tracks.iter().map(|t| t.id).collect();
         let clip = random.pick(&clips).unwrap_or(1);
         let track = random.pick(&tracks).unwrap_or(1);
-        match random.below(7) {
+        match random.below(11) {
             0 => Edit::Rename {
                 name: format!("n{}", random.below(5)),
             },
@@ -2102,7 +2798,25 @@ mod tests {
                     den: 1 + random.int(4),
                 },
             },
-            _ => Edit::RemoveClips { clips: vec![clip] },
+            6 => Edit::RemoveClips { clips: vec![clip] },
+            7 => Edit::Split {
+                clips: if random.below(2) == 0 {
+                    vec![clip]
+                } else {
+                    Vec::new()
+                },
+                at: random.int(300),
+            },
+            8 => Edit::Duplicate { clips: vec![clip] },
+            9 => Edit::FreezeFrame {
+                clip,
+                at: random.int(300),
+                frames: 1 + random.int(60),
+            },
+            _ => Edit::SetReverse {
+                clips: vec![clip],
+                reverse: random.below(2) == 0,
+            },
         }
     }
 

@@ -427,6 +427,11 @@ impl PlaybackPlan {
         let segments_of = |placements: &[Placement]| -> Result<Vec<Segment>, PlanError> {
             placements
                 .iter()
+                // A held or reversed clip (#35) is decoded and re-encoded by
+                // the full re-encode executor (#55), which does not exist
+                // yet; the preview shows it as a gap rather than pretend, and
+                // the diagnostic view says it is not previewed.
+                .filter(|placement| placement.motion.is_none())
                 .filter_map(|placement| {
                     let source = sources.get(&placement.source)?;
                     Some(segment_of(placement, source, timeline.time_base))

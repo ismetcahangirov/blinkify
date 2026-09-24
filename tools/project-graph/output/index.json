@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 237,
-    "tests": 31,
+    "files": 242,
+    "tests": 32,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 76,
-      "tests": 25,
+      "files": 79,
+      "tests": 26,
       "untested": [
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
@@ -26,6 +26,7 @@
         "apps/desktop/src/shell/zones/LibraryZone.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
         "apps/desktop/src/styles.css",
+        "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
@@ -36,7 +37,7 @@
       ]
     },
     "packages/types": {
-      "files": 92,
+      "files": 94,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
@@ -56,6 +57,7 @@
         "packages/types/src/generated/ContentLight.ts",
         "packages/types/src/generated/CopyEligibility.ts",
         "packages/types/src/generated/CopyNote.ts",
+        "packages/types/src/generated/CutPoint.ts",
         "packages/types/src/generated/DecodeStats.ts",
         "packages/types/src/generated/DiagnosticClip.ts",
         "packages/types/src/generated/DiagnosticOperation.ts",
@@ -91,6 +93,7 @@
         "packages/types/src/generated/MonitorCommand.ts",
         "packages/types/src/generated/MonitorLevels.ts",
         "packages/types/src/generated/MonitorStatus.ts",
+        "packages/types/src/generated/Motion.ts",
         "packages/types/src/generated/Operation.ts",
         "packages/types/src/generated/OperationsAt.ts",
         "packages/types/src/generated/PictureKind.ts",
@@ -781,10 +784,12 @@
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
         "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/editActions.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/rows.ts",
@@ -1008,6 +1013,7 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
@@ -1028,6 +1034,24 @@
       "dependsOn": [],
       "dependedOnBy": [
         "apps/desktop/src/main.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/EditToolbar.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/editActions.ts",
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shell/zones/TimelineZone.tsx"
       ],
       "coveredByTests": [],
       "hasNoDependents": false
@@ -1109,6 +1133,7 @@
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/draw.test.ts",
+        "apps/desktop/src/timeline/editActions.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
         "apps/desktop/src/timeline/interaction.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
@@ -1123,6 +1148,36 @@
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/timeline/draw.test.ts",
         "apps/desktop/src/timeline/interaction.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/editActions.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/timeline/editActions.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/timeline/editActions.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/timeline/EditToolbar.tsx",
+        "apps/desktop/src/timeline/editActions.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/timeline/editActions.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -1287,6 +1342,7 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
@@ -1352,6 +1408,7 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/useTimelineKeys.test.ts"
       ],
       "coveredByTests": [
@@ -1630,6 +1687,17 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/CopyEligibility.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/CutPoint.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2089,6 +2157,18 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Motion.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/Operation.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2136,7 +2216,9 @@
       "isTest": false,
       "dependsOn": [
         "packages/types/src/generated/AudioOperation.ts",
+        "packages/types/src/generated/Motion.ts",
         "packages/types/src/generated/Rational.ts",
+        "packages/types/src/generated/ReEncodeReason.ts",
         "packages/types/src/generated/TrackKind.ts"
       ],
       "dependedOnBy": [
@@ -2343,6 +2425,7 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2646,6 +2729,7 @@
         "packages/types/src/generated/ContentLight.ts",
         "packages/types/src/generated/CopyEligibility.ts",
         "packages/types/src/generated/CopyNote.ts",
+        "packages/types/src/generated/CutPoint.ts",
         "packages/types/src/generated/DecodeStats.ts",
         "packages/types/src/generated/DiagnosticClip.ts",
         "packages/types/src/generated/DiagnosticOperation.ts",
@@ -2681,6 +2765,7 @@
         "packages/types/src/generated/MonitorCommand.ts",
         "packages/types/src/generated/MonitorLevels.ts",
         "packages/types/src/generated/MonitorStatus.ts",
+        "packages/types/src/generated/Motion.ts",
         "packages/types/src/generated/Operation.ts",
         "packages/types/src/generated/OperationsAt.ts",
         "packages/types/src/generated/PictureKind.ts",
@@ -2754,8 +2839,11 @@
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
+        "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/draw.test.ts",
         "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/editActions.test.ts",
+        "apps/desktop/src/timeline/editActions.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
         "apps/desktop/src/timeline/interaction.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
@@ -2780,6 +2868,7 @@
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/timeline/draw.test.ts",
+        "apps/desktop/src/timeline/editActions.test.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
         "apps/desktop/src/timeline/timelineMedia.test.ts",
@@ -3333,7 +3422,8 @@
         "apps/desktop/src/shell/AppShell.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
-        "apps/desktop/src/shell/zones/TimelineZone.tsx"
+        "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/timeline/EditToolbar.tsx"
       ],
       "coveredByTests": [
         "apps/desktop/src/App.test.tsx",

@@ -656,6 +656,12 @@ impl MediaEngine {
     /// # Errors
     ///
     /// The sidecar is missing, or the file cannot be probed or indexed.
+    /// The keyframe index of the file at `path` (#24), opened once and kept.
+    pub(crate) fn keyframe_index(&self, path: &Path) -> Result<Arc<KeyframeIndex>, String> {
+        let info = self.prober()?.probe(path).map_err(|e| e.to_string())?;
+        self.index(path, &info)
+    }
+
     /// What the file at `path` is, for the document: its pictures — the
     /// first video stream that is not a cover image — for the sequence
     /// settings (#57), and which ticks of each stream exist, for trim bounds

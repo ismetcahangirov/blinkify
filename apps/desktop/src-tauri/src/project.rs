@@ -23,7 +23,10 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use blinkify_engine::playback::{PlaybackPlan, SourceMedia, chain_rendered};
 use blinkify_engine::project::edit::{Document, Edit, EditContext, HistoryView, SettingsImpact};
-use blinkify_engine::project::evaluate::{OperationsAt, Timeline, audio_operation, evaluate};
+use blinkify_engine::project::evaluate::{
+    OperationsAt, Timeline, audio_operation, evaluate, forces_re_encode,
+};
+use blinkify_engine::project::split::{CutPoint, cut_point};
 use blinkify_engine::project::trim::StreamExtent;
 use blinkify_engine::project::{
     self, ClipId, CopyEligibility, Operation, Project, SequenceSettings, SourceId, SourceStatus,
@@ -417,6 +420,72 @@ pub fn redo_edit(
         .map(|context| settle(&engine, opened, context, false)))
 }
 
+/// Whether a cut at sequence frame `position` on the main video track is
+/// lossless, and where the keyframes around it are (#35): the timeline's
+/// keyframe indicator. `None` when no clip plays forwards there. Reads the
+/// keyframe index around the position, so it runs off the window's thread.
+///
+/// # Errors
+///
+/// No project is open, or the source's index cannot be read.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn cut_point_at(
+    engine: State<'_, MediaEngine>,
+    state: State<'_, OpenProject>,
+    position: i64,
+) -> Result<Option<CutPoint>, String> {
+    // Only what is needed is copied out, so the index is read without the
+    // project locked.
+    let (placement, path) = {
+        let guard = state.lock()?;
+        let opened = guard.as_ref().ok_or("no project is open")?;
+        let Some(timeline) = opened.timeline.as_ref() else {
+            return Ok(None);
+        };
+        let main = timeline
+            .tracks
+            .iter()
+            .find(|track| track.kind == project::TrackKind::Video);
+        let Some(placement) = main
+            .and_then(|track| track.placements.iter().find(|p| p.covers(position)))
+            .filter(|placement| placement.motion.is_none())
+            .cloned()
+        else {
+            return Ok(None);
+        };
+        let Some(path) = opened
+            .document
+            .project()
+            .sources
+            .get(&placement.source)
+            .filter(|source| source.check().is_present())
+            .map(|source| source.path().to_path_buf())
+        else {
+            return Ok(None);
+        };
+        (placement, path)
+    };
+    let Some(tick) = placement.source_at(position) else {
+        return Ok(None);
+    };
+    let index = engine.keyframe_index(&path)?;
+    let stream = placement.stream;
+    let shown = index
+        .frame_at_or_before(stream, tick)
+        .map_err(|error| error.to_string())?
+        .unwrap_or(tick);
+    let before = index
+        .at_or_before(stream, shown)
+        .map_err(|error| error.to_string())?;
+    let after = index
+        .at_or_after(stream, shown.saturating_add(1))
+        .map_err(|error| error.to_string())?;
+    Ok(Some(cut_point(&placement, position, shown, before, after)))
+}
+
 /// What changing the open project's sequence to `settings` would do to
 /// copying (#57): asked by the settings dialog before anything is changed.
 ///
@@ -564,10 +633,11 @@ impl Diagnostics {
     }
 }
 
-/// Whether the preview renders `operation`: timing always; of the audio
-/// chain, what `chain_rendered` says.
+/// Whether the preview renders `operation`: timing always, a hold or a
+/// reverse not yet (#35, #55); of the audio chain, what `chain_rendered` says.
 fn previewed(operation: &Operation) -> bool {
-    audio_operation(operation).is_none_or(|step| chain_rendered(&step))
+    forces_re_encode(operation).is_none()
+        && audio_operation(operation).is_none_or(|step| chain_rendered(&step))
 }
 
 /// What applies under the playhead of the project's preview `session`.

@@ -109,3 +109,22 @@
   line-height: var(--type-caption-line);
   text-align: end;
 }
+
+.timeline__edit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* The keyframe indicator (#35): lossless in the lossless colour, the cost of
+   a cut elsewhere stated plainly. */
+.timeline__cut {
+  margin-inline-start: var(--space-2);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  color: var(--text-secondary);
+}
+
+.timeline__cut[data-state="lossless"] {
+  color: var(--lossless);
+}

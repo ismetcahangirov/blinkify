@@ -90,6 +90,7 @@ pub fn run() {
             project::begin_gesture,
             project::end_gesture,
             project::preview_settings,
+            project::cut_point_at,
             project::operations_at,
             updater::pending_update,
             updater::install_update

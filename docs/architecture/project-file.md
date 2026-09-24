@@ -44,6 +44,7 @@ eligibility — is [`sequence-settings.md`](./sequence-settings.md) (#57).
 | Version | What changed                                                                                                                                           |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1       | The first schema (#32).                                                                                                                                |
+| 3       | The `freeze` and `reverse` operations (#35). Nothing to migrate; bumped so that a version-2 build refuses a file holding one as newer, not damaged.    |
 | 2       | `sequence.matchFirstClip` (#57). Migrated as `true` for a version-1 sequence with no clip — its settings were the placeholder — and `false` otherwise. |
 
 ## Time

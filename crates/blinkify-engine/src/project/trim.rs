@@ -250,6 +250,8 @@ mod tests {
             speed: Rational { num: 1, den: 1 },
             audio: Vec::new(),
             sequence_time_base: sequence,
+            motion: None,
+            forced: None,
         };
         placement.length = frames(&placement, source_out - source_in).expect("frames");
         placement
