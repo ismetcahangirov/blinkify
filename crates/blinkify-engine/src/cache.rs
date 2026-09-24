@@ -96,6 +96,17 @@ impl Cache {
         Self { root, budget_bytes }
     }
 
+    /// Whether `path` is a file inside this cache — what may be served from
+    /// it. Compared after resolving `..` and links, so a path that climbs out
+    /// of the cache is not in it.
+    #[must_use]
+    pub fn contains(&self, path: &Path) -> bool {
+        match (path.canonicalize(), self.root.canonicalize()) {
+            (Ok(path), Ok(root)) => path.starts_with(root) && path.is_file(),
+            _ => false,
+        }
+    }
+
     /// Where the entry for `key` in `kind` lives. `kind` separates artefacts
     /// (`keyframes`, `peaks`, `filmstrip`) that share a key.
     #[must_use]

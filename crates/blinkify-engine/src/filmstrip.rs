@@ -314,7 +314,8 @@ impl Filmstrips {
 
 /// The tile width for a display size at `height`, rounded to an even number
 /// as the scaler and the JPEG encoder want.
-fn tile_width(display_width: u32, display_height: u32, height: u32) -> u32 {
+#[must_use]
+pub fn tile_width(display_width: u32, display_height: u32, height: u32) -> u32 {
     if display_height == 0 {
         return height;
     }

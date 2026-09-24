@@ -2,6 +2,7 @@
 @import "@blinkify/ui/styles.css";
 @import "./shell/shell.css";
 @import "./player/player.css";
+@import "./timeline/timeline.css";
 
 /*
  * The renderer's stylesheet.

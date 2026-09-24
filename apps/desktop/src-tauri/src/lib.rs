@@ -55,7 +55,12 @@ pub fn run() {
             let app = ctx.app_handle().clone();
             let path = request.uri().path().to_owned();
             std::thread::spawn(move || {
-                responder.respond(media::serve_frame(&app.state::<MediaEngine>(), &path));
+                let engine = app.state::<MediaEngine>();
+                // Filmstrip sheets for the timeline (#33) share the scheme:
+                // one origin, one CSP entry, and the same off-thread answer.
+                let response = media::serve_sheet(&engine, &path)
+                    .unwrap_or_else(|| media::serve_frame(&engine, &path));
+                responder.respond(response);
             });
         })
         .invoke_handler(tauri::generate_handler![

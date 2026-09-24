@@ -15,7 +15,7 @@ use std::time::Duration;
 use blinkify_engine::audio::MonitorLevels;
 use blinkify_engine::cache::Cache;
 use blinkify_engine::capability;
-use blinkify_engine::filmstrip::{Filmstrip, Filmstrips};
+use blinkify_engine::filmstrip::{self, Filmstrip, Filmstrips};
 use blinkify_engine::keyframes::{self, IndexProgress, KeyframeIndex};
 use blinkify_engine::orchestrator::CancelToken;
 use blinkify_engine::orchestrator::{JobProgress, Limits, Orchestrator};
@@ -425,7 +425,9 @@ pub fn generate_waveform(
 }
 
 /// The summed `(min, max)` peaks for `pixels` columns starting at
-/// `start_seconds`, at `samples_per_pixel`, as little-endian `i16` pairs.
+/// `start_seconds`, at `pixels_per_second` of the source, as little-endian
+/// `i16` pairs. The timeline asks in its own unit, the zoom; the samples per
+/// pixel are worked out here, from the stream's real sample rate.
 ///
 /// Binary rather than JSON: a screen of peaks is thousands of numbers per
 /// repaint-window change, and the timeline draws them straight into a canvas.
@@ -442,10 +444,13 @@ pub fn waveform_peaks(
     engine: tauri::State<'_, MediaEngine>,
     path: PathBuf,
     stream: u32,
-    samples_per_pixel: f64,
+    pixels_per_second: f64,
     start_seconds: f64,
     pixels: u32,
 ) -> Result<tauri::ipc::Response, String> {
+    if !(pixels_per_second.is_finite() && pixels_per_second > 0.0) {
+        return Err("the zoom is not a zoom".to_owned());
+    }
     let peaks = match engine
         .waveforms
         .lock()
@@ -455,6 +460,7 @@ pub fn waveform_peaks(
         Some(Waveform::Ready(peaks)) => Arc::clone(peaks),
         _ => return Err("the waveform is not ready".to_owned()),
     };
+    let samples_per_pixel = f64::from(peaks.sample_rate.max(1)) / pixels_per_second;
     let level = peaks
         .level_for(samples_per_pixel)
         .ok_or_else(|| "the waveform is empty".to_owned())?;
@@ -474,8 +480,10 @@ pub fn waveform_peaks(
     Ok(tauri::ipc::Response::new(bytes))
 }
 
-/// The filmstrip of `path` at `height` pixels, one thumbnail every
-/// `interval` seconds (see `filmstrip::interval_for_zoom`). Sheets are
+/// The filmstrip of `path` at `height` pixels, dense enough for a timeline
+/// zoom of `pixels_per_second`: one thumbnail per tile width, on the
+/// power-of-two ladder of `filmstrip::interval_for_zoom`, so zooming reuses a
+/// sheet already made. Sheets are
 /// announced on [`FILMSTRIP_EVENT`] as each is written, so the timeline fills
 /// in from the start while the rest is decoded; the command returns the whole
 /// filmstrip when it is done.
@@ -492,13 +500,21 @@ pub fn generate_filmstrip(
     engine: tauri::State<'_, MediaEngine>,
     path: PathBuf,
     height: u32,
-    interval: f64,
+    pixels_per_second: f64,
 ) -> Result<Filmstrip, String> {
     let cache = engine
         .cache
         .clone()
         .ok_or_else(|| "no cache directory is available".to_owned())?;
     let info = engine.prober()?.probe(&path).map_err(|e| e.to_string())?;
+    let (_, video) = info
+        .video()
+        .find(|(_, video)| !video.is_attached_picture)
+        .ok_or_else(|| "the file has no pictures".to_owned())?;
+    let interval = filmstrip::interval_for_zoom(
+        pixels_per_second,
+        filmstrip::tile_width(video.display_width, video.display_height, height),
+    );
     Filmstrips::new(engine.orchestrator()?.clone(), cache)
         .filmstrip(&path, &info, height, interval, None, move |sheet| {
             let _ = app.emit(FILMSTRIP_EVENT, sheet);
@@ -839,9 +855,99 @@ pub fn serve_frame(engine: &MediaEngine, path: &str) -> Response<Vec<u8>> {
     }
 }
 
+/// The sheet path a request on [`FRAME_SCHEME`] names: `/sheet/<path>`, the
+/// path percent-encoded. `None` for anything else.
+fn sheet_request(path: &str) -> Option<PathBuf> {
+    let encoded = path.strip_prefix("/sheet/")?;
+    let bytes = encoded.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while let Some(&byte) = bytes.get(i) {
+        if byte == b'%' {
+            let hex = std::str::from_utf8(bytes.get(i + 1..i + 3)?).ok()?;
+            decoded.push(u8::from_str_radix(hex, 16).ok()?);
+            i += 3;
+        } else {
+            decoded.push(byte);
+            i += 1;
+        }
+    }
+    String::from_utf8(decoded).ok().map(PathBuf::from)
+}
+
+/// Answer a filmstrip sheet request: the JPEG, if the path is a sheet inside
+/// the engine's cache. Nothing outside the cache is ever served — the
+/// scheme is not a way to read the disk.
+pub fn serve_sheet(engine: &MediaEngine, path: &str) -> Option<Response<Vec<u8>>> {
+    let sheet = sheet_request(path)?;
+    let respond = |status: StatusCode, body: Vec<u8>| {
+        Response::builder()
+            .status(status)
+            .header(header::CONTENT_TYPE, "image/jpeg")
+            .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+            .body(body)
+            .unwrap_or_default()
+    };
+    let inside = engine
+        .cache
+        .as_ref()
+        .is_some_and(|cache| cache.contains(&sheet))
+        && sheet
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("jpg"));
+    if !inside {
+        return Some(respond(StatusCode::FORBIDDEN, Vec::new()));
+    }
+    Some(match std::fs::read(&sheet) {
+        Ok(bytes) => respond(StatusCode::OK, bytes),
+        Err(_) => respond(StatusCode::NOT_FOUND, Vec::new()),
+    })
+}
+
 #[cfg(test)]
+#[allow(clippy::expect_used)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_sheet_request_names_a_percent_encoded_path() {
+        assert_eq!(
+            sheet_request("/sheet/C%3A%5CCache%5Cfilmstrip%5Cab-h48-i1000-0.jpg"),
+            Some(PathBuf::from(r"C:\Cache\filmstrip\ab-h48-i1000-0.jpg"))
+        );
+        assert_eq!(sheet_request("/3/41"), None);
+        assert_eq!(sheet_request("/sheet/%zz"), None);
+        assert_eq!(sheet_request("/sheet/%4"), None);
+    }
+
+    #[test]
+    fn a_sheet_in_the_cache_is_served_and_nothing_outside_it() {
+        let dir = std::env::temp_dir().join("blinkify-sheet-test");
+        let sheets = dir.join("artefacts").join("filmstrip");
+        std::fs::create_dir_all(&sheets).expect("dir");
+        let sheet = sheets.join("ab-h48-i1000-0.jpg");
+        std::fs::write(&sheet, b"jpeg").expect("sheet");
+        let engine = MediaEngine::locate(Some(dir));
+        let inside = format!("/sheet/{}", sheet.display().to_string().replace('%', "%25"));
+        let response = serve_sheet(&engine, &inside).expect("a sheet request");
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.body(), b"jpeg");
+
+        let outside = std::env::current_exe().expect("exe");
+        let request = format!(
+            "/sheet/{}",
+            outside.display().to_string().replace('%', "%25")
+        );
+        let response = serve_sheet(&engine, &request).expect("a sheet request");
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        let climbing = "/sheet/..%2F..%2F..%2FWindows%2Fwin.ini";
+        assert_eq!(
+            serve_sheet(&engine, climbing)
+                .expect("a sheet request")
+                .status(),
+            StatusCode::FORBIDDEN
+        );
+    }
 
     #[test]
     fn a_frame_request_names_a_session_and_the_last_frame_seen() {

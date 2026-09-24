@@ -42,6 +42,9 @@ How Blinkify is put together and why the structure holds under change.
 - [`edits-and-history.md`](./edits-and-history.md) — the one path by which
   the open graph changes, primitive invertible changes, gestures and the
   undo history (#37)
+- [`timeline-rendering.md`](./timeline-rendering.md) — the canvas timeline:
+  two layers and a dirty-layer scheduler, virtualisation, anchored zoom, crisp
+  lines at every display scaling, thumbnails and waveforms (#33)
 
 ## What does not belong here
 

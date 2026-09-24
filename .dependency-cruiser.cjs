@@ -54,8 +54,10 @@ module.exports = {
         // filename and directory rather than by package, so a component file
         // that reached for a devDependency still fails — which is the case the
         // rule exists for, and `pnpm graph:injection` still proves it fires.
+        // Benchmarks (`*.perf.ts`, #33) run only under Vitest on the heavy
+        // workflow, and are tooling for the same reason tests are.
         pathNot:
-          "\\.(test|spec)\\.(ts|tsx)$|\\.stories\\.tsx$|/__tests__/|/\\.storybook/|(^|/)(eslint|vite|vitest)\\.config\\.(ts|mts|mjs)$",
+          "\\.(test|spec)\\.(ts|tsx)$|\\.perf\\.ts$|\\.stories\\.tsx$|/__tests__/|/\\.storybook/|(^|/)(eslint|vite|vitest)\\.config\\.(ts|mts|mjs)$",
       },
       to: { dependencyTypes: ["npm-dev"] },
     },
