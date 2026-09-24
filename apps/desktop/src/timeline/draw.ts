@@ -95,6 +95,10 @@ export interface TrackRow {
   readonly top: number;
   readonly height: number;
   readonly placements: readonly Placement[];
+  /** Not seen or heard (#36): drawn faint. */
+  readonly muted?: boolean;
+  /** Refuses every edit (#36): drawn on the border colour. */
+  readonly locked?: boolean;
 }
 
 /** One thumbnail, as a region of a loaded sprite sheet. */
@@ -308,11 +312,13 @@ function drawRows(painter: Painter, scene: Scene): void {
     painter.beginPath();
     painter.rect(0, rulerHeight, view.width, view.height - rulerHeight);
     painter.clip();
-    painter.fillStyle = theme.track;
+    painter.fillStyle = row.locked ? theme.border : theme.track;
     painter.fillRect(0, top + 1, view.width, row.height - 2);
+    painter.globalAlpha = row.muted ? 0.4 : 1;
     for (const placement of placementsIn(row.placements, first, last)) {
       drawClip(painter, scene, row, placement, top);
     }
+    painter.globalAlpha = 1;
     painter.strokeStyle = theme.border;
     painter.lineWidth = 1 / dpr;
     painter.beginPath();

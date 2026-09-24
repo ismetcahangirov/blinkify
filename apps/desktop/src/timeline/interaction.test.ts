@@ -42,6 +42,7 @@ function clip(
     speed: { num: 1, den: 1 },
     audio: [],
     sequenceTimeBase: { num: 1, den: 30 },
+    silent: false,
   };
 }
 
@@ -80,6 +81,7 @@ const EXTENTS = [
   {
     source: 1,
     stream: 0,
+    kind: "video" as const,
     timeBase: { num: 1, den: 1000 },
     start: 0,
     end: 10_000,

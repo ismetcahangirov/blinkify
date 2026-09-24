@@ -48,6 +48,9 @@ How Blinkify is put together and why the structure holds under change.
 - [`clip-interaction.md`](./clip-interaction.md) — selecting, dragging,
   trimming, rippling and rolling clips; pixel snapping; frames in, exact
   ticks out (#34)
+- [`tracks.md`](./tracks.md) — the compositing order, mute, solo and lock as
+  graph state, lock enforcement in the edit layer, detached and linked
+  sound (#36)
 - [`sequence-settings.md`](./sequence-settings.md) — the settings, matching
   the first clip, the one copy-eligibility predicate and who reads it (#57)
 

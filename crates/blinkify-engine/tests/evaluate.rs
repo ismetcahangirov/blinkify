@@ -242,7 +242,12 @@ fn preview_and_export_agree_on_every_frame_of_generated_graphs() {
                     time::rescale(to - from, played, sequence, Rounding::Up).expect("length");
                 at += length + random.below(3);
             }
-            Track { id, kind, clips }
+            Track {
+                id,
+                kind,
+                clips,
+                ..Track::default()
+            }
         };
         let pictures = track(
             TrackKind::Video,
@@ -391,6 +396,7 @@ fn two_clips(path: &Path, second: Vec<Operation>, first_gain: Option<f64>) -> Pr
                 Clip::new(1, 1, 0, tb, 0, first),
                 Clip::new(2, 1, 0, tb, 60, second),
             ],
+            ..Track::default()
         }],
         Rational { num: 30, den: 1 },
     )
@@ -535,6 +541,7 @@ fn a_clips_speed_is_seen_and_its_gain_is_heard() {
                 id: 1,
                 kind: TrackKind::Video,
                 clips: vec![Clip::new(1, 1, 0, tb, 0, operations)],
+                ..Track::default()
             }],
             Rational { num: 30, den: 1 },
         )
@@ -583,4 +590,73 @@ fn a_clips_speed_is_seen_and_its_gain_is_heard() {
         (halved - unity / 2.0).abs() < 0.002,
         "{halved} against {unity}"
     );
+}
+
+#[test]
+fn detached_sound_plays_once_from_its_own_track_and_writes_no_file() {
+    use blinkify_engine::project::edit::{Document, Edit, EditContext};
+    use blinkify_engine::project::trim::StreamExtent;
+
+    let orchestrator = orchestrator();
+    let dir = common::scratch("evaluate-detach");
+    let path = clip_file(&orchestrator, &dir, 4);
+    let source = Arc::new(media(&orchestrator, &path, None));
+    let sources = BTreeMap::from([(1, Arc::clone(&source))]);
+    let mut project = two_clips(
+        &path,
+        vec![Operation::Trim {
+            from: 2000,
+            to: 4000,
+        }],
+        None,
+    );
+    project
+        .sequence
+        .tracks
+        .push(Track::new(2, TrackKind::Audio, Vec::new()));
+    let mut document = Document::new(project).expect("valid");
+    // What the shell tells the document after probing: the file's sound.
+    let info = Prober::new(orchestrator.clone())
+        .probe(&path)
+        .expect("probe");
+    let (sound, _) = info.audio().next().expect("sound");
+    let tb = sound.time_base.expect("time base");
+    document.describe_streams(
+        1,
+        &[StreamExtent {
+            source: 1,
+            stream: sound.index,
+            kind: TrackKind::Audio,
+            time_base: tb,
+            start: 0,
+            end: 4 * tb.den / tb.num,
+        }],
+    );
+    let sounding = |document: &Document| -> Vec<(u32, Option<ClipId>)> {
+        let plan = plan_of(document.project(), &sources);
+        plan.sound_tracks()
+            .iter()
+            .flat_map(|(track, segments)| segments.iter().map(move |s| (*track, s.clip)))
+            .collect()
+    };
+    // Before: each clip's sound plays once, from its own video track.
+    assert_eq!(sounding(&document), vec![(1, Some(1)), (1, Some(2))]);
+    let written = files(&dir);
+    document
+        .apply(
+            &Edit::DetachAudio { clips: vec![1] },
+            &EditContext::default(),
+        )
+        .expect("detach");
+    // After: clip 1's sound plays once — from the audio track, not also from
+    // the pictures.
+    let after = sounding(&document);
+    assert_eq!(after.len(), 2, "{after:?}");
+    assert!(after.contains(&(1, Some(2))));
+    assert!(
+        after
+            .iter()
+            .any(|&(track, clip)| track == 2 && clip == Some(3))
+    );
+    assert_eq!(files(&dir), written, "detaching wrote a file");
 }

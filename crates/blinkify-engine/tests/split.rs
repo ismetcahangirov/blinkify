@@ -65,6 +65,7 @@ fn check(name: &str, seconds: i64) -> usize {
                 to: first + ticks,
             }],
         )],
+        ..Track::default()
     });
     let timeline = evaluate(&project).expect("evaluates");
     let placement = timeline.placements().next().expect("placed").clone();

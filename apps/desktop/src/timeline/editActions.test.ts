@@ -28,6 +28,7 @@ function clip(
     speed: { num: 1, den: 1 },
     audio: [],
     sequenceTimeBase: { num: 1, den: 30 },
+    silent: false,
     ...extra,
   };
 }
@@ -36,10 +37,18 @@ const TIMELINE: Timeline = {
   timeBase: { num: 1, den: 30 },
   frameRate: { num: 30, den: 1 },
   tracks: [
-    { id: 1, kind: "video", placements: [clip(1, 0, 60), clip(2, 60, 3000)] },
+    {
+      id: 1,
+      kind: "video",
+      visible: true,
+      audible: true,
+      placements: [clip(1, 0, 60), clip(2, 60, 3000)],
+    },
     {
       id: 2,
       kind: "audio",
+      visible: true,
+      audible: true,
       placements: [clip(3, 0, 120, { kind: "audio", track: 2 })],
     },
   ],
@@ -126,6 +135,8 @@ describe("freeze frame and reverse", () => {
         {
           id: 1,
           kind: "video",
+          visible: true,
+          audible: true,
           placements: [
             clip(1, 0, 60, { motion: "reverse", forced: "reverse" }),
           ],

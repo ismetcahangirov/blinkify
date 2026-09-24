@@ -20,7 +20,7 @@ use super::{ProjectError, SCHEMA_VERSION};
 type Migration = fn(Value) -> Result<Value, ProjectError>;
 
 /// `MIGRATIONS[n]` migrates version `n + 1` to `n + 2`.
-const MIGRATIONS: &[Migration] = &[v1_to_v2, v2_to_v3];
+const MIGRATIONS: &[Migration] = &[v1_to_v2, v2_to_v3, v3_to_v4];
 
 /// Schema 2 (#57): the sequence records whether its settings still wait for
 /// the first clip. A version-1 sequence with no clip had never been given
@@ -106,6 +106,30 @@ fn v2_to_v3(mut value: Value) -> Result<Value, ProjectError> {
         .as_object_mut()
         .ok_or_else(|| ProjectError::Corrupt("the project is not an object".to_owned()))?
         .insert("schemaVersion".to_owned(), Value::from(3));
+    Ok(value)
+}
+
+/// Schema 4 (#36): each track has a name, mute, solo, lock and collapse,
+/// and a clip may be detached from its sound and linked to other clips.
+/// Tracks of version 3 had none of these: default name, nothing set. A clip's
+/// `detached` and `link` are omitted when unset, so clips need nothing.
+fn v3_to_v4(mut value: Value) -> Result<Value, ProjectError> {
+    let object = value
+        .as_object_mut()
+        .ok_or_else(|| ProjectError::Corrupt("the project is not an object".to_owned()))?;
+    if let Some(tracks) = object
+        .get_mut("sequence")
+        .and_then(|sequence| sequence.get_mut("tracks"))
+        .and_then(Value::as_array_mut)
+    {
+        for track in tracks.iter_mut().filter_map(Value::as_object_mut) {
+            track.insert("name".to_owned(), Value::from(""));
+            for flag in ["muted", "solo", "locked", "collapsed"] {
+                track.insert(flag.to_owned(), Value::Bool(false));
+            }
+        }
+    }
+    object.insert("schemaVersion".to_owned(), Value::from(4));
     Ok(value)
 }
 

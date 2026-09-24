@@ -91,6 +91,27 @@ export function clickSelection(
   return selection.includes(clip) ? [...selection] : [clip];
 }
 
+/**
+ * `selection` with every clip linked to a selected one (#36): selecting a
+ * video clip selects its detached sound, as CapCut does, until they are
+ * unlinked.
+ */
+export function withLinked(
+  selection: readonly number[],
+  tracks: readonly { clips: readonly { id: number; link?: number }[] }[],
+): number[] {
+  const clips = tracks.flatMap((track) => track.clips);
+  const links = new Set(
+    clips
+      .filter((clip) => selection.includes(clip.id) && clip.link !== undefined)
+      .map((clip) => clip.link),
+  );
+  const linked = clips
+    .filter((clip) => clip.link !== undefined && links.has(clip.link))
+    .map((clip) => clip.id);
+  return [...new Set([...selection, ...linked])];
+}
+
 /** Every clip, for select-all. */
 export function allClips(rows: readonly TrackRow[]): number[] {
   return rows.flatMap((row) => row.placements.map((p) => p.clip));
@@ -281,7 +302,8 @@ function moveTo(drag: MoveDrag, input: DragInput): DragResult {
   let invalid: string | null = null;
   const ghosts = drag.clips.map(({ placement, row }) => {
     const to = input.rows[input.rows.indexOf(row) + rowShift] ?? row;
-    if (to.kind !== row.kind)
+    if (to.locked) invalid = "That track is locked.";
+    else if (to.kind !== row.kind)
       invalid = `A ${row.kind} clip cannot go on a ${to.kind} track.`;
     else if (collides(to, placement.start + delta, placement.length, moving))
       invalid = "Another clip is in the way.";

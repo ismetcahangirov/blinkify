@@ -38,6 +38,10 @@ sequenceTimeBase: Rational,
  */
 motion?: Motion, 
 /**
+ * Its own sound is not played: it was detached to an audio clip (#36).
+ */
+silent: boolean, 
+/**
  * Why the clip must be re-encoded whole, if something forces it — a
  * hold or a reverse. Recorded here so the planner and the export report
  * cannot miss it.

@@ -19,6 +19,7 @@ const PLACEMENT: Placement = {
   speed: { num: 1, den: 1 },
   audio: [],
   sequenceTimeBase: { num: 1, den: 30 },
+  silent: false,
 };
 
 describe("typed clip timing", () => {

@@ -51,7 +51,7 @@ use crate::probe::Rational;
 use crate::proxy::ExportSource;
 
 /// The schema this build writes, and the newest it reads.
-pub const SCHEMA_VERSION: u32 = 3;
+pub const SCHEMA_VERSION: u32 = 4;
 
 /// The project file extension, without the dot.
 pub const EXTENSION: &str = "blinkify";
@@ -93,22 +93,56 @@ pub struct Sequence {
     pub tracks: Vec<Track>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "kebab-case")]
 #[ts(export)]
 pub enum TrackKind {
+    #[default]
     Video,
     Audio,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+/// A track of the sequence (#36). Tracks are listed top to bottom, and that
+/// order is the compositing order: a video track higher in the list is in
+/// front of the ones below it.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
+// Four independent switches, as a track header shows them: not a state
+// machine hiding in booleans.
+#[allow(clippy::struct_excessive_bools)]
 pub struct Track {
     pub id: TrackId,
     pub kind: TrackKind,
+    /// What the user called it; empty for the default, "V1", "A2", counted
+    /// by kind from the top.
+    pub name: String,
+    /// Not seen (a video track) or not heard (audio) — in the preview and in
+    /// the export alike.
+    pub muted: bool,
+    /// Only soloed tracks are heard, when any is. Sound only: pictures are
+    /// not soloed.
+    pub solo: bool,
+    /// Refuses every edit to its clips, from every entry point: the check is
+    /// in the edit layer, not the interface.
+    pub locked: bool,
+    /// Drawn short in the timeline. The layout, kept with the project.
+    pub collapsed: bool,
     /// In timeline order.
     pub clips: Vec<Clip>,
+}
+
+impl Track {
+    /// A track with the default name and nothing set.
+    #[must_use]
+    pub fn new(id: TrackId, kind: TrackKind, clips: Vec<Clip>) -> Self {
+        Self {
+            id,
+            kind,
+            clips,
+            ..Self::default()
+        }
+    }
 }
 
 /// A piece of a source placed on a track.
@@ -127,6 +161,15 @@ pub struct Clip {
     /// base (one tick per frame; see [`SequenceSettings::time_base`]).
     #[ts(type = "number")]
     pub start: i64,
+    /// Its sound plays from an audio clip of its own (#36): the clip's
+    /// pictures are all it contributes.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub detached: bool,
+    /// Clips with the same link move, trim and select together; `None` for
+    /// a clip on its own. Detaching links the sound to its pictures.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub link: Option<ClipId>,
     /// What is done to the clip, in order. Data only, and private: the
     /// evaluator ([`evaluate`], #30) is the one reader, so there is no second
     /// interpretation to disagree with it.
@@ -189,6 +232,8 @@ impl Clip {
             stream,
             time_base,
             start,
+            detached: false,
+            link: None,
             operations,
         }
     }
@@ -457,7 +502,10 @@ mod tests {
                     },
                     Operation::Gain { db: -3.5 },
                 ],
+                detached: false,
+                link: None,
             }],
+            ..Track::default()
         });
         project
     }
@@ -572,6 +620,8 @@ mod tests {
                     },
                     start: random.int(1 << 32),
                     operations,
+                    detached: false,
+                    link: None,
                 });
             }
             project.sequence.tracks.push(Track {
@@ -582,6 +632,7 @@ mod tests {
                     TrackKind::Audio
                 },
                 clips,
+                ..Track::default()
             });
         }
         project

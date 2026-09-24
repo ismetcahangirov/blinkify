@@ -32,6 +32,8 @@ use crate::time::{Rounding, rescale};
 pub struct StreamExtent {
     pub source: SourceId,
     pub stream: u32,
+    /// Pictures or sound: what a clip of this stream goes on (#36).
+    pub kind: super::TrackKind,
     pub time_base: Rational,
     #[ts(type = "number")]
     pub start: i64,
@@ -252,6 +254,7 @@ mod tests {
             sequence_time_base: sequence,
             motion: None,
             forced: None,
+            silent: false,
         };
         placement.length = frames(&placement, source_out - source_in).expect("frames");
         placement

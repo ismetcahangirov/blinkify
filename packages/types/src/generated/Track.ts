@@ -2,7 +2,36 @@
 import type { Clip } from "./Clip";
 import type { TrackKind } from "./TrackKind";
 
+/**
+ * A track of the sequence (#36). Tracks are listed top to bottom, and that
+ * order is the compositing order: a video track higher in the list is in
+ * front of the ones below it.
+ */
 export type Track = { id: number, kind: TrackKind, 
+/**
+ * What the user called it; empty for the default, "V1", "A2", counted
+ * by kind from the top.
+ */
+name: string, 
+/**
+ * Not seen (a video track) or not heard (audio) — in the preview and in
+ * the export alike.
+ */
+muted: boolean, 
+/**
+ * Only soloed tracks are heard, when any is. Sound only: pictures are
+ * not soloed.
+ */
+solo: boolean, 
+/**
+ * Refuses every edit to its clips, from every entry point: the check is
+ * in the edit layer, not the interface.
+ */
+locked: boolean, 
+/**
+ * Drawn short in the timeline. The layout, kept with the project.
+ */
+collapsed: boolean, 
 /**
  * In timeline order.
  */

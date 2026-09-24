@@ -43,6 +43,7 @@ use super::{
     TrackId, TrackKind,
 };
 use crate::probe::Rational;
+use crate::time::{Rounding, rescale};
 
 /// How many entries the history keeps before it forgets the oldest. An
 /// entry holds only what its edit changed, so this is generous; it bounds a
@@ -171,6 +172,38 @@ pub enum Edit {
         clips: Vec<ClipId>,
         reverse: bool,
     },
+    /// Remove a track and every clip on it (#36).
+    RemoveTrack {
+        track: TrackId,
+    },
+    /// Move a track to `index` in the track list: its compositing place,
+    /// for a video track. Video tracks stay above audio ones.
+    MoveTrack {
+        track: TrackId,
+        index: u32,
+    },
+    RenameTrack {
+        track: TrackId,
+        name: String,
+    },
+    /// Set a track's switches; those left `None` are unchanged.
+    SetTrack {
+        track: TrackId,
+        muted: Option<bool>,
+        solo: Option<bool>,
+        locked: Option<bool>,
+        collapsed: Option<bool>,
+    },
+    /// Give video clips' sound a clip of its own on an audio track, linked
+    /// to the pictures. Nothing is copied or encoded: the new clip plays the
+    /// same file's sound.
+    DetachAudio {
+        clips: Vec<ClipId>,
+    },
+    /// Stop clips moving and deleting with the clips linked to them.
+    Unlink {
+        clips: Vec<ClipId>,
+    },
     /// Choose the sequence settings (#57): it stops waiting for a first clip.
     SetSettings {
         settings: SequenceSettings,
@@ -206,6 +239,17 @@ impl Edit {
             Self::FreezeFrame { .. } => "Freeze frame".to_owned(),
             Self::SetReverse { reverse: true, .. } => "Reverse".to_owned(),
             Self::SetReverse { reverse: false, .. } => "Play forwards".to_owned(),
+            Self::RemoveTrack { .. } => "Remove track".to_owned(),
+            Self::MoveTrack { .. } => "Move track".to_owned(),
+            Self::RenameTrack { .. } => "Rename track".to_owned(),
+            Self::SetTrack { muted: Some(_), .. } => "Mute track".to_owned(),
+            Self::SetTrack { solo: Some(_), .. } => "Solo track".to_owned(),
+            Self::SetTrack {
+                locked: Some(_), ..
+            } => "Lock track".to_owned(),
+            Self::SetTrack { .. } => "Change track".to_owned(),
+            Self::DetachAudio { clips: ids } => clips(ids.len(), "Detach audio", "Detach audio of"),
+            Self::Unlink { clips: ids } => clips(ids.len(), "Unlink clip", "Unlink"),
             Self::SetSpeed { clips: ids, .. } => {
                 clips(ids.len(), "Change speed", "Change speed of")
             }
@@ -231,6 +275,9 @@ pub enum EditError {
     Refused(String),
     #[error(transparent)]
     Settings(#[from] SettingsError),
+    /// A locked track refuses every edit to its clips (#36).
+    #[error("track {0} is locked: unlock it to change its clips")]
+    Locked(TrackId),
 }
 
 /// One primitive change to the graph. Applying it returns its inverse.
@@ -255,6 +302,32 @@ pub(super) enum Change {
     RemoveClip(ClipId),
     /// Replace a clip, by id, where it stands.
     ReplaceClip(Clip),
+    /// Set a track's name and switches.
+    Header(TrackId, Header),
+}
+
+/// A track's name and switches: everything of it but its clips.
+#[derive(Debug, Clone, PartialEq, Eq)]
+// The track's four switches, one for one.
+#[allow(clippy::struct_excessive_bools)]
+pub(super) struct Header {
+    name: String,
+    muted: bool,
+    solo: bool,
+    locked: bool,
+    collapsed: bool,
+}
+
+impl Header {
+    fn of(track: &Track) -> Self {
+        Self {
+            name: track.name.clone(),
+            muted: track.muted,
+            solo: track.solo,
+            locked: track.locked,
+            collapsed: track.collapsed,
+        }
+    }
 }
 
 /// The track holding clip `id`, and the clip's index on it.
@@ -354,6 +427,16 @@ impl Change {
                     index: Some(index),
                     clip: track_mut(project, track)?.clips.remove(index),
                 }
+            }
+            Self::Header(id, header) => {
+                let track = track_mut(project, id)?;
+                let previous = Header::of(track);
+                track.name = header.name;
+                track.muted = header.muted;
+                track.solo = header.solo;
+                track.locked = header.locked;
+                track.collapsed = header.collapsed;
+                Self::Header(id, previous)
             }
             Self::ReplaceClip(clip) => {
                 let slot = project
@@ -469,7 +552,12 @@ fn compile(
     context: &EditContext,
 ) -> Result<Compiled, EditError> {
     let kept = context.selection.clone();
+    // Linked clips move and delete together (#36): the edit is widened to
+    // them before it is compiled.
+    let widened = widen(project, edit)?;
+    let edit = widened.as_ref().unwrap_or(edit);
     match edit {
+        Edit::DetachAudio { clips } => return detach_audio(project, facts, clips, kept),
         Edit::TrimEdge {
             clip,
             edge,
@@ -499,40 +587,7 @@ fn compile(
             }
         }
         Edit::AddTrack { kind } => (vec![add_track(project, *kind)], kept),
-        Edit::AddClip {
-            track,
-            source,
-            stream,
-            time_base,
-            start,
-            from,
-            to,
-        } => {
-            find_track(project, *track)?;
-            if !project.sources.contains_key(source) {
-                return Err(EditError::NoSource(*source));
-            }
-            let id = project.clips().map(|(_, c)| c.id).max().unwrap_or(0) + 1;
-            let clip = Clip::new(
-                id,
-                *source,
-                *stream,
-                *time_base,
-                *start,
-                vec![Operation::Trim {
-                    from: *from,
-                    to: *to,
-                }],
-            );
-            let insert = Change::InsertClip {
-                track: *track,
-                index: None,
-                clip,
-            };
-            let mut changes = adopt_first_clip(project, &facts.geometry, *track, *source);
-            changes.push(insert);
-            (changes, vec![id])
-        }
+        Edit::AddClip { .. } => add_clip(project, facts, edit)?,
         Edit::MoveClips { moves } => (move_clips(project, moves)?, kept),
         Edit::SetSpeed { clips, ratio } => (set_speed(project, clips, *ratio)?, kept),
         Edit::SetSettings { settings } => {
@@ -556,13 +611,19 @@ fn compile(
             (changes, remaining)
         }
         Edit::SetReverse { clips, reverse } => (set_reverse(project, clips, *reverse)?, kept),
+        Edit::RemoveTrack { .. }
+        | Edit::MoveTrack { .. }
+        | Edit::RenameTrack { .. }
+        | Edit::SetTrack { .. }
+        | Edit::Unlink { .. } => return track_edit(project, edit, kept),
         Edit::TrimEdge { .. }
         | Edit::Roll { .. }
         | Edit::RippleDelete { .. }
         | Edit::Split { .. }
         | Edit::Join { .. }
         | Edit::Duplicate { .. }
-        | Edit::FreezeFrame { .. } => unreachable!("compiled above"),
+        | Edit::FreezeFrame { .. }
+        | Edit::DetachAudio { .. } => unreachable!("compiled above"),
     }))
 }
 
@@ -1202,6 +1263,350 @@ fn adopt_first_clip(
         .unwrap_or_default()
 }
 
+/// The edits to tracks and links (#36), compiled.
+fn track_edit(project: &Project, edit: &Edit, kept: Vec<ClipId>) -> Result<Compiled, EditError> {
+    Ok(Compiled::from(match edit {
+        Edit::RemoveTrack { track } => {
+            find_track(project, *track)?;
+            let remaining = kept
+                .into_iter()
+                .filter(|c| find(project, *c).is_ok_and(|(t, _)| t.id != *track))
+                .collect();
+            (vec![Change::RemoveTrack(*track)], remaining)
+        }
+        Edit::MoveTrack { track, index } => (move_track(project, *track, *index)?, kept),
+        Edit::RenameTrack { track, name } => {
+            let current = find_track(project, *track)?;
+            let header = Header {
+                name: name.trim().to_owned(),
+                ..Header::of(current)
+            };
+            (header_change(current, header), kept)
+        }
+        Edit::SetTrack {
+            track,
+            muted,
+            solo,
+            locked,
+            collapsed,
+        } => {
+            let current = find_track(project, *track)?;
+            let now = Header::of(current);
+            let header = Header {
+                muted: muted.unwrap_or(now.muted),
+                solo: solo.unwrap_or(now.solo),
+                locked: locked.unwrap_or(now.locked),
+                collapsed: collapsed.unwrap_or(now.collapsed),
+                ..now
+            };
+            (header_change(current, header), kept)
+        }
+        Edit::Unlink { clips } => {
+            let mut changes = Vec::new();
+            for id in with_links(project, clips) {
+                let (_, clip) = find(project, id)?;
+                if clip.link.is_some() {
+                    changes.push(Change::ReplaceClip(Clip {
+                        link: None,
+                        ..clip.clone()
+                    }));
+                }
+            }
+            (changes, kept)
+        }
+        _ => (Vec::new(), kept),
+    }))
+}
+
+/// `edit` with the clips linked to the ones it moves or deletes added, or
+/// `None` when it is not an edit that follows links.
+fn widen(project: &Project, edit: &Edit) -> Result<Option<Edit>, EditError> {
+    Ok(match edit {
+        Edit::MoveClips { moves } => Some(Edit::MoveClips {
+            moves: with_linked_moves(project, moves)?,
+        }),
+        Edit::RemoveClips { clips } => Some(Edit::RemoveClips {
+            clips: with_links(project, clips),
+        }),
+        Edit::RippleDelete { clips } => Some(Edit::RippleDelete {
+            clips: with_links(project, clips),
+        }),
+        _ => None,
+    })
+}
+
+/// `clips` and every clip linked to one of them, each once, in order.
+fn with_links(project: &Project, clips: &[ClipId]) -> Vec<ClipId> {
+    let links: BTreeSet<ClipId> = clips
+        .iter()
+        .filter_map(|&id| find(project, id).ok().and_then(|(_, c)| c.link))
+        .collect();
+    let mut all: Vec<ClipId> = clips.to_vec();
+    for (_, clip) in project.clips() {
+        if clip.link.is_some_and(|link| links.contains(&link)) && !all.contains(&clip.id) {
+            all.push(clip.id);
+        }
+    }
+    all
+}
+
+/// `moves` and, for every clip linked to a moving one, the same move in
+/// time on its own track — unless it is moved explicitly.
+fn with_linked_moves(project: &Project, moves: &[ClipMove]) -> Result<Vec<ClipMove>, EditError> {
+    let mut all = moves.to_vec();
+    for step in moves {
+        let (_, clip) = find(project, step.clip)?;
+        let Some(link) = clip.link else { continue };
+        let delta = step.start - clip.start;
+        for (track, partner) in project.clips() {
+            if partner.link == Some(link) && !all.iter().any(|m| m.clip == partner.id) {
+                all.push(ClipMove {
+                    clip: partner.id,
+                    track: track.id,
+                    start: partner.start + delta,
+                });
+            }
+        }
+    }
+    Ok(all)
+}
+
+fn header_change(track: &Track, header: Header) -> Vec<Change> {
+    if header == Header::of(track) {
+        Vec::new()
+    } else {
+        vec![Change::Header(track.id, header)]
+    }
+}
+
+/// Move `id` to `index` of the track list, keeping video tracks above audio.
+fn move_track(project: &Project, id: TrackId, index: u32) -> Result<Vec<Change>, EditError> {
+    let tracks = &project.sequence.tracks;
+    let from = tracks
+        .iter()
+        .position(|t| t.id == id)
+        .ok_or(EditError::NoTrack(id))?;
+    let kind = find_track(project, id)?.kind;
+    let videos = tracks.iter().filter(|t| t.kind == TrackKind::Video).count();
+    let wanted = usize::try_from(index).unwrap_or(usize::MAX);
+    let to = match kind {
+        TrackKind::Video => wanted.min(videos.saturating_sub(1)),
+        TrackKind::Audio => wanted.clamp(videos, tracks.len().saturating_sub(1)),
+    };
+    Ok(if to == from {
+        Vec::new()
+    } else {
+        vec![
+            Change::RemoveTrack(id),
+            Change::InsertTrack(to, find_track(project, id)?.clone()),
+        ]
+    })
+}
+
+/// Detach the sound of each video clip in `clips` (#36).
+fn detach_audio(
+    project: &Project,
+    facts: &Facts,
+    clips: &[ClipId],
+    kept: Vec<ClipId>,
+) -> Result<Compiled, EditError> {
+    let timeline = timeline_of(project)?;
+    let mut changes = Vec::new();
+    let mut selection = kept;
+    let mut next = next_id(project);
+    let mut next_track = project
+        .sequence
+        .tracks
+        .iter()
+        .map(|t| t.id)
+        .max()
+        .unwrap_or(0)
+        + 1;
+    // Audio tracks as they will be, with what is being placed on them.
+    let mut lanes: Vec<(TrackId, Vec<(i64, i64)>)> = timeline
+        .tracks
+        .iter()
+        .filter(|t| t.kind == TrackKind::Audio)
+        .map(|t| {
+            (
+                t.id,
+                t.placements.iter().map(|p| (p.start, p.end())).collect(),
+            )
+        })
+        .collect();
+    for &id in &clips.iter().copied().collect::<BTreeSet<_>>() {
+        let (track, placement) = placed(&timeline, id)?;
+        let (_, clip) = find(project, id)?;
+        if track.kind != TrackKind::Video || clip.detached {
+            continue;
+        }
+        if placement.motion.is_some() {
+            return Err(EditError::Refused(format!(
+                "clip {id} is held or reversed: it has no sound to detach"
+            )));
+        }
+        let Some(sound) = facts
+            .extents
+            .values()
+            .find(|e| e.source == clip.source && e.kind == TrackKind::Audio)
+        else {
+            return Err(EditError::Refused(format!(
+                "clip {id}'s file has no sound to detach"
+            )));
+        };
+        let (from, to) = sound_range(placement, sound)?;
+        let (start, end) = (placement.start, placement.end());
+        let lane = lanes
+            .iter_mut()
+            .find(|(_, taken)| taken.iter().all(|&(a, b)| end <= a || b <= start));
+        let lane_id = if let Some((lane_id, taken)) = lane {
+            taken.push((start, end));
+            *lane_id
+        } else {
+            let track = Track::new(next_track, TrackKind::Audio, Vec::new());
+            changes.push(Change::InsertTrack(project.sequence.tracks.len(), track));
+            lanes.push((next_track, vec![(start, end)]));
+            next_track += 1;
+            next_track - 1
+        };
+        // The pictures keep what shapes them; the sound takes the speed and
+        // the audio chain with it.
+        let (picture_ops, sound_ops): (Vec<Operation>, Vec<Operation>) = clip
+            .operations
+            .iter()
+            .partition(|operation| super::evaluate::audio_operation(operation).is_none());
+        let mut audio_ops = vec![Operation::Trim { from, to }];
+        audio_ops.extend(
+            picture_ops
+                .iter()
+                .filter(|operation| matches!(operation, Operation::Speed { .. }))
+                .copied(),
+        );
+        audio_ops.extend(sound_ops);
+        changes.push(Change::ReplaceClip(Clip {
+            detached: true,
+            link: Some(clip.link.unwrap_or(id)),
+            operations: picture_ops,
+            ..clip.clone()
+        }));
+        changes.push(Change::InsertClip {
+            track: lane_id,
+            index: None,
+            clip: Clip {
+                id: next,
+                source: clip.source,
+                stream: sound.stream,
+                time_base: sound.time_base,
+                start,
+                detached: false,
+                link: Some(clip.link.unwrap_or(id)),
+                operations: audio_ops,
+            },
+        });
+        selection.push(next);
+        next += 1;
+    }
+    Ok(Compiled {
+        changes,
+        selection,
+        clamped: false,
+    })
+}
+
+/// The ticks of `sound` that play under `placement`'s pictures: the same
+/// moments of the file, in the sound's own time base, lasting exactly as
+/// many frames as the pictures.
+fn sound_range(placement: &Placement, sound: &StreamExtent) -> Result<(i64, i64), EditError> {
+    let id = placement.clip;
+    let played = Rational {
+        num: sound.time_base.num.saturating_mul(placement.speed.den),
+        den: sound.time_base.den.saturating_mul(placement.speed.num),
+    };
+    let from = rescale(
+        placement.source_in,
+        placement.time_base,
+        sound.time_base,
+        Rounding::Down,
+    )
+    .ok_or_else(|| too_long(id))?
+    .max(sound.start);
+    let to = from
+        .checked_add(
+            rescale(
+                placement.length,
+                placement.sequence_time_base,
+                played,
+                Rounding::Down,
+            )
+            .ok_or_else(|| too_long(id))?,
+        )
+        .ok_or_else(|| too_long(id))?
+        .min(sound.end);
+    if to <= from {
+        return Err(EditError::Refused(format!(
+            "clip {id} plays none of its file's sound"
+        )));
+    }
+    Ok((from, to))
+}
+
+/// The track a change touches the clips of, if it touches any: what a lock
+/// is checked against.
+fn touched_track(project: &Project, change: &Change) -> Option<TrackId> {
+    match change {
+        Change::InsertClip { track, .. } => Some(*track),
+        Change::RemoveClip(id) => find(project, *id).ok().map(|(t, _)| t.id),
+        Change::ReplaceClip(clip) => find(project, clip.id).ok().map(|(t, _)| t.id),
+        Change::RemoveTrack(id) => Some(*id),
+        _ => None,
+    }
+}
+
+/// Place a new clip (the `AddClip` edit), adopting its settings when it is
+/// the sequence's first (#57).
+fn add_clip(
+    project: &Project,
+    facts: &Facts,
+    edit: &Edit,
+) -> Result<(Vec<Change>, Vec<ClipId>), EditError> {
+    let Edit::AddClip {
+        track,
+        source,
+        stream,
+        time_base,
+        start,
+        from,
+        to,
+    } = edit
+    else {
+        return Ok((Vec::new(), Vec::new()));
+    };
+    find_track(project, *track)?;
+    if !project.sources.contains_key(source) {
+        return Err(EditError::NoSource(*source));
+    }
+    let id = project.clips().map(|(_, c)| c.id).max().unwrap_or(0) + 1;
+    let clip = Clip::new(
+        id,
+        *source,
+        *stream,
+        *time_base,
+        *start,
+        vec![Operation::Trim {
+            from: *from,
+            to: *to,
+        }],
+    );
+    let insert = Change::InsertClip {
+        track: *track,
+        index: None,
+        clip,
+    };
+    let mut changes = adopt_first_clip(project, &facts.geometry, *track, *source);
+    changes.push(insert);
+    Ok((changes, vec![id]))
+}
+
 /// A new track below the last of its kind — or, the first of its kind,
 /// videos above audio.
 fn add_track(project: &Project, kind: TrackKind) -> Change {
@@ -1220,6 +1625,7 @@ fn add_track(project: &Project, kind: TrackKind) -> Change {
             id,
             kind,
             clips: Vec::new(),
+            ..Track::default()
         },
     )
 }
@@ -1391,6 +1797,16 @@ impl Document {
     /// evaluate. The graph and the history are then unchanged.
     pub fn apply(&mut self, edit: &Edit, context: &EditContext) -> Result<Applied, EditError> {
         let compiled = compile(&self.project, &self.facts, edit, context)?;
+        // Every edit, from every entry point, becomes these changes: the one
+        // place a lock cannot be routed around.
+        if let Some(track) = compiled
+            .changes
+            .iter()
+            .filter_map(|change| touched_track(&self.project, change))
+            .find(|&track| find_track(&self.project, track).is_ok_and(|t| t.locked))
+        {
+            return Err(EditError::Locked(track));
+        }
         let after = EditContext {
             selection: compiled.selection,
             playhead: context.playhead,
@@ -1733,16 +2149,19 @@ mod tests {
                 id: 1,
                 kind: TrackKind::Video,
                 clips: vec![clip(1, 0), clip(2, 30), clip(3, 90)],
+                ..Track::default()
             },
             Track {
                 id: 2,
                 kind: TrackKind::Video,
                 clips: Vec::new(),
+                ..Track::default()
             },
             Track {
                 id: 3,
                 kind: TrackKind::Audio,
                 clips: Vec::new(),
+                ..Track::default()
             },
         ];
         Document::new(project).expect("valid")
@@ -2130,11 +2549,13 @@ mod tests {
                 id: 1,
                 kind: TrackKind::Video,
                 clips: Vec::new(),
+                ..Track::default()
             },
             Track {
                 id: 2,
                 kind: TrackKind::Audio,
                 clips: Vec::new(),
+                ..Track::default()
             },
         ];
         let mut document = Document::new(project).expect("valid");
@@ -2309,6 +2730,7 @@ mod tests {
             &[StreamExtent {
                 source: 1,
                 stream: 0,
+                kind: TrackKind::Video,
                 time_base: TB,
                 start: 0,
                 end: 1500,
@@ -2713,6 +3135,401 @@ mod tests {
             .expect("forwards");
         assert_eq!(placement_of(&document, 2).motion, None);
         assert_eq!(document.history().entries.len(), 3);
+    }
+
+    /// `bounded()`, with source 1 also known to have sound: stream 1, 48 kHz,
+    /// ten seconds.
+    fn with_sound() -> Document {
+        let mut document = bounded();
+        let audio = Rational {
+            num: 1,
+            den: 48_000,
+        };
+        document.describe_streams(
+            1,
+            &[
+                StreamExtent {
+                    source: 1,
+                    stream: 0,
+                    kind: TrackKind::Video,
+                    time_base: TB,
+                    start: 0,
+                    end: 1500,
+                },
+                StreamExtent {
+                    source: 1,
+                    stream: 1,
+                    kind: TrackKind::Audio,
+                    time_base: audio,
+                    start: 0,
+                    end: 480_000,
+                },
+            ],
+        );
+        document
+    }
+
+    fn clip_of(document: &Document, id: ClipId) -> Clip {
+        document
+            .project()
+            .clips()
+            .find(|(_, c)| c.id == id)
+            .map(|(_, c)| c.clone())
+            .expect("clip")
+    }
+
+    #[test]
+    fn detaching_audio_makes_a_linked_sound_clip_of_the_same_file() {
+        let mut document = with_sound();
+        let applied = document
+            .apply(&Edit::DetachAudio { clips: vec![2] }, &at(&[2], 0))
+            .expect("detach");
+        let pictures = clip_of(&document, 2);
+        assert!(pictures.detached);
+        assert_eq!(pictures.link, Some(2));
+        let sound = clip_of(&document, 4);
+        assert_eq!(applied.context.selection, vec![2, 4]);
+        assert_eq!((sound.source, sound.stream, sound.link), (1, 1, Some(2)));
+        // On the audio track, exactly under the pictures.
+        assert_eq!(spans(&document, 2), vec![(4, 30, 60)]);
+        let placement = placement_of(&document, 2);
+        assert!(placement.silent);
+        assert!(!placement_of(&document, 4).silent);
+        // Again: nothing more to detach.
+        document
+            .apply(
+                &Edit::DetachAudio { clips: vec![2] },
+                &EditContext::default(),
+            )
+            .expect("again");
+        assert_eq!(document.history().entries.len(), 1);
+        document.undo();
+        assert!(!clip_of(&document, 2).detached);
+        assert!(spans(&document, 2).is_empty());
+    }
+
+    #[test]
+    fn detaching_a_clip_whose_track_is_taken_makes_a_new_audio_track() {
+        let mut document = with_sound();
+        document
+            .apply(
+                &Edit::DetachAudio { clips: vec![1] },
+                &EditContext::default(),
+            )
+            .expect("first");
+        // Clip 2 is right after clip 1: the same audio track has room.
+        document
+            .apply(
+                &Edit::DetachAudio { clips: vec![2] },
+                &EditContext::default(),
+            )
+            .expect("second");
+        assert_eq!(document.project().sequence.tracks.len(), 3);
+        // A clip on the second video track at the same time needs a new one.
+        document
+            .apply(
+                &Edit::AddClip {
+                    track: 2,
+                    source: 1,
+                    stream: 0,
+                    time_base: TB,
+                    start: 0,
+                    from: 0,
+                    to: 1000,
+                },
+                &EditContext::default(),
+            )
+            .expect("add");
+        let added = document
+            .project()
+            .clips()
+            .map(|(_, c)| c.id)
+            .max()
+            .expect("clip");
+        document
+            .apply(
+                &Edit::DetachAudio { clips: vec![added] },
+                &EditContext::default(),
+            )
+            .expect("third");
+        let tracks = &document.project().sequence.tracks;
+        assert_eq!(tracks.len(), 4);
+        assert_eq!(tracks[3].kind, TrackKind::Audio);
+    }
+
+    #[test]
+    fn linked_clips_move_and_delete_together_until_unlinked() {
+        let mut document = with_sound();
+        document
+            .apply(
+                &Edit::DetachAudio { clips: vec![2] },
+                &EditContext::default(),
+            )
+            .expect("detach");
+        document
+            .apply(
+                &Edit::MoveClips {
+                    moves: vec![ClipMove {
+                        clip: 2,
+                        track: 1,
+                        start: 200,
+                    }],
+                },
+                &EditContext::default(),
+            )
+            .expect("move");
+        assert_eq!(spans(&document, 2), vec![(4, 200, 230)]);
+        document
+            .apply(&Edit::Unlink { clips: vec![4] }, &EditContext::default())
+            .expect("unlink");
+        assert_eq!(clip_of(&document, 2).link, None);
+        document
+            .apply(
+                &Edit::MoveClips {
+                    moves: vec![ClipMove {
+                        clip: 2,
+                        track: 1,
+                        start: 300,
+                    }],
+                },
+                &EditContext::default(),
+            )
+            .expect("move alone");
+        assert_eq!(spans(&document, 2), vec![(4, 200, 230)]);
+        // Linked again by a fresh detach elsewhere, and deleted together.
+        document
+            .apply(
+                &Edit::DetachAudio { clips: vec![1] },
+                &EditContext::default(),
+            )
+            .expect("detach 1");
+        document
+            .apply(
+                &Edit::RemoveClips { clips: vec![1] },
+                &EditContext::default(),
+            )
+            .expect("delete");
+        assert_eq!(spans(&document, 2), vec![(4, 200, 230)]);
+    }
+
+    #[test]
+    fn a_locked_track_refuses_every_edit_to_its_clips() {
+        let mut document = with_sound();
+        document
+            .apply(
+                &Edit::SetTrack {
+                    track: 1,
+                    muted: None,
+                    solo: None,
+                    locked: Some(true),
+                    collapsed: None,
+                },
+                &EditContext::default(),
+            )
+            .expect("lock");
+        let original = json(&document);
+        let refused = [
+            Edit::MoveClips {
+                moves: vec![ClipMove {
+                    clip: 1,
+                    track: 2,
+                    start: 0,
+                }],
+            },
+            Edit::TrimEdge {
+                clip: 1,
+                edge: Edge::End,
+                frames: -5,
+                ripple: false,
+            },
+            Edit::Roll {
+                left: 1,
+                right: 2,
+                frames: 3,
+            },
+            Edit::SetSpeed {
+                clips: vec![1],
+                ratio: Rational { num: 2, den: 1 },
+            },
+            Edit::RemoveClips { clips: vec![1] },
+            Edit::RippleDelete { clips: vec![1] },
+            Edit::Split {
+                clips: Vec::new(),
+                at: 15,
+            },
+            Edit::Duplicate { clips: vec![1] },
+            Edit::FreezeFrame {
+                clip: 1,
+                at: 10,
+                frames: 30,
+            },
+            Edit::SetReverse {
+                clips: vec![1],
+                reverse: true,
+            },
+            Edit::DetachAudio { clips: vec![1] },
+            Edit::AddClip {
+                track: 1,
+                source: 1,
+                stream: 0,
+                time_base: TB,
+                start: 300,
+                from: 0,
+                to: 1000,
+            },
+            Edit::RemoveTrack { track: 1 },
+            // A move onto a locked track from elsewhere is refused too.
+        ];
+        for edit in &refused {
+            assert_eq!(
+                document.apply(edit, &EditContext::default()),
+                Err(EditError::Locked(1)),
+                "{edit:?}"
+            );
+        }
+        assert_eq!(json(&document), original);
+        // Its switches still work, and unlocking lets edits through again.
+        document
+            .apply(
+                &Edit::RenameTrack {
+                    track: 1,
+                    name: " Main ".to_owned(),
+                },
+                &EditContext::default(),
+            )
+            .expect("rename");
+        assert_eq!(document.project().sequence.tracks[0].name, "Main");
+        document
+            .apply(
+                &Edit::SetTrack {
+                    track: 1,
+                    muted: None,
+                    solo: None,
+                    locked: Some(false),
+                    collapsed: None,
+                },
+                &EditContext::default(),
+            )
+            .expect("unlock");
+        document
+            .apply(&refused[4], &EditContext::default())
+            .expect("now it deletes");
+    }
+
+    #[test]
+    fn mute_and_solo_decide_what_is_seen_and_heard() {
+        let mut document = with_sound();
+        let set = |track, muted, solo| Edit::SetTrack {
+            track,
+            muted,
+            solo,
+            locked: None,
+            collapsed: None,
+        };
+        let heard = |document: &Document| -> Vec<(TrackId, bool, bool)> {
+            evaluate(document.project())
+                .expect("evaluates")
+                .tracks
+                .iter()
+                .map(|t| (t.id, t.visible, t.audible))
+                .collect()
+        };
+        assert_eq!(
+            heard(&document),
+            vec![(1, true, true), (2, true, true), (3, false, true)]
+        );
+        document
+            .apply(&set(3, None, Some(true)), &EditContext::default())
+            .expect("solo");
+        assert_eq!(
+            heard(&document),
+            vec![(1, true, false), (2, true, false), (3, false, true)]
+        );
+        // Soloing a muted track: muted wins, so nothing is heard.
+        document
+            .apply(&set(3, Some(true), None), &EditContext::default())
+            .expect("mute");
+        assert!(heard(&document).iter().all(|&(_, _, audible)| !audible));
+        document
+            .apply(&set(1, Some(true), None), &EditContext::default())
+            .expect("hide");
+        assert!(!heard(&document)[0].1);
+        assert_eq!(document.history().entries.len(), 3);
+    }
+
+    #[test]
+    fn the_top_video_track_is_in_front_and_moving_it_changes_that() {
+        let mut document = with_sound();
+        document
+            .apply(
+                &Edit::AddClip {
+                    track: 2,
+                    source: 1,
+                    stream: 0,
+                    time_base: TB,
+                    start: 10,
+                    from: 0,
+                    to: 500,
+                },
+                &EditContext::default(),
+            )
+            .expect("add");
+        let picture = |document: &Document| -> Vec<(ClipId, i64, i64)> {
+            evaluate(document.project())
+                .expect("evaluates")
+                .picture()
+                .iter()
+                .map(|p| (p.clip, p.start, p.end()))
+                .collect()
+        };
+        // Track 1 is on top: clip 1 covers clip 4 entirely.
+        assert_eq!(
+            picture(&document),
+            vec![(1, 0, 30), (2, 30, 60), (3, 90, 120)]
+        );
+        document
+            .apply(
+                &Edit::MoveTrack { track: 2, index: 0 },
+                &EditContext::default(),
+            )
+            .expect("move up");
+        // Now clip 4 (10..25) is in front, and clip 1 shows around it.
+        assert_eq!(
+            picture(&document),
+            vec![
+                (1, 0, 10),
+                (4, 10, 25),
+                (1, 25, 30),
+                (2, 30, 60),
+                (3, 90, 120)
+            ]
+        );
+        // The pieces of clip 1 play the same source ticks it did.
+        let whole = placement_of(&document, 1);
+        let pieces = evaluate(document.project()).expect("evaluates").picture();
+        let after = pieces.iter().find(|p| p.start == 25).expect("piece");
+        assert_eq!(after.source_at(25), whole.source_at(25));
+        // Video tracks cannot go below audio ones.
+        document
+            .apply(
+                &Edit::MoveTrack { track: 2, index: 9 },
+                &EditContext::default(),
+            )
+            .expect("clamped");
+        assert_eq!(document.project().sequence.tracks[1].id, 2);
+    }
+
+    #[test]
+    fn removing_a_track_takes_its_clips_and_undo_brings_them_back() {
+        let mut document = with_sound();
+        let original = json(&document);
+        document
+            .apply(&Edit::RemoveTrack { track: 1 }, &at(&[1, 2], 0))
+            .expect("remove");
+        assert_eq!(document.project().sequence.tracks.len(), 2);
+        assert_eq!(document.project().clips().count(), 0);
+        document.undo();
+        assert_eq!(json(&document), original);
     }
 
     /// xorshift64*, seeded, so a failing sequence reproduces.

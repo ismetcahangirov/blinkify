@@ -56,6 +56,7 @@ function view(): ProjectView {
     speed: { num: 1, den: 1 },
     audio: [],
     sequenceTimeBase: { num: 1, den: 30 },
+    silent: false,
   });
   return {
     path: "C:\\Work\\Trip.blinkify",
@@ -87,6 +88,8 @@ function view(): ProjectView {
         {
           id: 1,
           kind: "video",
+          visible: true,
+          audible: true,
           placements: Array.from({ length: 200 }, (_, i) =>
             placement(i + 1, i * 30),
           ),

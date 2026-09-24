@@ -3,7 +3,7 @@
  * stacked canvases, and the hand-drawn horizontal scrollbar.
  */
 .timeline {
-  --timeline-header-width: calc(var(--space-12) + var(--space-4));
+  --timeline-header-width: calc(var(--space-16) * 3);
   --timeline-scrollbar-height: var(--space-2);
   padding: var(--space-2);
   min-height: 0;
@@ -52,6 +52,7 @@
 .timeline__header {
   display: flex;
   align-items: center;
+  gap: var(--space-1);
   padding-inline: var(--space-2);
   border-bottom: var(--border-width) solid var(--border);
   font-size: var(--type-caption-size);
@@ -127,4 +128,44 @@
 
 .timeline__cut[data-state="lossless"] {
   color: var(--lossless);
+}
+
+.timeline__corner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-inline: var(--space-1);
+}
+
+.timeline__track-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
+}
+
+.timeline__rename {
+  flex: 1;
+  min-width: 0;
+  padding: 0 var(--space-1);
+  border: var(--border-width) solid var(--focus-ring);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.timeline__switches {
+  display: flex;
+  gap: 0;
+}
+
+.timeline__header[data-muted="true"] .timeline__track-name {
+  color: var(--text-disabled);
+}
+
+.timeline__header [aria-pressed="true"] {
+  color: var(--text-accent);
 }

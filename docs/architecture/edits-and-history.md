@@ -69,6 +69,11 @@ Each `Edit` variant compiles to primitive changes:
   earlier by the length removed before it.
 - **Split / Join / Duplicate / Freeze frame / Set reverse** — see
   [`clip-interaction.md`](./clip-interaction.md#split-duplicate-freeze-reverse).
+- **Tracks** — remove (with its clips), move, rename, set mute / solo / lock /
+  collapse; **Detach audio** and **Unlink** — see [`tracks.md`](./tracks.md).
+  Moving and deleting follow links. A locked track refuses every edit to its
+  clips: the check is on the compiled changes, so no edit can route around
+  it.
 - **Set settings** — the sequence settings, which also stops the sequence
   waiting for its first clip (#57).
 - **Speed** — one `Speed` operation replaces all of a clip's speed changes;

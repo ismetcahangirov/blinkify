@@ -50,7 +50,14 @@ export function runTimelineAction(action: TimelineAction): void {
   const clips = [...project.selection];
   switch (action) {
     case "select-all":
-      project.select(allClips(layoutRows(project.view?.timeline)));
+      project.select(
+        allClips(
+          layoutRows(
+            project.view?.timeline,
+            project.view?.project.sequence.tracks,
+          ),
+        ),
+      );
       return;
     case "delete":
       if (clips.length > 0) void project.edit({ edit: "remove-clips", clips });

@@ -178,3 +178,23 @@ export function cutStatement(cut: CutPoint | null): {
     text: `A cut here re-encodes up to the next keyframe${ahead ? ` (${ahead})` : ""}`,
   };
 }
+
+/** Detach the sound of the selected video clips (#36). */
+export function detachAction(
+  timeline: View,
+  selection: readonly number[],
+): Action {
+  const chosen = placements(timeline).filter(
+    (p) =>
+      selection.includes(p.clip) &&
+      p.kind === "video" &&
+      !p.silent &&
+      !p.motion,
+  );
+  return chosen.length === 0
+    ? { edit: null, notice: "Select a video clip with its sound to detach." }
+    : {
+        edit: { edit: "detach-audio", clips: chosen.map((p) => p.clip) },
+        notice: null,
+      };
+}

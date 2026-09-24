@@ -7,6 +7,14 @@ import type { TrackKind } from "./TrackKind";
  */
 export type EvaluatedTrack = { id: number, kind: TrackKind, 
 /**
+ * Its pictures are composited: a video track that is not muted (#36).
+ */
+visible: boolean, 
+/**
+ * Its sound is heard: not muted, and soloed if any track is (#36).
+ */
+audible: boolean, 
+/**
  * In timeline order, none overlapping.
  */
 placements: Array<Placement>, };

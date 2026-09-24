@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useProjectStore } from "../project/project.store.js";
 import {
   cutStatement,
+  detachAction,
   duplicateAction,
   freezeAction,
   reverseAction,
@@ -146,6 +147,29 @@ export function EditToolbar() {
           void perform(
             reverseAction(project().view?.timeline, project().selection),
           )
+        }
+      />
+      <IconButton
+        label="Detach audio"
+        icon={<Glyph d="M3 4h7v5H3zM5 12h8M11 10l2 2-2 2" />}
+        disabled={!selected}
+        onClick={() =>
+          void perform(
+            detachAction(project().view?.timeline, project().selection),
+          )
+        }
+      />
+      <IconButton
+        label="Unlink"
+        icon={
+          <Glyph d="M6 10l-1.5 1.5a2 2 0 0 1-3-3L3 7M10 6l1.5-1.5a2 2 0 0 1 3 3L13 9M6 6l4 4" />
+        }
+        disabled={!selected}
+        onClick={() =>
+          void perform({
+            edit: { edit: "unlink", clips: [...project().selection] },
+            notice: null,
+          })
         }
       />
       <Switch

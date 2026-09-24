@@ -5,6 +5,7 @@ import { useProjectStore } from "../project/project.store.js";
 import type { TrackRow } from "./draw.js";
 import {
   clickSelection,
+  withLinked,
   DRAG_THRESHOLD,
   dragTo,
   hitTest,
@@ -94,7 +95,10 @@ export function TimelineCanvas() {
   };
 
   const rows = (): TrackRow[] =>
-    layoutRows(useProjectStore.getState().view?.timeline);
+    layoutRows(
+      useProjectStore.getState().view?.timeline,
+      useProjectStore.getState().view?.project.sequence.tracks,
+    );
 
   /** The track stack's y for a clip-area y. */
   const stackY = (y: number) =>
@@ -135,7 +139,21 @@ export function TimelineCanvas() {
       !modifiers.ctrl &&
       !modifiers.shift;
     if (!keeps)
-      project.select(clickSelection(project.selection, hit, modifiers));
+      project.select(
+        withLinked(
+          clickSelection(project.selection, hit, modifiers),
+          project.view?.project.sequence.tracks ?? [],
+        ),
+      );
+    // A locked track refuses every edit: say so rather than start a drag
+    // the engine would refuse anyway.
+    if (hit?.row.locked) {
+      useTimelineStore
+        .getState()
+        .setNotice("This track is locked: unlock it to change its clips.");
+      press.current = { x, hit: null, drag: null, result: null };
+      return;
+    }
     press.current = { x, hit, drag: null, result: null };
   };
 
