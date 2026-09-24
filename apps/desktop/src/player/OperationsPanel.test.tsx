@@ -99,3 +99,17 @@ describe("the operations panel", () => {
     ).toBe("Gain +2.5 dB");
   });
 });
+
+describe("describing an operation", () => {
+  it("says a hold and a reverse are re-encoded", () => {
+    expect(
+      describeOperation({
+        operation: { op: "freeze", frames: 90 },
+        previewed: false,
+      }),
+    ).toBe("Freeze frame: 90 frames (re-encoded)");
+    expect(
+      describeOperation({ operation: { op: "reverse" }, previewed: false }),
+    ).toBe("Reverse (re-encoded)");
+  });
+});

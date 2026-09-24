@@ -31,6 +31,7 @@ pub mod evaluate;
 pub mod migrate;
 pub mod settings;
 pub mod source;
+pub mod split;
 pub mod trim;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -50,7 +51,7 @@ use crate::probe::Rational;
 use crate::proxy::ExportSource;
 
 /// The schema this build writes, and the newest it reads.
-pub const SCHEMA_VERSION: u32 = 2;
+pub const SCHEMA_VERSION: u32 = 3;
 
 /// The project file extension, without the dot.
 pub const EXTENSION: &str = "blinkify";
@@ -160,6 +161,16 @@ pub enum Operation {
     Denoise { strength: f64 },
     /// Bring the clip to an integrated loudness, in LUFS.
     Normalise { target_lufs: f64 },
+    /// Hold the first frame of the trim for `frames` sequence frames (#35).
+    /// The picture is one the source never showed for that long, so the
+    /// clip is re-encoded at export.
+    Freeze {
+        #[ts(type = "number")]
+        frames: i64,
+    },
+    /// Play the trim backwards (#35). Re-encoded at export: packets cannot
+    /// be copied in reverse order.
+    Reverse,
 }
 
 impl Clip {
@@ -397,6 +408,8 @@ fn check_operation(clip: ClipId, operation: &Operation) -> Result<(), ProjectErr
         Operation::Gain { db } => db.is_finite(),
         Operation::Denoise { strength } => (0.0..=1.0).contains(&strength),
         Operation::Normalise { target_lufs } => target_lufs.is_finite() && target_lufs < 0.0,
+        Operation::Freeze { frames } => frames >= 1,
+        Operation::Reverse => true,
     };
     if valid {
         Ok(())

@@ -28,6 +28,7 @@ use ts_rs::TS;
 
 use super::{Clip, ClipId, Operation, Project, ProjectError, SourceId, TrackId, TrackKind};
 use crate::probe::Rational;
+use crate::tier::ReEncodeReason;
 use crate::time::{Rounding, rescale};
 
 /// One step of a clip's audio chain.
@@ -47,8 +48,33 @@ pub fn audio_operation(operation: &Operation) -> Option<AudioOperation> {
         Operation::Gain { db } => Some(AudioOperation::Gain { db }),
         Operation::Denoise { strength } => Some(AudioOperation::Denoise { strength }),
         Operation::Normalise { target_lufs } => Some(AudioOperation::Normalise { target_lufs }),
-        Operation::Trim { .. } | Operation::Speed { .. } => None,
+        Operation::Trim { .. }
+        | Operation::Speed { .. }
+        | Operation::Freeze { .. }
+        | Operation::Reverse => None,
     }
+}
+
+/// Why `operation` forces a full re-encode of its clip, if it does — the
+/// reason the planner records and the export report states (#35).
+#[must_use]
+pub fn forces_re_encode(operation: &Operation) -> Option<ReEncodeReason> {
+    match operation {
+        Operation::Freeze { .. } => Some(ReEncodeReason::FreezeFrame),
+        Operation::Reverse => Some(ReEncodeReason::Reverse),
+        _ => None,
+    }
+}
+
+/// How a clip moves through its source, when not forward.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "kebab-case")]
+#[ts(export)]
+pub enum Motion {
+    /// From the out-point back to the in-point.
+    Reverse,
+    /// The in-point's frame, held.
+    Hold,
 }
 
 /// A clip, resolved: which source ticks play, where, how fast, through what.
@@ -79,6 +105,16 @@ pub struct Placement {
     pub audio: Vec<AudioOperation>,
     /// The sequence's time base, which `start` and `length` count.
     pub sequence_time_base: Rational,
+    /// Backwards or held; absent when the clip plays forwards.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub motion: Option<Motion>,
+    /// Why the clip must be re-encoded whole, if something forces it — a
+    /// hold or a reverse. Recorded here so the planner and the export report
+    /// cannot miss it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub forced: Option<ReEncodeReason>,
 }
 
 impl Placement {
@@ -110,14 +146,21 @@ impl Placement {
         if !self.covers(position) {
             return None;
         }
+        if self.motion == Some(Motion::Hold) {
+            return Some(self.source_in);
+        }
         let offset = rescale(
             position - self.start,
             self.sequence_time_base,
             self.played_time_base(),
             Rounding::Down,
         )?;
-        let tick = self.source_in.checked_add(offset)?;
-        (tick < self.source_out).then_some(tick)
+        let tick = if self.motion == Some(Motion::Reverse) {
+            self.source_out.checked_sub(1)?.checked_sub(offset)?
+        } else {
+            self.source_in.checked_add(offset)?
+        };
+        (self.source_in <= tick && tick < self.source_out).then_some(tick)
     }
 
     /// The clip's operations as the evaluator resolved them: one trim, the
@@ -130,6 +173,13 @@ impl Placement {
         }];
         if self.speed != (Rational { num: 1, den: 1 }) {
             operations.push(Operation::Speed { ratio: self.speed });
+        }
+        match self.motion {
+            Some(Motion::Hold) => operations.push(Operation::Freeze {
+                frames: self.length,
+            }),
+            Some(Motion::Reverse) => operations.push(Operation::Reverse),
+            None => {}
         }
         operations.extend(self.audio.iter().map(|operation| match *operation {
             AudioOperation::Gain { db } => Operation::Gain { db },
@@ -299,6 +349,8 @@ fn place(
     let mut trim = None;
     let mut speed = (1_i64, 1_i64);
     let mut audio = Vec::new();
+    let mut hold = None;
+    let mut reverse = false;
     for operation in &clip.operations {
         match *operation {
             Operation::Trim { from, to } => trim = Some((from, to)),
@@ -313,6 +365,8 @@ fn place(
             Operation::Normalise { target_lufs } => {
                 audio.push(AudioOperation::Normalise { target_lufs });
             }
+            Operation::Freeze { frames } => hold = Some(frames),
+            Operation::Reverse => reverse = true,
         }
     }
     let (source_in, source_out) = trim.ok_or(EvaluateError::Untrimmed(clip.id))?;
@@ -333,13 +387,26 @@ fn place(
         },
         audio,
         sequence_time_base: sequence,
+        // A hold wins over a reverse: one frame has no direction.
+        motion: if hold.is_some() {
+            Some(Motion::Hold)
+        } else if reverse {
+            Some(Motion::Reverse)
+        } else {
+            None
+        },
+        forced: clip.operations.iter().find_map(forces_re_encode),
     };
     let played = placement.played_time_base();
     if played.num <= 0 || played.den <= 0 {
         return Err(overflow());
     }
-    placement.length =
-        rescale(source_out - source_in, played, sequence, Rounding::Up).ok_or_else(overflow)?;
+    placement.length = match hold {
+        Some(frames) => frames,
+        None => {
+            rescale(source_out - source_in, played, sequence, Rounding::Up).ok_or_else(overflow)?
+        }
+    };
     placement
         .start
         .checked_add(placement.length)

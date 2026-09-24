@@ -69,3 +69,53 @@ Typing an in point, out point or duration in the inspector sends the same
 The preview's bounds are approximate — floating point, for display — and
 only show the user the limit while dragging. The engine's are exact and are
 the ones that apply.
+
+## Split, duplicate, freeze, reverse
+
+From [#35](https://github.com/ismetcahangirov/blinkify/issues/35). Code:
+`crates/blinkify-engine/src/project/split.rs`, the `Split`, `Join`,
+`Duplicate`, `FreezeFrame` and `SetReverse` edits, and
+`apps/desktop/src/timeline/editActions.ts`.
+
+- **Split** (Ctrl+B) cuts the selected clips under the playhead, or every
+  clip under it when none is selected. The left half keeps the clip's id.
+  The two halves meet in the source at the tick on screen at the cut — the
+  evaluator's own reading, rounded down — so every source tick is in exactly
+  one half: nothing dropped, nothing shown twice. If the far half's partial
+  last frame would make it a frame too long, that sub-frame tail is left off,
+  so the halves end exactly where the clip did. Where a frame is a whole
+  number of ticks (an MP4's 1/15360 or 1/90000 at common rates), split then
+  join is the original byte for byte; where it is not, the joined clip shows
+  the same frames and may lack less than a frame of tail.
+- **Duplicate** puts each copy right after its original and moves the rest
+  of the track along.
+- **Freeze frame** cuts the clip at the playhead and inserts a held frame of
+  three seconds there, the rest of the track moving later. A held frame is a
+  `Freeze { frames }` operation: its length is the frames, not its source.
+- **Reverse** plays the selected clips backwards, or forwards again. Trimming
+  the timeline start of a reversed clip trims its source's end.
+
+Held and reversed clips **force a full re-encode**. The evaluator records the
+reason on the placement (`forced: freeze-frame | reverse`), so the planner
+(#39) and the export report (#52) cannot miss it; the timeline marks them
+with a band along the top and says so in the label; reversing more than a
+minute warns at the point of use. They are executed by the full re-encode
+executor (#55), which does not exist yet: until it does, the preview shows
+them as a gap and the diagnostic view says they are not previewed. They can
+be edited now; they cannot be exported until #55.
+
+### The keyframe indicator
+
+A cut is lossless when the frame on screen at the cut is a keyframe a copy
+can start from. The timeline asks the engine (`cut_point_at`) once the
+playhead rests: the engine reads the keyframe index (#24) around that
+position and answers with `CutPoint` — lossless or not, an open-GOP keyframe
+named as such, and the keyframes before and after in timeline frames. The
+toolbar states it: _Keyframe: a cut here is lossless_, or what a cut there
+costs.
+
+**Snap cuts to keyframes** is off by default. When it is on and the playhead
+is off a keyframe, a split moves to the nearest keyframe inside the clip, and
+the timeline says where it landed — _Cut moved to the keyframe 5 frames
+later_. Moving a user's cut silently would be a correctness change disguised
+as a convenience.

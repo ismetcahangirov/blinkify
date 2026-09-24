@@ -4,4 +4,4 @@ import type { Rational } from "./Rational";
 /**
  * One thing done to a clip, with its parameters.
  */
-export type Operation = { "op": "trim", from: number, to: number, } | { "op": "speed", ratio: Rational, } | { "op": "gain", db: number, } | { "op": "denoise", strength: number, } | { "op": "normalise", targetLufs: number, };
+export type Operation = { "op": "trim", from: number, to: number, } | { "op": "speed", ratio: Rational, } | { "op": "gain", db: number, } | { "op": "denoise", strength: number, } | { "op": "normalise", targetLufs: number, } | { "op": "freeze", frames: number, } | { "op": "reverse" };

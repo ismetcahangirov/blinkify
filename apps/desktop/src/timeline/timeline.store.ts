@@ -1,4 +1,4 @@
-import type { Timeline } from "@blinkify/types";
+import type { CutPoint, Timeline } from "@blinkify/types";
 import { create } from "zustand";
 import {
   useProjectStore,
@@ -60,6 +60,13 @@ interface TimelineViewState {
    * its source, a drop that could not happen. */
   notice: string | null;
   setNotice: (notice: string | null) => void;
+  /** Whether a split moves to the nearest keyframe (#35). Off by default:
+   * moving a cut is a change the user has to ask for. */
+  snapToKeyframe: boolean;
+  setSnapToKeyframe: (on: boolean) => void;
+  /** What the keyframe index says about a cut at the playhead. */
+  cut: CutPoint | null;
+  setCut: (cut: CutPoint | null) => void;
 }
 
 const length = (): number =>
@@ -71,6 +78,8 @@ export const useTimelineStore = create<TimelineViewState>((set, get) => ({
   playhead: null,
   drag: null,
   notice: null,
+  snapToKeyframe: false,
+  cut: null,
 
   setSize: (width, height) => {
     const view = { ...get().view, width, height };
@@ -111,4 +120,6 @@ export const useTimelineStore = create<TimelineViewState>((set, get) => ({
 
   setDrag: (drag) => set({ drag }),
   setNotice: (notice) => set({ notice }),
+  setSnapToKeyframe: (snapToKeyframe) => set({ snapToKeyframe }),
+  setCut: (cut) => set({ cut }),
 }));

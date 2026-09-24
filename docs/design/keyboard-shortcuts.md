@@ -68,6 +68,7 @@ field when one has focus: there, these keys edit the text.
 | Backspace    | Delete the selected clips                | Same   |
 | Shift+Delete | Ripple delete: delete and close the gaps | —      |
 | Ctrl+A       | Select every clip                        | Same   |
+| Ctrl+B       | Split at the playhead                    | Same   |
 
 ## Timeline pointer
 

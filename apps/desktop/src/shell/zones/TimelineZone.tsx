@@ -1,6 +1,7 @@
 import { IconButton } from "@blinkify/ui";
 import { memo, useEffect } from "react";
 import { useTimelineKeys } from "../../timeline/useTimelineKeys.js";
+import { EditToolbar } from "../../timeline/EditToolbar.js";
 import { TimelineCanvas } from "../../timeline/TimelineCanvas.js";
 import { TimelineScrollbar } from "../../timeline/TimelineScrollbar.js";
 import { TrackHeaders } from "../../timeline/TrackHeaders.js";
@@ -51,6 +52,7 @@ export const TimelineZone = memo(function TimelineZone() {
         >
           {notice}
         </p>
+        <EditToolbar />
         <div className="timeline__zoom" role="group" aria-label="Zoom">
           <IconButton
             label="Zoom out"

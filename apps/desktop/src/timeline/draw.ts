@@ -355,9 +355,14 @@ function drawClip(
     if (video)
       drawThumbnails(painter, scene, placement, left, top, width, height);
     else drawWaveform(painter, scene, placement, left, top, width, height);
+    const name = scene.labels.get(placement.source) ?? "";
     const label = scene.text.fit(
       painter,
-      scene.labels.get(placement.source) ?? "",
+      placement.motion === "hold"
+        ? `Freeze · ${name}`
+        : placement.motion === "reverse"
+          ? `Reverse · ${name}`
+          : name,
       width - 8,
     );
     if (label) {
@@ -384,6 +389,11 @@ function drawClip(
     width - 2 * inset,
     height - 2 * inset,
   );
+  if (placement.forced) {
+    // Re-encoded at export whatever else holds (#35): a band along the top.
+    painter.fillStyle = theme.warning;
+    painter.fillRect(left, top, width, 3);
+  }
   if (ineligible) {
     // The copy-ineligible mark (#57): a band along the bottom edge, so it
     // reads at every zoom without covering the pictures.

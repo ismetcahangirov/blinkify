@@ -20,7 +20,7 @@ use super::{ProjectError, SCHEMA_VERSION};
 type Migration = fn(Value) -> Result<Value, ProjectError>;
 
 /// `MIGRATIONS[n]` migrates version `n + 1` to `n + 2`.
-const MIGRATIONS: &[Migration] = &[v1_to_v2];
+const MIGRATIONS: &[Migration] = &[v1_to_v2, v2_to_v3];
 
 /// Schema 2 (#57): the sequence records whether its settings still wait for
 /// the first clip. A version-1 sequence with no clip had never been given
@@ -94,6 +94,18 @@ fn to(mut value: Value, target: u32, migrations: &[Migration]) -> Result<Value, 
             )));
         }
     }
+    Ok(value)
+}
+
+/// Schema 3 (#35): two operations, `freeze` and `reverse`. A version-2
+/// file has neither, so nothing in it changes but its version — which is
+/// bumped at all so that a version-2 build refuses a file holding one with
+/// "saved by a newer version", not "damaged".
+fn v2_to_v3(mut value: Value) -> Result<Value, ProjectError> {
+    value
+        .as_object_mut()
+        .ok_or_else(|| ProjectError::Corrupt("the project is not an object".to_owned()))?
+        .insert("schemaVersion".to_owned(), Value::from(3));
     Ok(value)
 }
 

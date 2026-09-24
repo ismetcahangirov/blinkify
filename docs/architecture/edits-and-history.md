@@ -67,6 +67,8 @@ Each `Edit` variant compiles to primitive changes:
 - **Roll** — the cut between two touching clips, both edges together.
 - **Ripple delete** — removed, and every later clip on the track moved
   earlier by the length removed before it.
+- **Split / Join / Duplicate / Freeze frame / Set reverse** — see
+  [`clip-interaction.md`](./clip-interaction.md#split-duplicate-freeze-reverse).
 - **Set settings** — the sequence settings, which also stops the sequence
   waiting for its first clip (#57).
 - **Speed** — one `Speed` operation replaces all of a clip's speed changes;

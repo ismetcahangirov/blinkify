@@ -41,6 +41,12 @@ pub enum ReEncodeReason {
     /// No encoder on this machine can produce a seam that matches the source,
     /// and the user chose a full re-encode over moving the cut. See `ADR-0003`.
     NoEncoderMatchesSourceProfile,
+    /// A held frame (#35): a picture shown for longer than the source ever
+    /// showed it has to be encoded.
+    FreezeFrame,
+    /// A reversed clip (#35): its pictures are decoded and encoded again in
+    /// the opposite order.
+    Reverse,
 }
 
 /// What happens to a segment's pixels on the way to the output file.

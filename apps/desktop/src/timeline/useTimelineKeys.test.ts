@@ -90,6 +90,7 @@ describe("the timeline's editing keys", () => {
     expect(timelineActionForKey(key("a", { ctrlKey: true }))).toBe(
       "select-all",
     );
+    expect(timelineActionForKey(key("b", { ctrlKey: true }))).toBe("split");
     expect(timelineActionForKey(key("a"))).toBeNull();
     expect(timelineActionForKey(key("Delete", { altKey: true }))).toBeNull();
   });
