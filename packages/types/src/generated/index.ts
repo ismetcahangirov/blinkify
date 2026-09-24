@@ -5,6 +5,7 @@
 // `pnpm types:generate` after changing one; a stale barrel here means the
 // renderer is compiling against a contract the Rust side no longer implements.
 
+export * from "./Applied";
 export * from "./AppliedClip";
 export * from "./AudioInfo";
 export * from "./AudioOperation";
@@ -25,6 +26,7 @@ export * from "./DecodeStats";
 export * from "./DiagnosticClip";
 export * from "./DiagnosticOperation";
 export * from "./Diagnostics";
+export * from "./Edge";
 export * from "./Edit";
 export * from "./EditContext";
 export * from "./EditList";
@@ -80,6 +82,7 @@ export * from "./SettingsImpact";
 export * from "./SheetReady";
 export * from "./SourceRef";
 export * from "./SourceStatus";
+export * from "./StreamExtent";
 export * from "./StreamGeometry";
 export * from "./StreamInfo";
 export * from "./StreamKind";

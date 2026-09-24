@@ -46,6 +46,7 @@ function view(entries: string[], applied: number): ProjectView {
     unavailable: {},
     affectedClips: [],
     eligibility: {},
+    extents: [],
   };
 }
 

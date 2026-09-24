@@ -1,5 +1,6 @@
 import { IconButton } from "@blinkify/ui";
-import { memo } from "react";
+import { memo, useEffect } from "react";
+import { useTimelineKeys } from "../../timeline/useTimelineKeys.js";
 import { TimelineCanvas } from "../../timeline/TimelineCanvas.js";
 import { TimelineScrollbar } from "../../timeline/TimelineScrollbar.js";
 import { TrackHeaders } from "../../timeline/TrackHeaders.js";
@@ -28,11 +29,28 @@ export const TimelineZone = memo(function TimelineZone() {
   const zoomIn = useTimelineStore((state) => state.zoomIn);
   const zoomOut = useTimelineStore((state) => state.zoomOut);
   const fitAll = useTimelineStore((state) => state.fitAll);
+  const notice = useTimelineStore((state) => state.notice);
+  const setNotice = useTimelineStore((state) => state.setNotice);
+  useTimelineKeys();
+
+  // A notice is information for a moment, not a state to dismiss.
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(timer);
+  }, [notice, setNotice]);
 
   return (
     <div className="zone timeline">
       <div className="timeline__toolbar">
         <h2 className="zone__title">Timeline</h2>
+        <p
+          className="timeline__notice"
+          role="status"
+          data-testid="timeline-notice"
+        >
+          {notice}
+        </p>
         <div className="timeline__zoom" role="group" aria-label="Zoom">
           <IconButton
             label="Zoom out"

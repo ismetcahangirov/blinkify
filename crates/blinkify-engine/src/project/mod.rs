@@ -31,6 +31,7 @@ pub mod evaluate;
 pub mod migrate;
 pub mod settings;
 pub mod source;
+pub mod trim;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;

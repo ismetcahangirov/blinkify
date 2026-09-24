@@ -40,6 +40,7 @@ const VIEW: ProjectView = {
   },
   affectedClips: [4, 5, 9],
   eligibility: {},
+  extents: [],
   timeline: null,
   history: { entries: [], applied: 0 },
 };
@@ -95,6 +96,7 @@ describe("the project store", () => {
       unavailable: {},
       affectedClips: [],
       eligibility: {},
+      extents: [],
     };
     invoked.mockResolvedValueOnce(relinked);
     await useProjectStore.getState().relink(1, "D:\\Moved\\beach.mp4");

@@ -49,6 +49,7 @@ function view(matchFirstClip = false): ProjectView {
     unavailable: {},
     affectedClips: [],
     eligibility: {},
+    extents: [],
   };
 }
 

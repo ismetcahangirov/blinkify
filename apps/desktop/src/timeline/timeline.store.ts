@@ -4,6 +4,7 @@ import {
   useProjectStore,
   type DeepReadonly,
 } from "../project/project.store.js";
+import type { DragPreview } from "./draw.js";
 import { RULER_HEIGHT } from "./rows.js";
 import {
   fit,
@@ -51,6 +52,14 @@ interface TimelineViewState {
   /** The frame the playhead is on, in sequence frames — set by the player. */
   playhead: number | null;
   setPlayhead: (frame: number | null) => void;
+  /** A drag in progress, for the overlay (#34). Never part of the graph
+   * until it is released. */
+  drag: DragPreview | null;
+  setDrag: (drag: DragPreview | null) => void;
+  /** What the last edit ran into, said briefly: a trim that met the end of
+   * its source, a drop that could not happen. */
+  notice: string | null;
+  setNotice: (notice: string | null) => void;
 }
 
 const length = (): number =>
@@ -60,6 +69,8 @@ export const useTimelineStore = create<TimelineViewState>((set, get) => ({
   view: { scale: 4, origin: 0, scrollTop: 0, width: 0, height: 0 },
   fitted: false,
   playhead: null,
+  drag: null,
+  notice: null,
 
   setSize: (width, height) => {
     const view = { ...get().view, width, height };
@@ -97,4 +108,7 @@ export const useTimelineStore = create<TimelineViewState>((set, get) => ({
   setPlayhead: (playhead) => {
     if (playhead !== get().playhead) set({ playhead });
   },
+
+  setDrag: (drag) => set({ drag }),
+  setNotice: (notice) => set({ notice }),
 }));

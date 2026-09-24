@@ -109,7 +109,12 @@ export function mountTimeline(
   const scheduler = new RedrawScheduler((layers) => {
     if (layers.has("content") && content) drawContent(content, scene());
     if (layers.has("overlay") && overlay)
-      drawOverlay(overlay, scene(), useTimelineStore.getState().playhead);
+      drawOverlay(
+        overlay,
+        scene(),
+        useTimelineStore.getState().playhead,
+        useTimelineStore.getState().drag,
+      );
   }, frames);
 
   const media = new TimelineMedia(
@@ -171,7 +176,12 @@ export function mountTimeline(
       if (state.view !== previous.view) {
         scheduler.invalidate("content");
         scheduler.invalidate("overlay");
-      } else if (state.playhead !== previous.playhead) {
+      } else if (
+        state.playhead !== previous.playhead ||
+        state.drag !== previous.drag
+      ) {
+        // A drag is drawn on the overlay: the clips under it are not
+        // repainted while it moves.
         scheduler.invalidate("overlay");
       }
     }),
