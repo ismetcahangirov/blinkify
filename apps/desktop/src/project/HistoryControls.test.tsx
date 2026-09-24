@@ -25,6 +25,7 @@ const invoked = vi.mocked(invoke);
 function view(entries: string[], applied: number): ProjectView {
   return {
     path: "C:\\Work\\Trip.blinkify",
+    dirty: false,
     project: {
       schemaVersion: 1,
       name: "Trip",

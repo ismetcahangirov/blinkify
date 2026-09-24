@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 243,
-    "tests": 33,
+    "files": 247,
+    "tests": 34,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 80,
-      "tests": 27,
+      "files": 82,
+      "tests": 28,
       "untested": [
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
@@ -35,7 +35,7 @@
       ]
     },
     "packages/types": {
-      "files": 94,
+      "files": 96,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
@@ -110,6 +110,8 @@
         "packages/types/src/generated/ProxySegment.ts",
         "packages/types/src/generated/Rational.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
+        "packages/types/src/generated/RecentProject.ts",
+        "packages/types/src/generated/RecoveryOffer.ts",
         "packages/types/src/generated/SeamReason.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/SequenceSettings.ts",
@@ -214,6 +216,7 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/UpdateBanner.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
         "apps/desktop/src/shell/AppShell.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.tsx",
@@ -691,11 +694,47 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/project/HistoryControls.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/project/ProjectLifecycle.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/project/ProjectLifecycle.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/project/ProjectLifecycle.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/HistoryControls.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.test.tsx",
+        "apps/desktop/src/shell/AppBar.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/project/ProjectLifecycle.test.tsx"
       ],
       "hasNoDependents": false
     },
@@ -723,6 +762,7 @@
         "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/shell/AppBar.tsx"
       ],
@@ -773,6 +813,8 @@
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.test.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
@@ -798,6 +840,7 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
@@ -824,6 +867,7 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/project/HistoryControls.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/windowChrome.ts",
@@ -2460,6 +2504,28 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/RecentProject.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/RecoveryOffer.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/SeamReason.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2815,6 +2881,8 @@
         "packages/types/src/generated/ProxySegment.ts",
         "packages/types/src/generated/Rational.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
+        "packages/types/src/generated/RecentProject.ts",
+        "packages/types/src/generated/RecoveryOffer.ts",
         "packages/types/src/generated/SeamReason.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/SequenceSettings.ts",
@@ -2864,6 +2932,8 @@
         "apps/desktop/src/player/timecode.ts",
         "apps/desktop/src/player/useTransportShortcuts.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.test.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
@@ -2897,6 +2967,7 @@
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
@@ -3450,6 +3521,8 @@
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.test.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
@@ -3466,6 +3539,7 @@
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",

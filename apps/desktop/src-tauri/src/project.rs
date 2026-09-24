@@ -26,6 +26,7 @@ use blinkify_engine::project::edit::{Document, Edit, EditContext, HistoryView, S
 use blinkify_engine::project::evaluate::{
     OperationsAt, Timeline, audio_operation, evaluate, forces_re_encode,
 };
+use blinkify_engine::project::session::Session;
 use blinkify_engine::project::split::{CutPoint, cut_point};
 use blinkify_engine::project::trim::StreamExtent;
 use blinkify_engine::project::{
@@ -34,7 +35,7 @@ use blinkify_engine::project::{
 use blinkify_engine::proxy::MediaAsset;
 use blinkify_engine::time::{self, MICROSECONDS, Rounding};
 use serde::Serialize;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, State};
 use ts_rs::TS;
 
 use crate::media::{MediaEngine, PreviewOpened};
@@ -61,25 +62,25 @@ impl LaunchFile {
 pub struct OpenProject(Mutex<Option<Opened>>);
 
 #[derive(Debug)]
-struct Opened {
-    path: PathBuf,
-    /// The graph and its history. Every change to it is an edit (#37).
-    document: Document,
+pub(crate) struct Opened {
+    /// The project, its history, where it lives and what was saved (#37,
+    /// #54). Every change to the graph is an edit on its document.
+    pub(crate) session: Session,
     /// The graph as the evaluator last resolved it.
-    timeline: Option<Timeline>,
-    preview: Option<ProjectPreview>,
+    pub(crate) timeline: Option<Timeline>,
+    pub(crate) preview: Option<ProjectPreview>,
 }
 
 /// A preview session playing the project, and the sources it has opened —
 /// kept, so a graph change does not probe or index a file again.
 #[derive(Debug)]
-struct ProjectPreview {
-    session: u32,
+pub(crate) struct ProjectPreview {
+    pub(crate) session: u32,
     sources: BTreeMap<SourceId, Arc<SourceMedia>>,
 }
 
 impl OpenProject {
-    fn lock(&self) -> Result<MutexGuard<'_, Option<Opened>>, String> {
+    pub(crate) fn lock(&self) -> Result<MutexGuard<'_, Option<Opened>>, String> {
         self.0
             .lock()
             .map_err(|_| "the project state is poisoned".to_owned())
@@ -92,8 +93,11 @@ impl OpenProject {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct ProjectView {
-    #[ts(type = "string")]
-    pub path: PathBuf,
+    /// Where the project file is; `null` for a project never saved (#54).
+    #[ts(type = "string | null")]
+    pub path: Option<PathBuf>,
+    /// It differs from what was last saved or opened (#54).
+    pub dirty: bool,
     pub project: Project,
     /// The graph as the evaluator (#30) resolves it — what the timeline
     /// draws, so the renderer never interprets an operation itself. `None`
@@ -128,7 +132,8 @@ pub struct EditOutcome {
 }
 
 impl ProjectView {
-    fn of(path: &Path, document: &Document, timeline: Option<&Timeline>) -> Self {
+    fn of(session: &Session, timeline: Option<&Timeline>) -> Self {
+        let document = session.document();
         let project = document.project();
         let unavailable: BTreeMap<SourceId, SourceStatus> = project
             .check_sources()
@@ -140,7 +145,8 @@ impl ProjectView {
             .flat_map(|&source| project.clips_of(source))
             .collect();
         Self {
-            path: path.to_path_buf(),
+            path: session.path().map(Path::to_path_buf),
+            dirty: session.is_dirty(),
             project: project.clone(),
             timeline: timeline.cloned(),
             history: document.history(),
@@ -153,8 +159,18 @@ impl ProjectView {
 }
 
 impl Opened {
-    fn view(&self) -> ProjectView {
-        ProjectView::of(&self.path, &self.document, self.timeline.as_ref())
+    /// A session opened: its sources probed, its graph evaluated.
+    pub(crate) fn new(engine: &MediaEngine, mut session: Session) -> Self {
+        describe_sources(engine, session.document_mut());
+        Self {
+            timeline: evaluate(session.document().project()).ok(),
+            session,
+            preview: None,
+        }
+    }
+
+    pub(crate) fn view(&self) -> ProjectView {
+        ProjectView::of(&self.session, self.timeline.as_ref())
     }
 }
 
@@ -175,25 +191,10 @@ fn describe_sources(engine: &MediaEngine, document: &mut Document) {
     }
 }
 
-fn open(engine: &MediaEngine, state: &OpenProject, path: &Path) -> Result<ProjectView, String> {
-    let project = Project::load(path).map_err(|error| error.to_string())?;
-    let mut document = Document::new(project).map_err(|error| error.to_string())?;
-    describe_sources(engine, &mut document);
-    let opened = Opened {
-        path: path.to_path_buf(),
-        timeline: evaluate(document.project()).ok(),
-        document,
-        preview: None,
-    };
-    let view = opened.view();
-    *state.lock()? = Some(opened);
-    Ok(view)
-}
-
 /// Evaluate `opened`'s graph and, if it is previewed, give the player the new
 /// plan: sources it has not opened yet are opened, the rest are reused.
-fn refresh(engine: &MediaEngine, opened: &mut Opened) -> Result<(), String> {
-    let project = opened.document.project();
+pub(crate) fn refresh(engine: &MediaEngine, opened: &mut Opened) -> Result<(), String> {
+    let project = opened.session.document().project();
     let timeline = evaluate(project).map_err(|error| error.to_string())?;
     if let Some(preview) = &mut opened.preview {
         let plan = plan_for(engine, project, &timeline, &mut preview.sources)?;
@@ -247,23 +248,8 @@ pub fn launch_project(
     let Some(path) = launch.0.as_deref() else {
         return Ok(None);
     };
-    let view = open(&engine, &state, path)?;
-    // The taskbar names the project, as the app bar does. A title that
-    // cannot be set costs the user nothing, so it is not an error.
-    if let Some(window) = app.get_webview_window("main") {
-        let _ = window.set_title(&window_title(&view.project.name));
-    }
-    Ok(Some(view))
-}
-
-/// "Trip — Blinkify", or plain "Blinkify" for a project with no name.
-fn window_title(name: &str) -> String {
-    let name = name.trim();
-    if name.is_empty() {
-        "Blinkify".to_owned()
-    } else {
-        format!("{name} — Blinkify")
-    }
+    // A double-click in Explorer takes the same path as File > Open (#54).
+    crate::lifecycle::open_project(app, engine, state, path.to_path_buf()).map(Some)
 }
 
 /// Point `source` at the file at `path` — the same content, moved — and save
@@ -289,7 +275,8 @@ pub fn relink_source(
     // Opened read-only to fingerprint, and never written (`CLAUDE.md`
     // section 19). What is saved is the project file.
     let relinked = opened
-        .document
+        .session
+        .document()
         .project()
         .sources
         .get(&source)
@@ -297,23 +284,29 @@ pub fn relink_source(
         .relink(&MediaAsset::new(path).export_source())
         .map_err(|error| error.to_string())?;
     opened
-        .document
+        .session
+        .document_mut()
         .relink(source, relinked, &context)
         .map_err(|error| error.to_string())?;
     let (geometry, extents) = opened
-        .document
+        .session
+        .document()
         .project()
         .sources
         .get(&source)
         .map(|reference| engine.facts_of(reference.path()))
         .unwrap_or_default();
-    opened.document.describe_source(source, geometry);
-    opened.document.describe_streams(source, &extents);
     opened
-        .document
-        .project()
-        .save(&opened.path)
-        .map_err(|error| error.to_string())?;
+        .session
+        .document_mut()
+        .describe_source(source, geometry);
+    opened
+        .session
+        .document_mut()
+        .describe_streams(source, &extents);
+    if opened.session.path().is_some() {
+        opened.session.save().map_err(|error| error.to_string())?;
+    }
     // The relinked source is playable now: the preview picks it up.
     refresh(&engine, opened)?;
     Ok(opened.view())
@@ -338,7 +331,7 @@ pub fn open_project_preview(
 ) -> Result<PreviewOpened, String> {
     let mut guard = state.lock()?;
     let opened = guard.as_mut().ok_or("no project is open")?;
-    let project = opened.document.project();
+    let project = opened.session.document().project();
     let timeline = evaluate(project).map_err(|error| error.to_string())?;
     let mut sources = BTreeMap::new();
     let plan = plan_for(&engine, project, &timeline, &mut sources)?;
@@ -365,6 +358,7 @@ pub fn open_project_preview(
 // `updater::pending_update`.
 #[allow(clippy::needless_pass_by_value)]
 pub fn edit_project(
+    app: AppHandle,
     engine: State<'_, MediaEngine>,
     state: State<'_, OpenProject>,
     edit: Edit,
@@ -373,10 +367,23 @@ pub fn edit_project(
     let mut guard = state.lock()?;
     let opened = guard.as_mut().ok_or("no project is open")?;
     let applied = opened
-        .document
+        .session
+        .document_mut()
         .apply(&edit, &context)
         .map_err(|error| error.to_string())?;
-    Ok(settle(&engine, opened, applied.context, applied.clamped))
+    // An edit that is expensive to redo is autosaved at once, not at the
+    // next tick (#54). A recovery file that cannot be written does not undo
+    // the edit; the interval tries again.
+    if significant(&edit) {
+        let _ = opened.session.autosave();
+    }
+    Ok(settle(
+        &app,
+        &engine,
+        opened,
+        applied.context,
+        applied.clamped,
+    ))
 }
 
 /// Undo the open project's last edit; `None` when there is nothing to undo.
@@ -388,15 +395,17 @@ pub fn edit_project(
 // Tauri injects managed state by value; see `updater::pending_update`.
 #[allow(clippy::needless_pass_by_value)]
 pub fn undo_edit(
+    app: AppHandle,
     engine: State<'_, MediaEngine>,
     state: State<'_, OpenProject>,
 ) -> Result<Option<EditOutcome>, String> {
     let mut guard = state.lock()?;
     let opened = guard.as_mut().ok_or("no project is open")?;
     Ok(opened
-        .document
+        .session
+        .document_mut()
         .undo()
-        .map(|context| settle(&engine, opened, context, false)))
+        .map(|context| settle(&app, &engine, opened, context, false)))
 }
 
 /// Redo the open project's last undone edit; `None` when there is nothing to
@@ -409,15 +418,17 @@ pub fn undo_edit(
 // Tauri injects managed state by value; see `updater::pending_update`.
 #[allow(clippy::needless_pass_by_value)]
 pub fn redo_edit(
+    app: AppHandle,
     engine: State<'_, MediaEngine>,
     state: State<'_, OpenProject>,
 ) -> Result<Option<EditOutcome>, String> {
     let mut guard = state.lock()?;
     let opened = guard.as_mut().ok_or("no project is open")?;
     Ok(opened
-        .document
+        .session
+        .document_mut()
         .redo()
-        .map(|context| settle(&engine, opened, context, false)))
+        .map(|context| settle(&app, &engine, opened, context, false)))
 }
 
 /// Whether a cut at sequence frame `position` on the main video track is
@@ -457,7 +468,8 @@ pub fn cut_point_at(
             return Ok(None);
         };
         let Some(path) = opened
-            .document
+            .session
+            .document()
             .project()
             .sources
             .get(&placement.source)
@@ -504,7 +516,8 @@ pub fn preview_settings(
     let guard = state.lock()?;
     let opened = guard.as_ref().ok_or("no project is open")?;
     opened
-        .document
+        .session
+        .document()
         .settings_impact(&settings)
         .map_err(|error| error.to_string())
 }
@@ -526,7 +539,10 @@ pub fn begin_gesture(
 ) -> Result<(), String> {
     let mut guard = state.lock()?;
     let opened = guard.as_mut().ok_or("no project is open")?;
-    opened.document.begin_gesture(&label, &context);
+    opened
+        .session
+        .document_mut()
+        .begin_gesture(&label, &context);
     Ok(())
 }
 
@@ -541,12 +557,29 @@ pub fn begin_gesture(
 pub fn end_gesture(state: State<'_, OpenProject>) -> Result<ProjectView, String> {
     let mut guard = state.lock()?;
     let opened = guard.as_mut().ok_or("no project is open")?;
-    opened.document.end_gesture();
+    opened.session.document_mut().end_gesture();
     Ok(opened.view())
+}
+
+/// Edits worth an autosave the moment they happen: they change many clips,
+/// or would take effort to do again.
+fn significant(edit: &Edit) -> bool {
+    match edit {
+        Edit::RippleDelete { .. }
+        | Edit::RemoveTrack { .. }
+        | Edit::DetachAudio { .. }
+        | Edit::Split { .. }
+        | Edit::FreezeFrame { .. }
+        | Edit::SetSettings { .. } => true,
+        Edit::MoveClips { moves } => moves.len() > 1,
+        Edit::RemoveClips { clips } => clips.len() > 1,
+        _ => false,
+    }
 }
 
 /// After the graph changed: evaluate it again, update the preview, report.
 fn settle(
+    app: &AppHandle,
     engine: &MediaEngine,
     opened: &mut Opened,
     context: EditContext,
@@ -558,8 +591,11 @@ fn settle(
     if refresh(engine, opened).is_err() {
         opened.timeline = None;
     }
+    let view = opened.view();
+    // The window says whether there is unsaved work, as the app bar does.
+    crate::lifecycle::title(app, &view);
     EditOutcome {
-        view: opened.view(),
+        view,
         context,
         clamped,
     }
@@ -671,7 +707,7 @@ pub fn operations_at(
         .ok_or("the playhead is out of range")?;
     Ok(Diagnostics::of(
         &timeline.at(position),
-        opened.document.project(),
+        opened.session.document().project(),
     ))
 }
 
@@ -684,12 +720,6 @@ mod tests {
             .map(|arg| (*arg).to_owned())
             .collect::<Vec<_>>()
             .into_iter()
-    }
-
-    #[test]
-    fn the_window_is_named_after_the_project() {
-        assert_eq!(window_title("Trip"), "Trip — Blinkify");
-        assert_eq!(window_title("  "), "Blinkify");
     }
 
     #[test]

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 
 import { useFileDrop } from "../player/useFileDrop.js";
 import { fileName, useProjectStore } from "./project.store.js";
@@ -19,13 +19,8 @@ export function SourcesBanner() {
   const view = useProjectStore((state) => state.view);
   const error = useProjectStore((state) => state.error);
   const relinkError = useProjectStore((state) => state.relinkError);
-  const loadLaunch = useProjectStore((state) => state.loadLaunch);
   const relink = useProjectStore((state) => state.relink);
   const target = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    void loadLaunch();
-  }, [loadLaunch]);
 
   const unavailable = view
     ? Object.entries(view.unavailable).flatMap(([id, status]) =>

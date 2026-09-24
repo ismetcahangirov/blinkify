@@ -60,6 +60,7 @@ function view(): ProjectView {
   });
   return {
     path: "C:\\Work\\Trip.blinkify",
+    dirty: false,
     project: {
       schemaVersion: 1,
       name: "Trip",

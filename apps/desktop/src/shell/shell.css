@@ -403,3 +403,29 @@
   flex-direction: column;
   gap: var(--space-2);
 }
+
+/* The new-project dialog's fields (#54). */
+.lifecycle__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--type-label-size);
+  color: var(--text-secondary);
+}
+
+.lifecycle__input {
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--type-body-size);
+}
+
+.lifecycle__check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--type-label-size);
+}

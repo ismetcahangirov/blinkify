@@ -21,6 +21,10 @@ blinkify-engine = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tauri = { version = "2.11.6", features = [] }
+# Native open and save dialogs (#54, #53): the webview cannot give a file's
+# full path, and a project or a source is a path. Official Tauri plugin,
+# Apache-2.0 OR MIT; it brings rfd (MIT) and tauri-plugin-fs (Apache-2.0 OR MIT).
+tauri-plugin-dialog = "2.7.3"
 # CLAUDE.md section 20 rule 8 permits exactly one outbound request: the update
 # check. This plugin is it, and it verifies a minisign signature on the manifest
 # before anything is downloaded.

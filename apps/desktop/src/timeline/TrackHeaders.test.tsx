@@ -33,6 +33,7 @@ const track = (
 function view(tracks: Track[]): ProjectView {
   return {
     path: "C:\\Work\\Trip.blinkify",
+    dirty: false,
     project: {
       schemaVersion: 4,
       name: "Trip",

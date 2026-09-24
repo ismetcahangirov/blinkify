@@ -70,6 +70,17 @@ field when one has focus: there, these keys edit the text.
 | Ctrl+A       | Select every clip                        | Same   |
 | Ctrl+B       | Split at the playhead                    | Same   |
 
+## Project
+
+From [#54](https://github.com/ismetcahangirov/blinkify/issues/54).
+
+| Key          | Action         | CapCut |
+| ------------ | -------------- | ------ |
+| Ctrl+N       | New project    | Same   |
+| Ctrl+O       | Open a project | Same   |
+| Ctrl+S       | Save           | Same   |
+| Ctrl+Shift+S | Save as        | —      |
+
 ## Timeline pointer
 
 From [#34](https://github.com/ismetcahangirov/blinkify/issues/34); how each

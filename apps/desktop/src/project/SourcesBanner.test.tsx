@@ -14,6 +14,7 @@ const fingerprint = { size: 10, modified: null, contentHash: "ab" };
 
 const VIEW: ProjectView = {
   path: "C:\\Work\\Trip.blinkify",
+  dirty: false,
   project: {
     schemaVersion: 1,
     name: "Trip",
@@ -54,6 +55,8 @@ describe("the sources banner", () => {
   it("says nothing when Blinkify was launched without a project", async () => {
     invoked.mockResolvedValueOnce(null);
     const { container } = render(<SourcesBanner />);
+    void useProjectStore.getState().loadLaunch();
+    void useProjectStore.getState().loadLaunch();
     await waitFor(() => {
       expect(invoked).toHaveBeenCalledWith("launch_project");
     });
@@ -63,6 +66,7 @@ describe("the sources banner", () => {
   it("opens the project and marks what is offline, and why", async () => {
     invoked.mockResolvedValueOnce(VIEW);
     render(<SourcesBanner />);
+    void useProjectStore.getState().loadLaunch();
     const banner = await screen.findByTestId("sources-banner");
     expect(banner).toHaveTextContent("3 clips are offline.");
     expect(screen.getByTestId("source-1")).toHaveTextContent(
@@ -83,6 +87,7 @@ describe("the sources banner", () => {
       "this project was saved by a newer version of Blinkify (schema 2); this version reads up to schema 1",
     );
     render(<SourcesBanner />);
+    void useProjectStore.getState().loadLaunch();
     expect(await screen.findByTestId("project-error")).toHaveTextContent(
       "The project could not be opened: this project was saved by a newer version",
     );
