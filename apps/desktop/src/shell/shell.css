@@ -303,3 +303,43 @@
   line-height: var(--type-caption-line);
   color: var(--text-disabled);
 }
+
+/*
+ * The history list (#37): oldest first, the undone entries dimmed, the
+ * current step marked.
+ */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(var(--space-6) * 8);
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history-list__entry {
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--type-label-size);
+  text-align: start;
+  cursor: pointer;
+}
+
+.history-list__entry[data-state="undone"] {
+  color: var(--text-disabled);
+}
+
+.history-list__entry[aria-current="step"] {
+  background: var(--surface-active);
+}
+
+.history-list__entry:hover,
+.history-list__entry:focus-visible {
+  background: var(--surface-hover);
+}

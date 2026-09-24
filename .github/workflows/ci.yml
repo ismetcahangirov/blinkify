@@ -150,6 +150,16 @@ jobs:
       - name: Evaluator boundary fires (evaluator:check:test)
         run: pnpm evaluator:check:test
 
+      # #37: every change to the open graph is an edit on the history. The
+      # compiler keeps the shell out of the document; this keeps other Rust
+      # code from building graph changes by hand, and renderer components
+      # from sending edits around the project store.
+      - name: Edit boundary (edits:check)
+        run: pnpm edits:check
+
+      - name: Edit boundary fires (edits:check:test)
+        run: pnpm edits:check:test
+
       # Runs before graph:check, on purpose. If a rule has been disarmed, the
       # committed graph is a faithful record of a check that proves nothing, and
       # graph:check would go green on it. Better to fail on the disarmed rule

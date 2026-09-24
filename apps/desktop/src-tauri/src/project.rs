@@ -7,8 +7,9 @@
 //! the project with [`launch_project`] once it is ready to show it.
 //!
 //! The project is previewed through the shared evaluator (#30):
-//! [`open_project_preview`] plays it, [`update_project`] replaces the graph
-//! and the preview follows without restarting what did not change, and
+//! [`open_project_preview`] plays it, [`edit_project`] applies an edit (#37)
+//! and the preview follows without restarting what did not change,
+//! [`undo_edit`] and [`redo_edit`] walk the history, and
 //! [`operations_at`] is the diagnostic view — what the evaluator applies
 //! under the playhead, which is what the export will apply there.
 //!
@@ -21,6 +22,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use blinkify_engine::playback::{PlaybackPlan, SourceMedia, chain_rendered};
+use blinkify_engine::project::edit::{Document, Edit, EditContext, HistoryView};
 use blinkify_engine::project::evaluate::{OperationsAt, Timeline, audio_operation, evaluate};
 use blinkify_engine::project::{self, ClipId, Operation, Project, SourceId, SourceStatus};
 use blinkify_engine::proxy::MediaAsset;
@@ -55,7 +57,8 @@ pub struct OpenProject(Mutex<Option<Opened>>);
 #[derive(Debug)]
 struct Opened {
     path: PathBuf,
-    project: Project,
+    /// The graph and its history. Every change to it is an edit (#37).
+    document: Document,
     /// The graph as the evaluator last resolved it.
     timeline: Option<Timeline>,
     preview: Option<ProjectPreview>,
@@ -77,8 +80,8 @@ impl OpenProject {
     }
 }
 
-/// A project as the renderer shows it: the graph, and what opening it found
-/// about its sources.
+/// A project as the renderer shows it: the graph, the graph evaluated, its
+/// history, and what opening it found about its sources.
 #[derive(Debug, Clone, PartialEq, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -86,14 +89,30 @@ pub struct ProjectView {
     #[ts(type = "string")]
     pub path: PathBuf,
     pub project: Project,
+    /// The graph as the evaluator (#30) resolves it — what the timeline
+    /// draws, so the renderer never interprets an operation itself. `None`
+    /// when the graph does not evaluate.
+    pub timeline: Option<Timeline>,
+    pub history: HistoryView,
     /// Every source that is not present, and why.
     pub unavailable: BTreeMap<SourceId, SourceStatus>,
     /// The clips that play an unavailable source — the ones to mark.
     pub affected_clips: Vec<ClipId>,
 }
 
+/// What an edit, an undo or a redo returns: the project now, and the
+/// selection and playhead to show with it.
+#[derive(Debug, Clone, PartialEq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct EditOutcome {
+    pub view: ProjectView,
+    pub context: EditContext,
+}
+
 impl ProjectView {
-    fn of(path: &Path, project: &Project) -> Self {
+    fn of(path: &Path, document: &Document, timeline: Option<&Timeline>) -> Self {
+        let project = document.project();
         let unavailable: BTreeMap<SourceId, SourceStatus> = project
             .check_sources()
             .into_iter()
@@ -106,30 +125,41 @@ impl ProjectView {
         Self {
             path: path.to_path_buf(),
             project: project.clone(),
+            timeline: timeline.cloned(),
+            history: document.history(),
             unavailable,
             affected_clips,
         }
     }
 }
 
+impl Opened {
+    fn view(&self) -> ProjectView {
+        ProjectView::of(&self.path, &self.document, self.timeline.as_ref())
+    }
+}
+
 fn open(state: &OpenProject, path: &Path) -> Result<ProjectView, String> {
     let project = Project::load(path).map_err(|error| error.to_string())?;
-    let view = ProjectView::of(path, &project);
-    *state.lock()? = Some(Opened {
+    let document = Document::new(project).map_err(|error| error.to_string())?;
+    let opened = Opened {
         path: path.to_path_buf(),
-        timeline: evaluate(&project).ok(),
-        project,
+        timeline: evaluate(document.project()).ok(),
+        document,
         preview: None,
-    });
+    };
+    let view = opened.view();
+    *state.lock()? = Some(opened);
     Ok(view)
 }
 
 /// Evaluate `opened`'s graph and, if it is previewed, give the player the new
 /// plan: sources it has not opened yet are opened, the rest are reused.
 fn refresh(engine: &MediaEngine, opened: &mut Opened) -> Result<(), String> {
-    let timeline = evaluate(&opened.project).map_err(|error| error.to_string())?;
+    let project = opened.document.project();
+    let timeline = evaluate(project).map_err(|error| error.to_string())?;
     if let Some(preview) = &mut opened.preview {
-        let plan = plan_for(engine, &opened.project, &timeline, &mut preview.sources)?;
+        let plan = plan_for(engine, project, &timeline, &mut preview.sources)?;
         if let Some(player) = engine.preview(preview.session) {
             player.set_plan(plan);
         }
@@ -214,22 +244,32 @@ pub fn relink_source(
     state: State<'_, OpenProject>,
     source: SourceId,
     path: PathBuf,
+    context: EditContext,
 ) -> Result<ProjectView, String> {
     let mut guard = state.lock()?;
     let opened = guard.as_mut().ok_or("no project is open")?;
     // Opened read-only to fingerprint, and never written (`CLAUDE.md`
     // section 19). What is saved is the project file.
-    opened
-        .project
-        .relink(source, &MediaAsset::new(path).export_source())
+    let relinked = opened
+        .document
+        .project()
+        .sources
+        .get(&source)
+        .ok_or_else(|| format!("no source {source}"))?
+        .relink(&MediaAsset::new(path).export_source())
         .map_err(|error| error.to_string())?;
     opened
-        .project
+        .document
+        .relink(source, relinked, &context)
+        .map_err(|error| error.to_string())?;
+    opened
+        .document
+        .project()
         .save(&opened.path)
         .map_err(|error| error.to_string())?;
     // The relinked source is playable now: the preview picks it up.
     refresh(&engine, opened)?;
-    Ok(ProjectView::of(&opened.path, &opened.project))
+    Ok(opened.view())
 }
 
 /// Preview the open project through the shared evaluator.
@@ -251,9 +291,10 @@ pub fn open_project_preview(
 ) -> Result<PreviewOpened, String> {
     let mut guard = state.lock()?;
     let opened = guard.as_mut().ok_or("no project is open")?;
-    let timeline = evaluate(&opened.project).map_err(|error| error.to_string())?;
+    let project = opened.document.project();
+    let timeline = evaluate(project).map_err(|error| error.to_string())?;
     let mut sources = BTreeMap::new();
-    let plan = plan_for(&engine, &opened.project, &timeline, &mut sources)?;
+    let plan = plan_for(&engine, project, &timeline, &mut sources)?;
     let preview = engine.start_preview(app, plan, max_width, max_height)?;
     opened.timeline = Some(timeline);
     opened.preview = Some(ProjectPreview {
@@ -263,29 +304,123 @@ pub fn open_project_preview(
     Ok(preview)
 }
 
-/// Replace the open project's graph — the timeline's edits arrive here — and
-/// update its preview in place. Nothing is written: saving is #54, and a
-/// graph change is decisions, not files (`CLAUDE.md` section 20 rule 1).
+/// Apply one edit to the open project (#37) and update its preview in place.
+/// Nothing is written: saving is #54, and a graph change is decisions, not
+/// files (`CLAUDE.md` section 20 rule 1).
 ///
 /// # Errors
 ///
-/// No project is open, or the new graph cannot be evaluated; the open graph
-/// is then unchanged.
+/// No project is open, or the engine refused the edit — it names something
+/// that is not there, or its result would not evaluate. The graph is then
+/// unchanged.
 #[tauri::command(async)]
 // Tauri injects managed state and arguments by value; see
 // `updater::pending_update`.
 #[allow(clippy::needless_pass_by_value)]
-pub fn update_project(
+pub fn edit_project(
     engine: State<'_, MediaEngine>,
     state: State<'_, OpenProject>,
-    project: Project,
-) -> Result<ProjectView, String> {
-    evaluate(&project).map_err(|error| error.to_string())?;
+    edit: Edit,
+    context: EditContext,
+) -> Result<EditOutcome, String> {
     let mut guard = state.lock()?;
     let opened = guard.as_mut().ok_or("no project is open")?;
-    opened.project = project;
-    refresh(&engine, opened)?;
-    Ok(ProjectView::of(&opened.path, &opened.project))
+    let context = opened
+        .document
+        .apply(&edit, &context)
+        .map_err(|error| error.to_string())?;
+    Ok(settle(&engine, opened, context))
+}
+
+/// Undo the open project's last edit; `None` when there is nothing to undo.
+///
+/// # Errors
+///
+/// No project is open.
+#[tauri::command(async)]
+// Tauri injects managed state by value; see `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn undo_edit(
+    engine: State<'_, MediaEngine>,
+    state: State<'_, OpenProject>,
+) -> Result<Option<EditOutcome>, String> {
+    let mut guard = state.lock()?;
+    let opened = guard.as_mut().ok_or("no project is open")?;
+    Ok(opened
+        .document
+        .undo()
+        .map(|context| settle(&engine, opened, context)))
+}
+
+/// Redo the open project's last undone edit; `None` when there is nothing to
+/// redo.
+///
+/// # Errors
+///
+/// No project is open.
+#[tauri::command(async)]
+// Tauri injects managed state by value; see `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn redo_edit(
+    engine: State<'_, MediaEngine>,
+    state: State<'_, OpenProject>,
+) -> Result<Option<EditOutcome>, String> {
+    let mut guard = state.lock()?;
+    let opened = guard.as_mut().ok_or("no project is open")?;
+    Ok(opened
+        .document
+        .redo()
+        .map(|context| settle(&engine, opened, context)))
+}
+
+/// Start a gesture — a slider being dragged — whose edits are one history
+/// entry, until [`end_gesture`].
+///
+/// # Errors
+///
+/// No project is open.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn begin_gesture(
+    state: State<'_, OpenProject>,
+    label: String,
+    context: EditContext,
+) -> Result<(), String> {
+    let mut guard = state.lock()?;
+    let opened = guard.as_mut().ok_or("no project is open")?;
+    opened.document.begin_gesture(&label, &context);
+    Ok(())
+}
+
+/// End the gesture under way.
+///
+/// # Errors
+///
+/// No project is open.
+#[tauri::command(async)]
+// Tauri injects managed state by value; see `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn end_gesture(state: State<'_, OpenProject>) -> Result<ProjectView, String> {
+    let mut guard = state.lock()?;
+    let opened = guard.as_mut().ok_or("no project is open")?;
+    opened.document.end_gesture();
+    Ok(opened.view())
+}
+
+/// After the graph changed: evaluate it again, update the preview, report.
+fn settle(engine: &MediaEngine, opened: &mut Opened, context: EditContext) -> EditOutcome {
+    // The edit has happened. A graph that no longer previews — only a
+    // project that opened unevaluable can get here — says so with
+    // `timeline: null` rather than by failing the edit.
+    if refresh(engine, opened).is_err() {
+        opened.timeline = None;
+    }
+    EditOutcome {
+        view: opened.view(),
+        context,
+    }
 }
 
 /// One operation in the diagnostic view, and whether the preview renders it
@@ -391,7 +526,10 @@ pub fn operations_at(
     let (_, t) = player.position();
     let position = time::rescale(t, MICROSECONDS, timeline.time_base, Rounding::Down)
         .ok_or("the playhead is out of range")?;
-    Ok(Diagnostics::of(&timeline.at(position), &opened.project))
+    Ok(Diagnostics::of(
+        &timeline.at(position),
+        opened.document.project(),
+    ))
 }
 
 #[cfg(test)]

@@ -1,6 +1,6 @@
 # Architecture gates
 
-Seven checks stand between a change and `main`. Each one enforces a boundary
+Eleven checks stand between a change and `main`. Each one enforces a boundary
 that [`../../CLAUDE.md`](../../CLAUDE.md) states as a rule. This document says
 how they work, what each one does **not** cover, and how to prove one still
 works after you touch it.
@@ -19,8 +19,9 @@ works after you touch it.
 | `pnpm sidecar:check`   | The bundled FFmpeg is LGPL-only, ours, and complete        | #21        |
 | `pnpm types:check`     | The committed IPC contract is what the Rust types generate | #32        |
 | `pnpm evaluator:check` | Only the shared evaluator interprets the edit graph        | #30        |
+| `pnpm edits:check`     | Every change to the open graph is an edit on the history   | #37        |
 
-All ten run in `pnpm verify`, and all ten block a merge — see
+All eleven run in `pnpm verify`, and all eleven block a merge — see
 [`ci.md`](./ci.md) for how they are wired into the pipeline and in what order.
 
 ## Two languages, two tools — and why that is not pedantry
@@ -206,6 +207,7 @@ pnpm gates:prove
 | `pnpm offline:check:test`   | The offline gate catches a font-service `<link>`, a remote `url()`, a remote `@import` and a remote `src`, and does not catch a URL in a comment or an `<a href>` a user clicks                                                                                              |
 | `pnpm sidecar:check:test`   | The sidecar gate rejects a GPL build, a non-free build, a distributor's "LGPL" build carrying `openh264`, a build missing `arnndn` or `hevc_nvenc`, a binary whose hash differs from the lock, and a committed `ffmpeg.exe` — see [`ffmpeg-sidecar.md`](./ffmpeg-sidecar.md) |
 | `pnpm evaluator:check:test` | The evaluator boundary catches an `Operation::` taken apart in the shell or the player, and a renderer or design-system file reading `.operations`; it lets through the evaluator itself, tests, `AudioOperation::` and renderer test fixtures                               |
+| `pnpm edits:check:test`     | The edit boundary catches a `&mut Project` or a mutable `Project` binding outside the edit layer, and a renderer component invoking `edit_project` or `undo_edit` directly; it lets through the edit layer, the project store, tests and read-only borrows                   |
 | `pnpm types:check:test`     | The IPC contract gate catches a type changed without regenerating, a new type not committed, and a removed type still committed                                                                                                                                              |
 | `pnpm tokens:check:test`    | The design-token gate catches a pixel padding, a rem radius, a millisecond duration, a numeric font weight and a length in an inline style, and does not catch a percentage, a `calc()` over tokens, zero, or the token files themselves                                     |
 

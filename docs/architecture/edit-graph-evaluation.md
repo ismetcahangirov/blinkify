@@ -92,8 +92,9 @@ the export will skip them.
 
 ## A graph change
 
-`update_project` evaluates the new graph, and refuses it with a reason if it
-cannot be evaluated; the open graph is then unchanged. `Player::set_plan` then
+An edit (`edit_project`, see [`edits-and-history.md`](./edits-and-history.md))
+evaluates the new graph, and refuses it with a reason if it cannot be
+evaluated; the open graph is then unchanged. `Player::set_plan` then
 swaps the plan in place:
 
 - sources already opened (probe, keyframe index, proxy) are reused;
