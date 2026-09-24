@@ -119,12 +119,13 @@ not an ADR.
 
 Direct dependencies only.
 
-| Component         | Version | Licence           |
-| ----------------- | ------- | ----------------- |
-| React             | 19.3.0  | MIT               |
-| React DOM         | 19.3.0  | MIT               |
-| Zustand           | 5.0.15  | MIT               |
-| `@tauri-apps/api` | 2.11.1  | Apache-2.0 OR MIT |
+| Component                   | Version | Licence           |
+| --------------------------- | ------- | ----------------- |
+| React                       | 19.3.0  | MIT               |
+| React DOM                   | 19.3.0  | MIT               |
+| Zustand                     | 5.0.15  | MIT               |
+| `@tauri-apps/api`           | 2.11.1  | Apache-2.0 OR MIT |
+| `@tauri-apps/plugin-dialog` | 2.7.3   | Apache-2.0 OR MIT |
 
 ### Radix UI primitives
 
@@ -167,16 +168,17 @@ transitive set is **496 packages** and is gated by `cargo deny check licenses`,
 which rejects GPL and AGPL outright and fails on any licence not explicitly
 allowed in `deny.toml`.
 
-| Crate                  | Version | Licence           | Why it ships                                                                       |
-| ---------------------- | ------- | ----------------- | ---------------------------------------------------------------------------------- |
-| `tauri`                | 2.11.6  | Apache-2.0 OR MIT | The shell. ADR-0001.                                                               |
-| `tauri-plugin-updater` | 2.12.0  | Apache-2.0 OR MIT | The update check — the one outbound request.                                       |
-| `serde`                | 1.0.229 | MIT OR Apache-2.0 | The IPC contract's serialisation.                                                  |
-| `serde_json`           | 1.0.151 | MIT OR Apache-2.0 | Same.                                                                              |
-| `thiserror`            | 2.0.20  | MIT OR Apache-2.0 | Engine error types.                                                                |
-| `ts-rs`                | 12.0.1  | MIT               | Generates the TypeScript side of the IPC contract.                                 |
-| `win32job`             | 2.0.3   | MIT OR Apache-2.0 | The kill-on-close job object that stops any `ffmpeg.exe` outliving Blinkify (#22). |
-| `cpal`                 | 0.18.2  | Apache-2.0        | Preview audio output through WASAPI; audio is the playback clock (#28).            |
+| Crate                  | Version | Licence           | Why it ships                                                                                                                  |
+| ---------------------- | ------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `tauri`                | 2.11.6  | Apache-2.0 OR MIT | The shell. ADR-0001.                                                                                                          |
+| `tauri-plugin-updater` | 2.12.0  | Apache-2.0 OR MIT | The update check — the one outbound request.                                                                                  |
+| `tauri-plugin-dialog`  | 2.7.3   | Apache-2.0 OR MIT | Native open and save dialogs for projects and media (#54, #53). Brings `rfd` (MIT) and `tauri-plugin-fs` (Apache-2.0 OR MIT). |
+| `serde`                | 1.0.229 | MIT OR Apache-2.0 | The IPC contract's serialisation.                                                                                             |
+| `serde_json`           | 1.0.151 | MIT OR Apache-2.0 | Same.                                                                                                                         |
+| `thiserror`            | 2.0.20  | MIT OR Apache-2.0 | Engine error types.                                                                                                           |
+| `ts-rs`                | 12.0.1  | MIT               | Generates the TypeScript side of the IPC contract.                                                                            |
+| `win32job`             | 2.0.3   | MIT OR Apache-2.0 | The kill-on-close job object that stops any `ffmpeg.exe` outliving Blinkify (#22).                                            |
+| `cpal`                 | 0.18.2  | Apache-2.0        | Preview audio output through WASAPI; audio is the playback clock (#28).                                                       |
 
 One entry is worth reading twice. `tauri-plugin-updater` pulls in `reqwest` and,
 under it, `webpki-root-certs` — Mozilla's root CA bundle, licensed

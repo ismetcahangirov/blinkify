@@ -156,6 +156,7 @@ describe("PlayerZone", () => {
     useProjectStore.setState({
       view: {
         path: "C:\\Work\\Trip.blinkify",
+        dirty: false,
         project: {
           schemaVersion: 1,
           name: "Trip",

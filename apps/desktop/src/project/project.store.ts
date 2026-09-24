@@ -3,6 +3,9 @@ import type {
   EditContext,
   EditOutcome,
   ProjectView,
+  RecentProject,
+  RecoveryOffer,
+  SequenceSettings,
 } from "@blinkify/types";
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
@@ -41,6 +44,33 @@ interface ProjectState {
   select: (clips: readonly number[]) => void;
   /** Open the project Blinkify was started with, if any. */
   loadLaunch: () => Promise<void>;
+  /**
+   * The launch (#54): the project Blinkify was started with; failing that,
+   * unsaved work to offer back; failing that, a new untitled project, so
+   * there is always somewhere to import into.
+   */
+  start: () => Promise<void>;
+  /** Recently opened projects, most recent first. */
+  recent: readonly RecentProject[];
+  loadRecent: () => Promise<void>;
+  /** Unsaved work from a session that ended uncleanly, offered back. */
+  recovery: readonly RecoveryOffer[];
+  restore: (offer: RecoveryOffer) => Promise<void>;
+  discardRecovery: (offer: RecoveryOffer) => Promise<void>;
+  /** A new project; `settings` null matches the first clip (#57). */
+  newProject: (
+    name: string,
+    settings: SequenceSettings | null,
+  ) => Promise<void>;
+  openProject: (path: string) => Promise<void>;
+  /** Save to the project file. Resolves with the engine's refusal, or
+   * "untitled" when it has none yet — the caller then asks where. */
+  save: () => Promise<string | null>;
+  saveAs: (path: string) => Promise<string | null>;
+  closeProject: (discard: boolean) => Promise<void>;
+  autosave: () => Promise<void>;
+  /** Why the last lifecycle command failed, in the engine's words. */
+  lifecycleError: string | null;
   relink: (source: number, path: string) => Promise<void>;
   /**
    * Apply one edit. Resolves with the engine's refusal, if it refused; the
@@ -77,6 +107,21 @@ export const useProjectStore = create<ProjectState>((set, get) => {
   const playhead = (): number => {
     const preview = usePreviewStore.getState();
     return preview.kind === "project" ? (preview.frameNumber ?? 0) : 0;
+  };
+
+  /** Run a lifecycle command; a refusal is kept to show, not thrown. */
+  const command = async <T>(
+    name: string,
+    args?: Record<string, unknown>,
+  ): Promise<T | null> => {
+    try {
+      const result = await invoke<T>(name, args);
+      set({ lifecycleError: null });
+      return result;
+    } catch (cause) {
+      set({ lifecycleError: message(cause) });
+      return null;
+    }
   };
 
   const context = (): EditContext => ({
@@ -116,6 +161,9 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     editError: null,
     lastClamped: false,
     selection: [],
+    recent: [],
+    recovery: [],
+    lifecycleError: null,
 
     select: (clips) => set({ selection: [...clips] }),
 
@@ -126,6 +174,100 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       } catch (cause) {
         set({ view: null, error: message(cause) });
       }
+    },
+
+    start: async () => {
+      await get().loadLaunch();
+      if (get().view || get().error) return;
+      try {
+        const offers = (await invoke<RecoveryOffer[]>("recovery_offers")) ?? [];
+        if (offers.length > 0) {
+          set({ recovery: offers });
+          return;
+        }
+      } catch {
+        // No recovery folder yet: nothing to offer.
+      }
+      await get().newProject("Untitled project", null);
+    },
+
+    loadRecent: async () => {
+      try {
+        set({
+          recent: (await invoke<RecentProject[]>("recent_projects")) ?? [],
+        });
+      } catch {
+        set({ recent: [] });
+      }
+    },
+
+    restore: async (offer) => {
+      const view = await command<ProjectView>("restore_recovery", { offer });
+      if (view) {
+        set({ view, selection: [] });
+        set({ recovery: get().recovery.filter((o) => o !== offer) });
+      }
+    },
+
+    discardRecovery: async (offer) => {
+      await command("discard_recovery", { offer });
+      const recovery = get().recovery.filter((o) => o !== offer);
+      set({ recovery });
+      if (recovery.length === 0 && !get().view)
+        await get().newProject("Untitled project", null);
+    },
+
+    newProject: async (name, settings) => {
+      const view = await command<ProjectView>("new_project", {
+        name,
+        settings,
+      });
+      if (view) set({ view, selection: [] });
+    },
+
+    openProject: async (path) => {
+      const view = await command<ProjectView>("open_project", { path });
+      if (view) {
+        set({ view, selection: [] });
+        await get().loadRecent();
+      }
+    },
+
+    save: async () => {
+      try {
+        const view = await invoke<ProjectView>("save_project");
+        set({ view, lifecycleError: null });
+        await get().loadRecent();
+        return null;
+      } catch (cause) {
+        const refusal = message(cause);
+        if (refusal !== "untitled") set({ lifecycleError: refusal });
+        return refusal;
+      }
+    },
+
+    saveAs: async (path) => {
+      try {
+        const view = await invoke<ProjectView>("save_project_as", { path });
+        set({ view, lifecycleError: null });
+        await get().loadRecent();
+        return null;
+      } catch (cause) {
+        const refusal = message(cause);
+        set({ lifecycleError: refusal });
+        return refusal;
+      }
+    },
+
+    closeProject: async (discard) => {
+      await command("close_project", { discard });
+      await usePreviewStore.getState().close();
+      set({ view: null, selection: [] });
+    },
+
+    autosave: async () => {
+      if (!get().view) return;
+      await command<boolean>("autosave_project");
     },
 
     edit: async (edit) => {
@@ -188,6 +330,14 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     },
   };
 });
+
+/** The name to show for the open project, marked when it has unsaved work. */
+export function projectTitle(
+  view: DeepReadonly<ProjectView> | null | undefined,
+): string {
+  const name = projectName(view);
+  return view?.dirty ? `${name} •` : name;
+}
 
 /** The name to show for the open project. */
 export function projectName(

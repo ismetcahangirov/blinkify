@@ -10,7 +10,15 @@ import type { Timeline } from "./Timeline";
  * A project as the renderer shows it: the graph, the graph evaluated, its
  * history, and what opening it found about its sources.
  */
-export type ProjectView = { path: string, project: Project, 
+export type ProjectView = { 
+/**
+ * Where the project file is; `null` for a project never saved (#54).
+ */
+path: string | null, 
+/**
+ * It differs from what was last saved or opened (#54).
+ */
+dirty: boolean, project: Project, 
 /**
  * The graph as the evaluator (#30) resolves it — what the timeline
  * draws, so the renderer never interprets an operation itself. `None`

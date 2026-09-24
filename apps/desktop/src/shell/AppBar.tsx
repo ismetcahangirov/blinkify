@@ -16,7 +16,12 @@ import {
 } from "./windowChrome.js";
 import { HistoryControls } from "../project/HistoryControls.js";
 import { SequenceSettingsDialog } from "../project/SequenceSettingsDialog.js";
-import { projectName, useProjectStore } from "../project/project.store.js";
+import { requestClose, runFileAction } from "../project/ProjectLifecycle.js";
+import {
+  fileName,
+  projectTitle,
+  useProjectStore,
+} from "../project/project.store.js";
 
 /**
  * The application bar (#19), laid out as the layout reference specifies:
@@ -53,6 +58,10 @@ const noop = (): void => undefined;
 interface MenuActions {
   /** Open the sequence settings (#57); `null` with no project open. */
   readonly sequenceSettings: (() => void) | null;
+  /** Whether a project is open, for Save and Close (#54). */
+  readonly hasProject: boolean;
+  /** Recently opened projects (#54), most recent first. */
+  readonly recent: readonly { path: string; name: string }[];
 }
 
 const menus = (
@@ -68,27 +77,51 @@ const menus = (
         items: [
           {
             id: "new",
-            label: "New project",
+            label: "New project…",
             shortcut: "Ctrl+N",
-            disabled: true,
-            onSelect: noop,
+            onSelect: () => runFileAction("new"),
           },
           {
             id: "open",
             label: "Open…",
             shortcut: "Ctrl+O",
-            disabled: true,
-            onSelect: noop,
+            onSelect: () => runFileAction("open"),
           },
           {
             id: "save",
             label: "Save",
             shortcut: "Ctrl+S",
-            disabled: true,
-            onSelect: noop,
+            disabled: !actions.hasProject,
+            onSelect: () => runFileAction("save"),
+          },
+          {
+            id: "save-as",
+            label: "Save as…",
+            shortcut: "Ctrl+Shift+S",
+            disabled: !actions.hasProject,
+            onSelect: () => runFileAction("save-as"),
+          },
+          {
+            id: "close",
+            label: "Close project",
+            disabled: !actions.hasProject,
+            onSelect: requestClose,
           },
         ],
       },
+      ...(actions.recent.length === 0
+        ? []
+        : [
+            {
+              label: "Recent",
+              items: actions.recent.slice(0, 8).map((project) => ({
+                id: `recent-${project.path}`,
+                label: project.name || fileName(project.path),
+                onSelect: () =>
+                  void useProjectStore.getState().openProject(project.path),
+              })),
+            },
+          ]),
       {
         items: [
           {
@@ -167,8 +200,9 @@ const menus = (
 
 export function AppBar() {
   const [maximised, setMaximised] = useState(false);
-  const name = useProjectStore((state) => projectName(state.view));
+  const name = useProjectStore((state) => projectTitle(state.view));
   const hasProject = useProjectStore((state) => state.view !== null);
+  const recent = useProjectStore((state) => state.recent);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
@@ -206,6 +240,8 @@ export function AppBar() {
       <nav className="shell__menus" aria-label="Main menu">
         {menus({
           sequenceSettings: hasProject ? () => setSettingsOpen(true) : null,
+          hasProject,
+          recent,
         }).map((menu) => (
           <DropdownMenu
             key={menu.label}

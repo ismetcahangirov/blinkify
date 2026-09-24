@@ -28,6 +28,7 @@ const NONE: SettingsImpact = {
 function view(matchFirstClip = false): ProjectView {
   return {
     path: "C:\\Work\\Trip.blinkify",
+    dirty: false,
     project: {
       schemaVersion: 2,
       name: "Trip",

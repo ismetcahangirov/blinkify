@@ -77,6 +77,8 @@ export * from "./ProxyReason";
 export * from "./ProxySegment";
 export * from "./Rational";
 export * from "./ReEncodeReason";
+export * from "./RecentProject";
+export * from "./RecoveryOffer";
 export * from "./SeamReason";
 export * from "./Sequence";
 export * from "./SequenceSettings";

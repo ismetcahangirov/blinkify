@@ -3,6 +3,7 @@ import { InspectorZone } from "./shell/zones/InspectorZone.js";
 import { LibraryZone } from "./shell/zones/LibraryZone.js";
 import { PlayerZone } from "./shell/zones/PlayerZone.js";
 import { TimelineZone } from "./shell/zones/TimelineZone.js";
+import { ProjectLifecycle } from "./project/ProjectLifecycle.js";
 import { SourcesBanner } from "./project/SourcesBanner.js";
 import { UpdateBanner } from "./UpdateBanner.js";
 
@@ -23,6 +24,7 @@ export function App() {
   return (
     <>
       <UpdateBanner />
+      <ProjectLifecycle />
       <SourcesBanner />
       <AppShell
         library={<LibraryZone />}

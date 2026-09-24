@@ -48,6 +48,9 @@ How Blinkify is put together and why the structure holds under change.
 - [`clip-interaction.md`](./clip-interaction.md) — selecting, dragging,
   trimming, rippling and rolling clips; pixel snapping; frames in, exact
   ticks out (#34)
+- [`project-lifecycle.md`](./project-lifecycle.md) — new, open, save, exact
+  dirty state, autosave to a recovery file beside the project, recovery at
+  launch, closing on unsaved work (#54)
 - [`tracks.md`](./tracks.md) — the compositing order, mute, solo and lock as
   graph state, lock enforcement in the edit layer, detached and linked
   sound (#36)

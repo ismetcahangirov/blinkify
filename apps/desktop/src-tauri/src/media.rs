@@ -677,6 +677,18 @@ impl MediaEngine {
         (geometry, extents(&info))
     }
 
+    /// Close one preview session; returns once its decoders have exited.
+    pub(crate) fn close_preview(&self, session: u32) {
+        let removed = self
+            .previews
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .remove(&session);
+        if let Some(removed) = removed {
+            removed.close();
+        }
+    }
+
     pub(crate) fn source_media(&self, path: &Path) -> Result<SourceMedia, String> {
         let info = self.prober()?.probe(path).map_err(|e| e.to_string())?;
         let index = self.index(path, &info)?;
@@ -759,14 +771,7 @@ pub fn transport(
 // `updater::pending_update`.
 #[allow(clippy::needless_pass_by_value)]
 pub fn close_preview(engine: tauri::State<'_, MediaEngine>, session: u32) {
-    let removed = engine
-        .previews
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner)
-        .remove(&session);
-    if let Some(removed) = removed {
-        removed.close();
-    }
+    engine.close_preview(session);
 }
 
 /// Close every preview session: what closing a project does.

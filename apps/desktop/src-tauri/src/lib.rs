@@ -9,6 +9,7 @@
 //! process boundary, so a per-frame or per-clip command is a performance bug
 //! waiting to be written.
 
+pub mod lifecycle;
 pub mod media;
 pub mod project;
 pub mod updater;
@@ -44,6 +45,8 @@ fn tier_is_lossless(tier: ExportTier) -> bool {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
+        // Native open and save dialogs for projects and media (#54, #53).
+        .plugin(tauri_plugin_dialog::init())
         .manage(PendingUpdate::default())
         // A double-clicked `.blinkify` arrives as the first argument (#32).
         .manage(LaunchFile::from_args(std::env::args()))
@@ -91,6 +94,17 @@ pub fn run() {
             project::end_gesture,
             project::preview_settings,
             project::cut_point_at,
+            lifecycle::new_project,
+            lifecycle::open_project,
+            lifecycle::save_project,
+            lifecycle::save_project_as,
+            lifecycle::close_project,
+            lifecycle::autosave_project,
+            lifecycle::recent_projects,
+            lifecycle::recovery_offers,
+            lifecycle::restore_recovery,
+            lifecycle::discard_recovery,
+            lifecycle::quit_app,
             project::operations_at,
             updater::pending_update,
             updater::install_update
@@ -132,8 +146,13 @@ pub fn run() {
             // trade for a preference: the recovery is that the window opens
             // where it opened last time, which is where it would have opened
             // anyway.
-            if matches!(event, WindowEvent::CloseRequested { .. }) {
+            if let WindowEvent::CloseRequested { api, .. } = event {
                 window_state::save(window.app_handle(), window);
+                // Not on unsaved work (#54): the renderer asks the user to
+                // save, discard or cancel, and then quits itself.
+                if !lifecycle::may_close(window) {
+                    api.prevent_close();
+                }
             }
         })
         .build(tauri::generate_context!())
