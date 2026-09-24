@@ -97,6 +97,7 @@ function view(): ProjectView {
     unavailable: {},
     affectedClips: [],
     eligibility: {},
+    extents: [],
   };
 }
 

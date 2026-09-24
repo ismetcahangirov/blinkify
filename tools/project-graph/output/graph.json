@@ -267,6 +267,165 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ClipTimingFields.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/ClipTimingFields.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/interaction.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/interaction.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/inspector/ClipTimingFields.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/shell/zones/InspectorZone.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/main.tsx",
       "dependencies": [
         {
@@ -1420,7 +1579,8 @@
       ],
       "dependents": [
         "apps/desktop/src/project/HistoryControls.test.tsx",
-        "apps/desktop/src/shell/AppBar.tsx"
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1710,6 +1870,7 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
@@ -1717,6 +1878,7 @@
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
@@ -1727,7 +1889,9 @@
         "apps/desktop/src/timeline/mountTimeline.test.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/rows.ts",
-        "apps/desktop/src/timeline/timeline.store.ts"
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.test.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2113,7 +2277,42 @@
     },
     {
       "source": "apps/desktop/src/shell/zones/InspectorZone.tsx",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../inspector/ClipTimingFields.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/ClipTimingFields.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "apps/desktop/src/App.tsx"
       ],
@@ -2546,6 +2745,23 @@
         },
         {
           "dynamic": false,
+          "module": "../../timeline/useTimelineKeys.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/useTimelineKeys.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "@blinkify/ui",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2629,9 +2845,27 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "import"
           ],
           "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./interaction.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/interaction.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2954,14 +3188,164 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/draw.test.ts",
+        "apps/desktop/src/timeline/interaction.test.ts",
+        "apps/desktop/src/timeline/interaction.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/recordingPainter.ts",
         "apps/desktop/src/timeline/rows.ts",
         "apps/desktop/src/timeline/theme.ts",
         "apps/desktop/src/timeline/timeline.perf.ts",
+        "apps/desktop/src/timeline/timeline.store.ts",
         "apps/desktop/src/timeline/timelineMedia.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/timeline/interaction.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./interaction.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/interaction.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./viewport.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/viewport.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/timeline/interaction.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./viewport.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/viewport.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/interaction.test.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3332,7 +3716,8 @@
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
         "apps/desktop/src/timeline/mountTimeline.ts",
-        "apps/desktop/src/timeline/timeline.store.ts"
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3431,6 +3816,24 @@
             "import"
           ],
           "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3593,6 +3996,145 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/timeline/useTimelineKeys.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./useTimelineKeys.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/useTimelineKeys.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/timeline/useTimelineKeys.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../project/HistoryControls.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/HistoryControls.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./interaction.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/interaction.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./rows.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/rows.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/timeline/useTimelineKeys.test.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/timeline/viewport.test.ts",
       "dependencies": [
         {
@@ -3624,6 +4166,8 @@
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
         "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/interaction.test.ts",
+        "apps/desktop/src/timeline/interaction.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
         "apps/desktop/src/timeline/viewport.test.ts"
       ],
@@ -3663,6 +4207,34 @@
       "source": "apps/desktop/vite.config.ts",
       "dependencies": [],
       "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Applied.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./EditContext",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/EditContext.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -4107,6 +4679,16 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Edge.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/Edit.ts",
       "dependencies": [
         {
@@ -4120,6 +4702,24 @@
             "import"
           ],
           "resolved": "packages/types/src/generated/ClipMove.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Edge",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Edge.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4192,6 +4792,7 @@
       "source": "packages/types/src/generated/EditContext.ts",
       "dependencies": [],
       "dependents": [
+        "packages/types/src/generated/Applied.ts",
         "packages/types/src/generated/EditOutcome.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -5352,6 +5953,24 @@
         },
         {
           "dynamic": false,
+          "module": "./StreamExtent",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/StreamExtent.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Timeline",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -5435,6 +6054,7 @@
         "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/SequenceSettings.ts",
+        "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/Timeline.ts",
@@ -5620,6 +6240,35 @@
             "import"
           ],
           "resolved": "packages/types/src/generated/Fingerprint.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/ProjectView.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/StreamExtent.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6074,6 +6723,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./Applied",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Applied.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./AppliedClip",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6405,6 +7071,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/Diagnostics.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Edge",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Edge.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7349,6 +8032,23 @@
         },
         {
           "dynamic": false,
+          "module": "./StreamExtent",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/StreamExtent.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./StreamGeometry",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7580,6 +8280,8 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/OperationsPanel.test.tsx",
@@ -7600,6 +8302,8 @@
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/timeline/draw.test.ts",
         "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/interaction.test.ts",
+        "apps/desktop/src/timeline/interaction.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/rows.ts",
@@ -7607,6 +8311,7 @@
         "apps/desktop/src/timeline/timeline.store.ts",
         "apps/desktop/src/timeline/timelineMedia.test.ts",
         "apps/desktop/src/timeline/timelineMedia.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.test.ts",
         "apps/desktop/src/update.store.ts"
       ],
       "orphan": false,
@@ -9238,6 +9943,7 @@
       "dependents": [
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
+        "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
@@ -9663,8 +10369,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 228,
-    "totalDependenciesCruised": 424,
+    "totalCruised": 237,
+    "totalDependenciesCruised": 458,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

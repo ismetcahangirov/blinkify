@@ -175,6 +175,7 @@ describe("PlayerZone", () => {
         unavailable: {},
         affectedClips: [],
         eligibility: {},
+        extents: [],
         timeline: null,
         history: { entries: [], applied: 0 },
       },

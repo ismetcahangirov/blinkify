@@ -33,6 +33,9 @@ interface ProjectState {
   relinkError: string | null;
   /** Why the last edit was refused. */
   editError: string | null;
+  /** Whether the last edit met a bound — the end of a source, the next
+   * clip — and did less than was asked. */
+  lastClamped: boolean;
   /** The selected clips. Travels with every edit, and comes back on undo. */
   selection: readonly number[];
   select: (clips: readonly number[]) => void;
@@ -88,6 +91,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       view: outcome.view,
       selection: outcome.context.selection,
       editError: null,
+      lastClamped: outcome.clamped,
     });
     const rate = outcome.view.project.sequence.settings.frameRate;
     const preview = usePreviewStore.getState();
@@ -110,6 +114,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     error: null,
     relinkError: null,
     editError: null,
+    lastClamped: false,
     selection: [],
 
     select: (clips) => set({ selection: [...clips] }),

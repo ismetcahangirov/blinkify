@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 228,
-    "tests": 28,
+    "files": 237,
+    "tests": 31,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 70,
-      "tests": 22,
+      "files": 76,
+      "tests": 25,
       "untested": [
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
@@ -36,9 +36,10 @@
       ]
     },
     "packages/types": {
-      "files": 89,
+      "files": 92,
       "tests": 0,
       "untested": [
+        "packages/types/src/generated/Applied.ts",
         "packages/types/src/generated/AppliedClip.ts",
         "packages/types/src/generated/AudioInfo.ts",
         "packages/types/src/generated/AudioOperation.ts",
@@ -59,6 +60,7 @@
         "packages/types/src/generated/DiagnosticClip.ts",
         "packages/types/src/generated/DiagnosticOperation.ts",
         "packages/types/src/generated/Diagnostics.ts",
+        "packages/types/src/generated/Edge.ts",
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/EditContext.ts",
         "packages/types/src/generated/EditList.ts",
@@ -114,6 +116,7 @@
         "packages/types/src/generated/SheetReady.ts",
         "packages/types/src/generated/SourceRef.ts",
         "packages/types/src/generated/SourceStatus.ts",
+        "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/StreamKind.ts",
@@ -263,6 +266,39 @@
       "dependedOnBy": [],
       "coveredByTests": [],
       "hasNoDependents": true
+    },
+    "apps/desktop/src/inspector/ClipTimingFields.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/interaction.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/inspector/ClipTimingFields.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/shell/zones/InspectorZone.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/ClipTimingFields.test.ts"
+      ],
+      "hasNoDependents": false
     },
     "apps/desktop/src/main.tsx": {
       "workspace": "apps/desktop",
@@ -654,7 +690,8 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/project/HistoryControls.test.tsx",
-        "apps/desktop/src/shell/AppBar.tsx"
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/project/HistoryControls.test.tsx"
@@ -732,6 +769,7 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
@@ -739,6 +777,7 @@
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
@@ -749,14 +788,17 @@
         "apps/desktop/src/timeline/mountTimeline.test.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/rows.ts",
-        "apps/desktop/src/timeline/timeline.store.ts"
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.test.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
-        "apps/desktop/src/timeline/mountTimeline.test.ts"
+        "apps/desktop/src/timeline/mountTimeline.test.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -896,7 +938,10 @@
       "workspace": "apps/desktop",
       "layer": "renderer",
       "isTest": false,
-      "dependsOn": [],
+      "dependsOn": [
+        "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/project/project.store.ts"
+      ],
       "dependedOnBy": [
         "apps/desktop/src/App.tsx"
       ],
@@ -967,6 +1012,7 @@
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
         "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.ts",
         "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
@@ -994,6 +1040,7 @@
         "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/interaction.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/rows.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
@@ -1058,17 +1105,59 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/draw.test.ts",
+        "apps/desktop/src/timeline/interaction.test.ts",
+        "apps/desktop/src/timeline/interaction.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/recordingPainter.ts",
         "apps/desktop/src/timeline/rows.ts",
         "apps/desktop/src/timeline/theme.ts",
         "apps/desktop/src/timeline/timeline.perf.ts",
+        "apps/desktop/src/timeline/timeline.store.ts",
         "apps/desktop/src/timeline/timelineMedia.ts"
       ],
       "coveredByTests": [
-        "apps/desktop/src/timeline/draw.test.ts"
+        "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/timeline/draw.test.ts",
+        "apps/desktop/src/timeline/interaction.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/interaction.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/interaction.ts",
+        "apps/desktop/src/timeline/viewport.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/timeline/interaction.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/viewport.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/interaction.test.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/timeline/interaction.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -1140,7 +1229,8 @@
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
         "apps/desktop/src/timeline/mountTimeline.ts",
-        "apps/desktop/src/timeline/timeline.store.ts"
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
       "coveredByTests": [],
       "hasNoDependents": false
@@ -1190,6 +1280,7 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
         "apps/desktop/src/timeline/rows.ts",
         "apps/desktop/src/timeline/viewport.ts",
         "packages/types/src/index.ts"
@@ -1236,6 +1327,38 @@
       ],
       "hasNoDependents": false
     },
+    "apps/desktop/src/timeline/useTimelineKeys.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/timeline/useTimelineKeys.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/HistoryControls.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/interaction.ts",
+        "apps/desktop/src/timeline/rows.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/timeline/useTimelineKeys.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/timeline/useTimelineKeys.test.ts"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/timeline/viewport.test.ts": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -1256,10 +1379,13 @@
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
         "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/interaction.test.ts",
+        "apps/desktop/src/timeline/interaction.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
         "apps/desktop/src/timeline/viewport.test.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/timeline/interaction.test.ts",
         "apps/desktop/src/timeline/viewport.test.ts"
       ],
       "hasNoDependents": false
@@ -1288,6 +1414,19 @@
       "dependedOnBy": [],
       "coveredByTests": [],
       "hasNoDependents": true
+    },
+    "packages/types/src/generated/Applied.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/EditContext.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
     },
     "packages/types/src/generated/AppliedClip.ts": {
       "workspace": "packages/types",
@@ -1548,12 +1687,25 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Edge.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/Edit.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
         "packages/types/src/generated/ClipMove.ts",
+        "packages/types/src/generated/Edge.ts",
         "packages/types/src/generated/Rational.ts",
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/TrackKind.ts"
@@ -1570,6 +1722,7 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "packages/types/src/generated/Applied.ts",
         "packages/types/src/generated/EditOutcome.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -2113,6 +2266,7 @@
         "packages/types/src/generated/HistoryView.ts",
         "packages/types/src/generated/Project.ts",
         "packages/types/src/generated/SourceStatus.ts",
+        "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/Timeline.ts"
       ],
       "dependedOnBy": [
@@ -2172,6 +2326,7 @@
         "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/SequenceSettings.ts",
+        "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/Timeline.ts",
@@ -2278,6 +2433,20 @@
       "isTest": false,
       "dependsOn": [
         "packages/types/src/generated/Fingerprint.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/ProjectView.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/StreamExtent.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Rational.ts"
       ],
       "dependedOnBy": [
         "packages/types/src/generated/ProjectView.ts",
@@ -2460,6 +2629,7 @@
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
+        "packages/types/src/generated/Applied.ts",
         "packages/types/src/generated/AppliedClip.ts",
         "packages/types/src/generated/AudioInfo.ts",
         "packages/types/src/generated/AudioOperation.ts",
@@ -2480,6 +2650,7 @@
         "packages/types/src/generated/DiagnosticClip.ts",
         "packages/types/src/generated/DiagnosticOperation.ts",
         "packages/types/src/generated/Diagnostics.ts",
+        "packages/types/src/generated/Edge.ts",
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/EditContext.ts",
         "packages/types/src/generated/EditList.ts",
@@ -2535,6 +2706,7 @@
         "packages/types/src/generated/SheetReady.ts",
         "packages/types/src/generated/SourceRef.ts",
         "packages/types/src/generated/SourceStatus.ts",
+        "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/StreamKind.ts",
@@ -2562,6 +2734,8 @@
         "packages/types/src/generated/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/OperationsPanel.test.tsx",
@@ -2582,6 +2756,8 @@
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/timeline/draw.test.ts",
         "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/interaction.test.ts",
+        "apps/desktop/src/timeline/interaction.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/rows.ts",
@@ -2589,9 +2765,11 @@
         "apps/desktop/src/timeline/timeline.store.ts",
         "apps/desktop/src/timeline/timelineMedia.test.ts",
         "apps/desktop/src/timeline/timelineMedia.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.test.ts",
         "apps/desktop/src/update.store.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/OperationsPanel.test.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
@@ -2602,8 +2780,10 @@
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/timeline/draw.test.ts",
+        "apps/desktop/src/timeline/interaction.test.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
-        "apps/desktop/src/timeline/timelineMedia.test.ts"
+        "apps/desktop/src/timeline/timelineMedia.test.ts",
+        "apps/desktop/src/timeline/useTimelineKeys.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -3138,6 +3318,7 @@
       "dependedOnBy": [
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
+        "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",

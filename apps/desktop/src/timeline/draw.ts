@@ -488,15 +488,36 @@ function drawWaveform(
   painter.stroke();
 }
 
-/** Draw the overlay layer: the playhead, and a drag preview when one is on. */
+/** A drag in progress, as the overlay shows it (#34). */
+export interface DragPreview {
+  readonly ghosts: readonly {
+    clip: number;
+    row: number;
+    start: number;
+    length: number;
+  }[];
+  readonly snapped: number | null;
+  readonly clamped: boolean;
+  readonly invalid: string | null;
+}
+
+/**
+ * Draw the overlay layer: the playhead and, while a clip is dragged, where it
+ * would land — its ghost, the line it snapped to, and a warning edge where a
+ * bound stopped it. The clips themselves are not redrawn during a drag.
+ */
 export function drawOverlay(
   painter: Painter,
-  scene: Pick<Scene, "view" | "dpr" | "theme" | "rulerHeight">,
+  scene: Pick<Scene, "view" | "dpr" | "theme" | "rulerHeight"> & {
+    readonly rows?: readonly TrackRow[];
+  },
   playhead: number | null,
+  drag: DragPreview | null = null,
 ): void {
   const { view, dpr, theme, rulerHeight } = scene;
   painter.setTransform(dpr, 0, 0, dpr, 0, 0);
   painter.clearRect(0, 0, view.width, view.height);
+  if (drag) drawDrag(painter, scene, drag);
   if (playhead === null) return;
   const x = crisp(xOf(view, playhead), dpr);
   if (x < -6 || x > view.width + 6) return;
@@ -515,4 +536,55 @@ export function drawOverlay(
   painter.lineTo(x - 5, rulerHeight - 10);
   painter.closePath();
   painter.fill();
+}
+
+function drawDrag(
+  painter: Painter,
+  scene: Pick<Scene, "view" | "dpr" | "theme" | "rulerHeight"> & {
+    readonly rows?: readonly TrackRow[];
+  },
+  drag: DragPreview,
+): void {
+  const { view, dpr, theme, rulerHeight } = scene;
+  const colour = drag.invalid ? theme.warning : theme.selected;
+  for (const ghost of drag.ghosts) {
+    const row = scene.rows?.find((r) => r.id === ghost.row);
+    if (!row) continue;
+    const top = rulerHeight + row.top - view.scrollTop + 2;
+    const left = snapToDevice(xOf(view, ghost.start), dpr);
+    const right = snapToDevice(xOf(view, ghost.start + ghost.length), dpr);
+    painter.globalAlpha = 0.25;
+    painter.fillStyle = colour;
+    painter.fillRect(
+      left,
+      top,
+      Math.max(1 / dpr, right - left),
+      row.height - 4,
+    );
+    painter.globalAlpha = 1;
+    painter.strokeStyle = colour;
+    painter.lineWidth = 2 / dpr;
+    painter.strokeRect(
+      left + 1 / dpr,
+      top + 1 / dpr,
+      right - left - 2 / dpr,
+      row.height - 6,
+    );
+    if (drag.clamped) {
+      // The bound that stopped the drag: a solid bar on both ends, so it
+      // reads whichever edge hit it.
+      painter.fillStyle = theme.warning;
+      painter.fillRect(left, top, 3, row.height - 4);
+      painter.fillRect(right - 3, top, 3, row.height - 4);
+    }
+  }
+  if (drag.snapped !== null) {
+    const x = crisp(xOf(view, drag.snapped), dpr);
+    painter.strokeStyle = theme.selected;
+    painter.lineWidth = 1 / dpr;
+    painter.beginPath();
+    painter.moveTo(x, rulerHeight);
+    painter.lineTo(x, view.height);
+    painter.stroke();
+  }
 }

@@ -396,3 +396,10 @@
 .sequence-settings__impact[data-state="refused"] {
   color: var(--warning);
 }
+
+/* A clip's timing, typed (#34). */
+.clip-timing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

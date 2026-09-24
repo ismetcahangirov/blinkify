@@ -24,6 +24,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use blinkify_engine::playback::{PlaybackPlan, SourceMedia, chain_rendered};
 use blinkify_engine::project::edit::{Document, Edit, EditContext, HistoryView, SettingsImpact};
 use blinkify_engine::project::evaluate::{OperationsAt, Timeline, audio_operation, evaluate};
+use blinkify_engine::project::trim::StreamExtent;
 use blinkify_engine::project::{
     self, ClipId, CopyEligibility, Operation, Project, SequenceSettings, SourceId, SourceStatus,
 };
@@ -105,6 +106,9 @@ pub struct ProjectView {
     /// renderer works out again. A source not listed has no pictures, or is
     /// offline.
     pub eligibility: BTreeMap<SourceId, CopyEligibility>,
+    /// Which ticks of each source stream exist (#34): what the timeline
+    /// bounds a trim preview by. The engine bounds the trim itself.
+    pub extents: Vec<StreamExtent>,
 }
 
 /// What an edit, an undo or a redo returns: the project now, and the
@@ -115,6 +119,9 @@ pub struct ProjectView {
 pub struct EditOutcome {
     pub view: ProjectView,
     pub context: EditContext,
+    /// A bound stopped the edit short of what was asked — the end of the
+    /// source, a neighbouring clip — and the timeline says so.
+    pub clamped: bool,
 }
 
 impl ProjectView {
@@ -137,6 +144,7 @@ impl ProjectView {
             unavailable,
             affected_clips,
             eligibility: document.eligibility(),
+            extents: document.extents(),
         }
     }
 }
@@ -158,7 +166,9 @@ fn describe_sources(engine: &MediaEngine, document: &mut Document) {
         .map(|(&id, source)| (id, source.path().to_path_buf()))
         .collect();
     for (id, path) in present {
-        document.describe_source(id, engine.geometry_of(&path));
+        let (geometry, extents) = engine.facts_of(&path);
+        document.describe_source(id, geometry);
+        document.describe_streams(id, &extents);
     }
 }
 
@@ -287,13 +297,15 @@ pub fn relink_source(
         .document
         .relink(source, relinked, &context)
         .map_err(|error| error.to_string())?;
-    let found = opened
+    let (geometry, extents) = opened
         .document
         .project()
         .sources
         .get(&source)
-        .and_then(|reference| engine.geometry_of(reference.path()));
-    opened.document.describe_source(source, found);
+        .map(|reference| engine.facts_of(reference.path()))
+        .unwrap_or_default();
+    opened.document.describe_source(source, geometry);
+    opened.document.describe_streams(source, &extents);
     opened
         .document
         .project()
@@ -357,11 +369,11 @@ pub fn edit_project(
 ) -> Result<EditOutcome, String> {
     let mut guard = state.lock()?;
     let opened = guard.as_mut().ok_or("no project is open")?;
-    let context = opened
+    let applied = opened
         .document
         .apply(&edit, &context)
         .map_err(|error| error.to_string())?;
-    Ok(settle(&engine, opened, context))
+    Ok(settle(&engine, opened, applied.context, applied.clamped))
 }
 
 /// Undo the open project's last edit; `None` when there is nothing to undo.
@@ -381,7 +393,7 @@ pub fn undo_edit(
     Ok(opened
         .document
         .undo()
-        .map(|context| settle(&engine, opened, context)))
+        .map(|context| settle(&engine, opened, context, false)))
 }
 
 /// Redo the open project's last undone edit; `None` when there is nothing to
@@ -402,7 +414,7 @@ pub fn redo_edit(
     Ok(opened
         .document
         .redo()
-        .map(|context| settle(&engine, opened, context)))
+        .map(|context| settle(&engine, opened, context, false)))
 }
 
 /// What changing the open project's sequence to `settings` would do to
@@ -465,7 +477,12 @@ pub fn end_gesture(state: State<'_, OpenProject>) -> Result<ProjectView, String>
 }
 
 /// After the graph changed: evaluate it again, update the preview, report.
-fn settle(engine: &MediaEngine, opened: &mut Opened, context: EditContext) -> EditOutcome {
+fn settle(
+    engine: &MediaEngine,
+    opened: &mut Opened,
+    context: EditContext,
+    clamped: bool,
+) -> EditOutcome {
     // The edit has happened. A graph that no longer previews — only a
     // project that opened unevaluable can get here — says so with
     // `timeline: null` rather than by failing the edit.
@@ -475,6 +492,7 @@ fn settle(engine: &MediaEngine, opened: &mut Opened, context: EditContext) -> Ed
     EditOutcome {
         view: opened.view(),
         context,
+        clamped,
     }
 }
 

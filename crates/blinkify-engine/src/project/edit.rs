@@ -34,8 +34,9 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
 
-use super::evaluate::evaluate;
+use super::evaluate::{EvaluatedTrack, Placement, Timeline, evaluate};
 use super::settings::{CopyEligibility, SettingsError, StreamGeometry, copy_eligibility};
+use super::trim::{Edge, StreamExtent, reach, retimed, trim};
 use super::{
     Clip, ClipId, Operation, Project, ProjectError, SequenceSettings, SourceId, SourceRef, Track,
     TrackId, TrackKind,
@@ -105,16 +106,24 @@ pub enum Edit {
     MoveClips {
         moves: Vec<ClipMove>,
     },
-    /// Play `from..to` of the clip's source, starting at `start` — trimming
-    /// either edge.
-    TrimClip {
+    /// Move one edge of a clip by `frames` sequence frames — positive is
+    /// later. Bounded by the source's extent, one frame of length and, unless
+    /// it ripples, the neighbouring clips. A ripple trim keeps the clip's
+    /// start and moves every later clip on the track by the change.
+    TrimEdge {
         clip: ClipId,
+        edge: Edge,
         #[ts(type = "number")]
-        from: i64,
+        frames: i64,
+        ripple: bool,
+    },
+    /// Move the cut between two adjacent clips by `frames`: the left one's
+    /// end and the right one's start together.
+    Roll {
+        left: ClipId,
+        right: ClipId,
         #[ts(type = "number")]
-        to: i64,
-        #[ts(type = "number")]
-        start: i64,
+        frames: i64,
     },
     /// Play the clips at `ratio` times normal speed; `1/1` is normal.
     SetSpeed {
@@ -122,6 +131,11 @@ pub enum Edit {
         ratio: Rational,
     },
     RemoveClips {
+        clips: Vec<ClipId>,
+    },
+    /// Remove clips and close the gaps they leave: every later clip on each
+    /// track moves earlier by the length removed before it.
+    RippleDelete {
         clips: Vec<ClipId>,
     },
     /// Choose the sequence settings (#57): it stops waiting for a first clip.
@@ -149,7 +163,10 @@ impl Edit {
             },
             Self::AddClip { .. } => "Add clip".to_owned(),
             Self::MoveClips { moves } => clips(moves.len(), "Move clip", "Move"),
-            Self::TrimClip { .. } => "Trim clip".to_owned(),
+            Self::TrimEdge { ripple: false, .. } => "Trim clip".to_owned(),
+            Self::TrimEdge { ripple: true, .. } => "Ripple trim".to_owned(),
+            Self::Roll { .. } => "Roll edit".to_owned(),
+            Self::RippleDelete { clips: ids } => clips(ids.len(), "Ripple delete", "Ripple delete"),
             Self::SetSpeed { clips: ids, .. } => {
                 clips(ids.len(), "Change speed", "Change speed of")
             }
@@ -342,31 +359,6 @@ fn revert(project: &mut Project, inverses: Vec<Change>) -> Vec<Change> {
     forward
 }
 
-/// A clip with the trim replaced by `from..to`: one trim, where the first
-/// one was, or first.
-fn retrimmed(clip: &Clip, from: i64, to: i64, start: i64) -> Clip {
-    let mut operations = Vec::with_capacity(clip.operations.len() + 1);
-    let mut placed = false;
-    for operation in &clip.operations {
-        if matches!(operation, Operation::Trim { .. }) {
-            if !placed {
-                operations.push(Operation::Trim { from, to });
-                placed = true;
-            }
-        } else {
-            operations.push(*operation);
-        }
-    }
-    if !placed {
-        operations.insert(0, Operation::Trim { from, to });
-    }
-    Clip {
-        start,
-        operations,
-        ..clip.clone()
-    }
-}
-
 /// A clip with every speed change replaced by one of `ratio`, where the first
 /// was — or none, at normal speed.
 fn respeeded(clip: &Clip, ratio: Rational) -> Clip {
@@ -392,18 +384,68 @@ fn respeeded(clip: &Clip, ratio: Rational) -> Clip {
     }
 }
 
-/// What an edit compiles to: the primitive changes, and the selection after.
-type Compiled = (Vec<Change>, Vec<ClipId>);
+/// What an edit compiles to: the primitive changes, the selection after,
+/// and whether a bound stopped it short of what was asked.
+struct Compiled {
+    changes: Vec<Change>,
+    selection: Vec<ClipId>,
+    clamped: bool,
+}
+
+impl From<(Vec<Change>, Vec<ClipId>)> for Compiled {
+    fn from((changes, selection): (Vec<Change>, Vec<ClipId>)) -> Self {
+        Self {
+            changes,
+            selection,
+            clamped: false,
+        }
+    }
+}
+
+/// What the document knows about its sources that is not in the graph: read
+/// from the files, never saved.
+#[derive(Debug, Default)]
+struct Facts {
+    /// What each source's pictures are (#57).
+    geometry: BTreeMap<SourceId, StreamGeometry>,
+    /// Which ticks of each source stream exist (#34).
+    extents: BTreeMap<(SourceId, u32), StreamExtent>,
+}
+
+impl Facts {
+    /// The ticks of `placement`'s stream that exist, in its time base.
+    fn extent_of(&self, placement: &Placement) -> Option<(i64, i64)> {
+        self.extents
+            .get(&(placement.source, placement.stream))
+            .filter(|extent| extent.time_base == placement.time_base)
+            .map(|extent| (extent.start, extent.end))
+    }
+}
 
 /// The primitive changes `edit` makes to `project`, and the selection after.
 fn compile(
     project: &Project,
-    geometry: &BTreeMap<SourceId, StreamGeometry>,
+    facts: &Facts,
     edit: &Edit,
     context: &EditContext,
 ) -> Result<Compiled, EditError> {
     let kept = context.selection.clone();
-    Ok(match edit {
+    match edit {
+        Edit::TrimEdge {
+            clip,
+            edge,
+            frames,
+            ripple,
+        } => return trim_edge(project, facts, *clip, *edge, *frames, *ripple, kept),
+        Edit::Roll {
+            left,
+            right,
+            frames,
+        } => return roll(project, facts, *left, *right, *frames, kept),
+        Edit::RippleDelete { clips } => return ripple_delete(project, clips, kept),
+        _ => {}
+    }
+    Ok(Compiled::from(match edit {
         Edit::Rename { name } => {
             if *name == project.name {
                 (Vec::new(), kept)
@@ -442,17 +484,11 @@ fn compile(
                 index: None,
                 clip,
             };
-            let mut changes = adopt_first_clip(project, geometry, *track, *source);
+            let mut changes = adopt_first_clip(project, &facts.geometry, *track, *source);
             changes.push(insert);
             (changes, vec![id])
         }
         Edit::MoveClips { moves } => (move_clips(project, moves)?, kept),
-        Edit::TrimClip {
-            clip,
-            from,
-            to,
-            start,
-        } => (trim_clip(project, *clip, *from, *to, *start)?, kept),
         Edit::SetSpeed { clips, ratio } => (set_speed(project, clips, *ratio)?, kept),
         Edit::SetSettings { settings } => {
             settings.validate()?;
@@ -474,6 +510,222 @@ fn compile(
             let remaining = kept.into_iter().filter(|c| !clips.contains(c)).collect();
             (changes, remaining)
         }
+        Edit::TrimEdge { .. } | Edit::Roll { .. } | Edit::RippleDelete { .. } => {
+            unreachable!("compiled above")
+        }
+    }))
+}
+
+/// The evaluated graph, for edits made in sequence frames. An edit to a graph
+/// that does not evaluate cannot be placed in frames at all.
+fn timeline_of(project: &Project) -> Result<Timeline, EditError> {
+    evaluate(project).map_err(|error| EditError::Refused(error.to_string()))
+}
+
+/// The placement of `clip`, and the evaluated track it is on.
+fn placed(timeline: &Timeline, clip: ClipId) -> Result<(&EvaluatedTrack, &Placement), EditError> {
+    timeline
+        .tracks
+        .iter()
+        .find_map(|track| {
+            track
+                .placements
+                .iter()
+                .find(|p| p.clip == clip)
+                .map(|p| (track, p))
+        })
+        .ok_or(EditError::NoClip(clip))
+}
+
+fn too_long(clip: ClipId) -> EditError {
+    EditError::Refused(format!("clip {clip}'s timing does not fit in 64 bits"))
+}
+
+/// Replace `id` with its new source range and start, and move every later
+/// clip of `track` (at or after `after`) by `shift` frames — how a ripple
+/// keeps the rest of the track butted up.
+fn retime_and_shift(
+    project: &Project,
+    track: &EvaluatedTrack,
+    id: ClipId,
+    (from, to, start): (i64, i64, i64),
+    after: i64,
+    shift: i64,
+) -> Result<Vec<Change>, EditError> {
+    let (_, current) = find(project, id)?;
+    let mut changes = vec![Change::ReplaceClip(retimed(current, from, to, start))];
+    if shift != 0 {
+        for later in track
+            .placements
+            .iter()
+            .filter(|p| p.clip != id && p.start >= after)
+        {
+            let (_, clip) = find(project, later.clip)?;
+            changes.push(Change::ReplaceClip(Clip {
+                start: later.start + shift,
+                ..clip.clone()
+            }));
+        }
+    }
+    Ok(changes)
+}
+
+fn trim_edge(
+    project: &Project,
+    facts: &Facts,
+    id: ClipId,
+    edge: Edge,
+    frames: i64,
+    ripple: bool,
+    kept: Vec<ClipId>,
+) -> Result<Compiled, EditError> {
+    let timeline = timeline_of(project)?;
+    let (track, placement) = placed(&timeline, id)?;
+    let before = track
+        .placements
+        .iter()
+        .filter(|p| p.clip != id && p.end() <= placement.start)
+        .map(Placement::end)
+        .max()
+        .unwrap_or(0);
+    let after = track
+        .placements
+        .iter()
+        .filter(|p| p.clip != id && p.start >= placement.end())
+        .map(|p| p.start)
+        .min();
+    // A ripple moves the neighbours out of the way; it is bounded only by the
+    // source, and by frame 0 for the start.
+    let room = if ripple {
+        (Some(0), None)
+    } else {
+        (Some(before), after)
+    };
+    let trimmed = trim(placement, edge, frames, facts.extent_of(placement), room)
+        .ok_or_else(|| too_long(id))?;
+    let changes = if ripple {
+        let shift = trimmed.length - placement.length;
+        // The clip keeps its start; everything after it follows the change.
+        retime_and_shift(
+            project,
+            track,
+            id,
+            (trimmed.from, trimmed.to, placement.start),
+            placement.end(),
+            shift,
+        )?
+    } else {
+        retime_and_shift(
+            project,
+            track,
+            id,
+            (trimmed.from, trimmed.to, trimmed.start),
+            placement.end(),
+            0,
+        )?
+    };
+    let unchanged = trimmed.from == placement.source_in
+        && trimmed.to == placement.source_out
+        && (ripple || trimmed.start == placement.start);
+    Ok(Compiled {
+        changes: if unchanged { Vec::new() } else { changes },
+        selection: kept,
+        clamped: trimmed.clamped,
+    })
+}
+
+fn roll(
+    project: &Project,
+    facts: &Facts,
+    left: ClipId,
+    right: ClipId,
+    frames: i64,
+    kept: Vec<ClipId>,
+) -> Result<Compiled, EditError> {
+    let timeline = timeline_of(project)?;
+    let (left_track, a) = placed(&timeline, left)?;
+    let (right_track, b) = placed(&timeline, right)?;
+    if left_track.id != right_track.id || a.end() != b.start {
+        return Err(EditError::Refused(format!(
+            "clips {left} and {right} do not meet, so there is no cut between them to roll"
+        )));
+    }
+    let (_, latest_a) = reach(a, Edge::End, facts.extent_of(a));
+    let (earliest_b, _) = reach(b, Edge::Start, facts.extent_of(b));
+    let lowest = (1 - a.length).max(earliest_b);
+    let highest = latest_a.min(b.length - 1);
+    let delta = frames.clamp(lowest.min(0), highest.max(0));
+    let a_trim = trim(a, Edge::End, delta, facts.extent_of(a), (None, None))
+        .ok_or_else(|| too_long(left))?;
+    let b_trim = trim(b, Edge::Start, delta, facts.extent_of(b), (None, None))
+        .ok_or_else(|| too_long(right))?;
+    if a_trim.start + a_trim.length != b_trim.start {
+        return Err(EditError::Refused(format!(
+            "the cut between clips {left} and {right} cannot move by exactly {delta} frames"
+        )));
+    }
+    let (_, a_clip) = find(project, left)?;
+    let (_, b_clip) = find(project, right)?;
+    let changes = if delta == 0 {
+        Vec::new()
+    } else {
+        vec![
+            Change::ReplaceClip(retimed(a_clip, a_trim.from, a_trim.to, a_trim.start)),
+            Change::ReplaceClip(retimed(b_clip, b_trim.from, b_trim.to, b_trim.start)),
+        ]
+    };
+    Ok(Compiled {
+        changes,
+        selection: kept,
+        clamped: delta != frames || a_trim.clamped || b_trim.clamped,
+    })
+}
+
+fn ripple_delete(
+    project: &Project,
+    clips: &[ClipId],
+    kept: Vec<ClipId>,
+) -> Result<Compiled, EditError> {
+    let timeline = timeline_of(project)?;
+    let removed: BTreeSet<ClipId> = clips.iter().copied().collect();
+    let mut changes = Vec::new();
+    for &id in &removed {
+        placed(&timeline, id)?;
+        changes.push(Change::RemoveClip(id));
+    }
+    for track in &timeline.tracks {
+        let gaps: Vec<&Placement> = track
+            .placements
+            .iter()
+            .filter(|p| removed.contains(&p.clip))
+            .collect();
+        if gaps.is_empty() {
+            continue;
+        }
+        for later in track
+            .placements
+            .iter()
+            .filter(|p| !removed.contains(&p.clip))
+        {
+            let shift: i64 = gaps
+                .iter()
+                .filter(|gap| gap.end() <= later.start)
+                .map(|gap| gap.length)
+                .sum();
+            if shift > 0 {
+                let (_, clip) = find(project, later.clip)?;
+                changes.push(Change::ReplaceClip(Clip {
+                    start: later.start - shift,
+                    ..clip.clone()
+                }));
+            }
+        }
+    }
+    let remaining = kept.into_iter().filter(|c| !removed.contains(c)).collect();
+    Ok(Compiled {
+        changes,
+        selection: remaining,
+        clamped: false,
     })
 }
 
@@ -557,32 +809,6 @@ fn move_clips(project: &Project, moves: &[ClipMove]) -> Result<Vec<Change>, Edit
     Ok(removes)
 }
 
-fn trim_clip(
-    project: &Project,
-    id: ClipId,
-    from: i64,
-    to: i64,
-    start: i64,
-) -> Result<Vec<Change>, EditError> {
-    let (track, current) = find(project, id)?;
-    let trimmed = retrimmed(current, from, to, start);
-    Ok(if trimmed == *current {
-        Vec::new()
-    } else if trimmed.start == current.start {
-        vec![Change::ReplaceClip(trimmed)]
-    } else {
-        // A new start can change the clip's place in timeline order.
-        vec![
-            Change::RemoveClip(id),
-            Change::InsertClip {
-                track: track.id,
-                index: None,
-                clip: trimmed,
-            },
-        ]
-    })
-}
-
 fn set_speed(
     project: &Project,
     clips: &[ClipId],
@@ -655,10 +881,20 @@ pub struct Document {
     /// refused for breaking a graph that worked, not for failing to mend one
     /// that did not.
     evaluates: bool,
-    /// What each source's pictures are, as probed. Not part of the graph and
-    /// not saved: it is read from the files, and it is what copy eligibility
-    /// and the first-clip default are decided from.
-    geometry: BTreeMap<SourceId, StreamGeometry>,
+    /// What each source is, as probed: not part of the graph and not saved.
+    /// Copy eligibility and the first-clip default are decided from its
+    /// pictures (#57), trim bounds from its streams' extents (#34).
+    facts: Facts,
+}
+
+/// An edit applied: the context after it, and whether a bound stopped it
+/// short of what was asked — a trim that met the end of its source.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct Applied {
+    pub context: EditContext,
+    pub clamped: bool,
 }
 
 impl Document {
@@ -686,7 +922,7 @@ impl Document {
             gesture: None,
             depth: depth.max(1),
             evaluates,
-            geometry: BTreeMap::new(),
+            facts: Facts::default(),
         })
     }
 
@@ -703,13 +939,17 @@ impl Document {
     ///
     /// The edit names something that does not exist, or its result would not
     /// evaluate. The graph and the history are then unchanged.
-    pub fn apply(&mut self, edit: &Edit, context: &EditContext) -> Result<EditContext, EditError> {
-        let (changes, selection) = compile(&self.project, &self.geometry, edit, context)?;
+    pub fn apply(&mut self, edit: &Edit, context: &EditContext) -> Result<Applied, EditError> {
+        let compiled = compile(&self.project, &self.facts, edit, context)?;
         let after = EditContext {
-            selection,
+            selection: compiled.selection,
             playhead: context.playhead,
         };
-        self.commit(edit.label(), changes, context, after)
+        let context = self.commit(edit.label(), compiled.changes, context, after)?;
+        Ok(Applied {
+            context,
+            clamped: compiled.clamped,
+        })
     }
 
     /// Add sources — an import — as one undoable step.
@@ -869,9 +1109,32 @@ impl Document {
     /// or could not be read.
     pub fn describe_source(&mut self, source: SourceId, geometry: Option<StreamGeometry>) {
         match geometry {
-            Some(geometry) => self.geometry.insert(source, geometry),
-            None => self.geometry.remove(&source),
+            Some(geometry) => self.facts.geometry.insert(source, geometry),
+            None => self.facts.geometry.remove(&source),
         };
+    }
+
+    /// Record which ticks of `source`'s streams exist, replacing what was
+    /// known. Trims are bounded by them.
+    pub fn describe_streams(&mut self, source: SourceId, extents: &[StreamExtent]) {
+        self.facts.extents.retain(|(id, _), _| *id != source);
+        for extent in extents {
+            self.facts
+                .extents
+                .insert((source, extent.stream), StreamExtent { source, ..*extent });
+        }
+    }
+
+    /// Every known stream extent — what the timeline bounds a trim preview
+    /// by, before the engine bounds the trim itself.
+    #[must_use]
+    pub fn extents(&self) -> Vec<StreamExtent> {
+        self.facts
+            .extents
+            .values()
+            .filter(|extent| self.project.sources.contains_key(&extent.source))
+            .copied()
+            .collect()
     }
 
     /// Whether each source with pictures can be stream-copied into the
@@ -883,7 +1146,8 @@ impl Document {
     }
 
     fn eligibility_at(&self, settings: &SequenceSettings) -> BTreeMap<SourceId, CopyEligibility> {
-        self.geometry
+        self.facts
+            .geometry
             .iter()
             .filter(|(id, _)| self.project.sources.contains_key(id))
             .map(|(&id, shape)| (id, copy_eligibility(settings, shape)))
@@ -1155,11 +1419,10 @@ mod tests {
         );
         assert!(matches!(
             document.apply(
-                &Edit::TrimClip {
-                    clip: 1,
-                    from: 500,
-                    to: 500,
-                    start: 0
+                &Edit::Roll {
+                    left: 1,
+                    right: 3,
+                    frames: 2
                 },
                 &EditContext::default()
             ),
@@ -1256,7 +1519,7 @@ mod tests {
         let after = document
             .apply(&Edit::RemoveClips { clips: vec![2] }, &at(&[1, 2], 42))
             .expect("delete");
-        assert_eq!(after, at(&[1], 42));
+        assert_eq!(after.context, at(&[1], 42));
         assert_eq!(document.undo(), Some(at(&[1, 2], 42)));
         assert_eq!(starts(&document, 0), vec![(1, 0), (2, 30), (3, 90)]);
         assert_eq!(document.redo(), Some(at(&[1], 42)));
@@ -1279,7 +1542,7 @@ mod tests {
                 &at(&[1], 0),
             )
             .expect("add");
-        assert_eq!(after.selection, vec![4]);
+        assert_eq!(after.context.selection, vec![4]);
         assert_eq!(
             starts(&document, 0),
             vec![(1, 0), (2, 30), (4, 60), (3, 90)]
@@ -1363,7 +1626,7 @@ mod tests {
                 },
             ],
         );
-        let trimmed = retrimmed(&clip, 4, 6, 9);
+        let trimmed = retimed(&clip, 4, 6, 9);
         assert_eq!(trimmed.start, 9);
         assert_eq!(
             trimmed.operations,
@@ -1586,6 +1849,176 @@ mod tests {
         );
     }
 
+    /// The standard document with source 1's stream 0 known to run 0..1500
+    /// ticks: every clip (0..1000) has 500 ticks — 15 frames — after it and
+    /// none before.
+    fn bounded() -> Document {
+        let mut document = document();
+        document.describe_streams(
+            1,
+            &[StreamExtent {
+                source: 1,
+                stream: 0,
+                time_base: TB,
+                start: 0,
+                end: 1500,
+            }],
+        );
+        document
+    }
+
+    fn edge(clip: ClipId, edge: Edge, frames: i64, ripple: bool) -> Edit {
+        Edit::TrimEdge {
+            clip,
+            edge,
+            frames,
+            ripple,
+        }
+    }
+
+    fn spans(document: &Document, track: usize) -> Vec<(ClipId, i64, i64)> {
+        let timeline = evaluate(document.project()).expect("evaluates");
+        timeline.tracks[track]
+            .placements
+            .iter()
+            .map(|p| (p.clip, p.start, p.end()))
+            .collect()
+    }
+
+    #[test]
+    fn a_trim_stops_at_the_end_of_its_source_and_says_so() {
+        let mut document = bounded();
+        // Clip 3 (90..120) wants 40 more frames; the source has 15.
+        let applied = document
+            .apply(&edge(3, Edge::End, 40, false), &EditContext::default())
+            .expect("trim");
+        assert!(applied.clamped);
+        assert_eq!(spans(&document, 0)[2], (3, 90, 135));
+        // Nothing before the in-point: the start cannot move earlier at all.
+        let applied = document
+            .apply(&edge(3, Edge::Start, -5, false), &EditContext::default())
+            .expect("trim");
+        assert!(applied.clamped);
+        assert_eq!(spans(&document, 0)[2], (3, 90, 135));
+        // Within the source, nothing is clamped.
+        let applied = document
+            .apply(&edge(3, Edge::End, -10, false), &EditContext::default())
+            .expect("trim");
+        assert!(!applied.clamped);
+        assert_eq!(spans(&document, 0)[2], (3, 90, 125));
+        assert_eq!(document.history().entries.len(), 2, "one entry each");
+    }
+
+    #[test]
+    fn a_trim_stops_at_its_neighbour_and_a_ripple_trim_moves_it() {
+        let mut document = bounded();
+        // Clip 1 (0..30) ends where clip 2 starts: it cannot grow.
+        let applied = document
+            .apply(&edge(1, Edge::End, 5, false), &EditContext::default())
+            .expect("trim");
+        assert!(applied.clamped);
+        assert_eq!(spans(&document, 0)[0], (1, 0, 30));
+        // Rippled, it grows and everything after it on the track follows.
+        document
+            .apply(&edge(1, Edge::End, 5, true), &EditContext::default())
+            .expect("ripple");
+        assert_eq!(
+            spans(&document, 0),
+            vec![(1, 0, 35), (2, 35, 65), (3, 95, 125)]
+        );
+        // A ripple trim of a start keeps the clip where it is and pulls the
+        // rest in.
+        document
+            .apply(&edge(2, Edge::Start, 10, true), &EditContext::default())
+            .expect("ripple");
+        assert_eq!(
+            spans(&document, 0),
+            vec![(1, 0, 35), (2, 35, 55), (3, 85, 115)]
+        );
+        assert_eq!(
+            document.history().entries,
+            vec!["Ripple trim", "Ripple trim"]
+        );
+        document.undo();
+        document.undo();
+        assert_eq!(
+            spans(&document, 0),
+            vec![(1, 0, 30), (2, 30, 60), (3, 90, 120)]
+        );
+    }
+
+    #[test]
+    fn a_ripple_delete_moves_every_later_clip_by_what_was_removed_before_it() {
+        let mut document = bounded();
+        let applied = document
+            .apply(
+                &Edit::RippleDelete { clips: vec![1, 3] },
+                &at(&[1, 2, 3], 0),
+            )
+            .expect("ripple delete");
+        assert_eq!(applied.context.selection, vec![2]);
+        // Clip 2 closes the 30-frame gap of clip 1; the gap after it stays.
+        assert_eq!(spans(&document, 0), vec![(2, 0, 30)]);
+        document.undo();
+        document
+            .apply(
+                &Edit::RippleDelete { clips: vec![2] },
+                &EditContext::default(),
+            )
+            .expect("ripple delete");
+        assert_eq!(spans(&document, 0), vec![(1, 0, 30), (3, 60, 90)]);
+        assert_eq!(document.history().entries.len(), 1);
+    }
+
+    #[test]
+    fn a_roll_moves_the_cut_and_nothing_else() {
+        let mut document = bounded();
+        document
+            .apply(
+                &Edit::Roll {
+                    left: 1,
+                    right: 2,
+                    frames: 6,
+                },
+                &EditContext::default(),
+            )
+            .expect("roll");
+        let after = spans(&document, 0);
+        assert_eq!(after[0], (1, 0, 36));
+        assert_eq!(after[1], (2, 36, 60));
+        // Earlier than the right clip's source allows: nothing before its
+        // in-point, so the cut cannot move back past where it started.
+        let applied = document
+            .apply(
+                &Edit::Roll {
+                    left: 1,
+                    right: 2,
+                    frames: -20,
+                },
+                &EditContext::default(),
+            )
+            .expect("roll");
+        assert!(applied.clamped);
+        let back = spans(&document, 0);
+        assert_eq!(back[0], (1, 0, 30));
+        assert_eq!(back[1], (2, 30, 60));
+    }
+
+    #[test]
+    fn numeric_entry_and_a_drag_make_the_same_graph() {
+        // The inspector sends the same edit a handle drag commits: a number
+        // of frames. There is one path, so the results cannot differ.
+        let mut dragged = bounded();
+        let mut typed = bounded();
+        dragged
+            .apply(&edge(2, Edge::Start, 4, false), &EditContext::default())
+            .expect("drag");
+        typed
+            .apply(&edge(2, Edge::Start, 4, false), &EditContext::default())
+            .expect("typed");
+        assert_eq!(json(&dragged), json(&typed));
+    }
+
     /// xorshift64*, seeded, so a failing sequence reproduces.
     struct Random(u64);
 
@@ -1652,15 +2085,16 @@ mod tests {
                     })
                     .collect(),
             },
-            4 => {
-                let from = random.int(5000);
-                Edit::TrimClip {
-                    clip,
-                    from,
-                    to: from + 1 + random.int(3000),
-                    start: random.int(600),
-                }
-            }
+            4 => Edit::TrimEdge {
+                clip,
+                edge: if random.below(2) == 0 {
+                    Edge::Start
+                } else {
+                    Edge::End
+                },
+                frames: random.int(80) - 40,
+                ripple: random.below(2) == 0,
+            },
             5 => Edit::SetSpeed {
                 clips: vec![clip],
                 ratio: Rational {

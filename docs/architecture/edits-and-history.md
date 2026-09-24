@@ -60,8 +60,15 @@ Each `Edit` variant compiles to primitive changes:
 - **Move** — every moving clip is removed first, then each is inserted, so
   clips moving past one another never collide half way. A clip may not move
   to a track of another kind.
-- **Trim** — one `Trim` operation replaces all of a clip's trims, at the
-  position of the first; a changed start re-inserts the clip in order.
+- **Trim edge** — one edge by a number of sequence frames, converted to
+  source ticks exactly and bounded by the source, one frame and (unless it
+  ripples) the neighbours; a ripple moves the later clips on the track. See
+  [`clip-interaction.md`](./clip-interaction.md).
+- **Roll** — the cut between two touching clips, both edges together.
+- **Ripple delete** — removed, and every later clip on the track moved
+  earlier by the length removed before it.
+- **Set settings** — the sequence settings, which also stops the sequence
+  waiting for its first clip (#57).
 - **Speed** — one `Speed` operation replaces all of a clip's speed changes;
   `1/1` removes it.
 - **Add clip** — the next clip id, placed in order, and selected.

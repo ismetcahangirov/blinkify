@@ -3,6 +3,7 @@ import type { CopyEligibility } from "./CopyEligibility";
 import type { HistoryView } from "./HistoryView";
 import type { Project } from "./Project";
 import type { SourceStatus } from "./SourceStatus";
+import type { StreamExtent } from "./StreamExtent";
 import type { Timeline } from "./Timeline";
 
 /**
@@ -30,4 +31,9 @@ affectedClips: Array<number>,
  * renderer works out again. A source not listed has no pictures, or is
  * offline.
  */
-eligibility: { [key in number]: CopyEligibility }, };
+eligibility: { [key in number]: CopyEligibility }, 
+/**
+ * Which ticks of each source stream exist (#34): what the timeline
+ * bounds a trim preview by. The engine bounds the trim itself.
+ */
+extents: Array<StreamExtent>, };

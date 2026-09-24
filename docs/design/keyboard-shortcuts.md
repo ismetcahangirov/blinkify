@@ -52,3 +52,38 @@ Rules:
 
 The tooltip of every transport control names its key, from the same table in
 code (`TRANSPORT_SHORTCUTS`), so the two cannot disagree.
+
+## Editing
+
+From [#37](https://github.com/ismetcahangirov/blinkify/issues/37) and
+[#34](https://github.com/ismetcahangirov/blinkify/issues/34). Left to a text
+field when one has focus: there, these keys edit the text.
+
+| Key          | Action                                   | CapCut |
+| ------------ | ---------------------------------------- | ------ |
+| Ctrl+Z       | Undo                                     | Same   |
+| Ctrl+Y       | Redo                                     | —      |
+| Ctrl+Shift+Z | Redo                                     | Same   |
+| Delete       | Delete the selected clips                | Same   |
+| Backspace    | Delete the selected clips                | Same   |
+| Shift+Delete | Ripple delete: delete and close the gaps | —      |
+| Ctrl+A       | Select every clip                        | Same   |
+
+## Timeline pointer
+
+From [#34](https://github.com/ismetcahangirov/blinkify/issues/34); how each
+works is [`../architecture/clip-interaction.md`](../architecture/clip-interaction.md).
+
+| Pointer                       | Action                                    |
+| ----------------------------- | ----------------------------------------- |
+| Click a clip                  | Select it                                 |
+| Ctrl+click                    | Add it to, or take it from, the selection |
+| Shift+click                   | Select the run of clips on its track      |
+| Drag a clip                   | Move the selection, to another track too  |
+| Drag a clip's edge            | Trim it                                   |
+| Shift while trimming          | Ripple: later clips follow                |
+| Ctrl on an edge shared by two | Roll the cut between them                 |
+| Alt while dragging            | Do not snap                               |
+| Escape while dragging         | Abandon the drag                          |
+| Ctrl+wheel                    | Zoom about the pointer                    |
+| Wheel, Shift+wheel            | Scroll the tracks, scroll sideways        |

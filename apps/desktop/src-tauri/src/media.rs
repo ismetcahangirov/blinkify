@@ -25,6 +25,7 @@ use blinkify_engine::playback::{
 };
 use blinkify_engine::probe::{MediaInfo, Prober};
 use blinkify_engine::project::StreamGeometry;
+use blinkify_engine::project::trim::StreamExtent;
 use blinkify_engine::proxy::{Proxies, Proxy, ProxyReason, proxy_advice};
 use blinkify_engine::waveform::{Peaks, WaveformStatus, Waveforms};
 use blinkify_engine::{EncoderCapabilities, Sidecar};
@@ -655,14 +656,19 @@ impl MediaEngine {
     /// # Errors
     ///
     /// The sidecar is missing, or the file cannot be probed or indexed.
-    /// What the pictures of the file at `path` are, for the sequence
-    /// settings (#57): its first video stream that is not a cover image.
-    /// `None` when it has none, or cannot be probed.
-    pub(crate) fn geometry_of(&self, path: &Path) -> Option<StreamGeometry> {
-        let info = self.prober().ok()?.probe(path).ok()?;
-        info.video()
+    /// What the file at `path` is, for the document: its pictures — the
+    /// first video stream that is not a cover image — for the sequence
+    /// settings (#57), and which ticks of each stream exist, for trim bounds
+    /// (#34). Nothing when it cannot be probed.
+    pub(crate) fn facts_of(&self, path: &Path) -> (Option<StreamGeometry>, Vec<StreamExtent>) {
+        let Some(info) = self.prober().ok().and_then(|p| p.probe(path).ok()) else {
+            return (None, Vec::new());
+        };
+        let geometry = info
+            .video()
             .filter(|(_, video)| !video.is_attached_picture)
-            .find_map(|(_, video)| StreamGeometry::of(video))
+            .find_map(|(_, video)| StreamGeometry::of(video));
+        (geometry, extents(&info))
     }
 
     pub(crate) fn source_media(&self, path: &Path) -> Result<SourceMedia, String> {
@@ -866,6 +872,40 @@ pub fn serve_frame(engine: &MediaEngine, path: &str) -> Response<Vec<u8>> {
     }
 }
 
+/// Which ticks of each stream of a probed file exist, in the stream's time
+/// base. The probe reports seconds; they are converted once here, the start
+/// to the nearest tick and the end down, so a trim bound never names a tick
+/// the file does not have.
+fn extents(info: &MediaInfo) -> Vec<StreamExtent> {
+    info.streams
+        .iter()
+        .filter_map(|stream| {
+            let time_base = stream.time_base.filter(|tb| tb.num > 0 && tb.den > 0)?;
+            let duration = stream
+                .duration_seconds
+                .or(info.container.duration_seconds)
+                .filter(|d| d.is_finite() && *d > 0.0)?;
+            let begin = stream
+                .start_seconds
+                .filter(|s| s.is_finite())
+                .unwrap_or(0.0);
+            #[allow(clippy::cast_precision_loss)]
+            let per_second = time_base.den as f64 / time_base.num as f64;
+            #[allow(clippy::cast_possible_truncation)]
+            let start = (begin * per_second).round() as i64;
+            #[allow(clippy::cast_possible_truncation)]
+            let end = ((begin + duration) * per_second).floor() as i64;
+            (end > start).then_some(StreamExtent {
+                source: 0,
+                stream: stream.index,
+                time_base,
+                start,
+                end,
+            })
+        })
+        .collect()
+}
+
 /// The sheet path a request on [`FRAME_SCHEME`] names: `/sheet/<path>`, the
 /// path percent-encoded. `None` for anything else.
 fn sheet_request(path: &str) -> Option<PathBuf> {
@@ -916,9 +956,56 @@ pub fn serve_sheet(engine: &MediaEngine, path: &str) -> Option<Response<Vec<u8>>
 }
 
 #[cfg(test)]
-#[allow(clippy::expect_used)]
+#[allow(clippy::expect_used, clippy::indexing_slicing)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stream_extents_are_whole_ticks_the_file_has() {
+        let info: MediaInfo = serde_json::from_value(serde_json::json!({
+            "container": {
+                "formatName": "mov,mp4",
+                "formatLongName": null,
+                "durationSeconds": 10.01,
+                "bitRate": null,
+                "sizeBytes": 1,
+                "editLists": [],
+                "hasEditList": false,
+                "chapters": []
+            },
+            "streams": [
+                {
+                    "index": 0, "codec": "h264", "profile": null, "level": null,
+                    "bitRate": null, "durationSeconds": 10.01, "startSeconds": 0.0,
+                    "timeBase": { "num": 1, "den": 90000 }, "isDefault": true,
+                    "kind": { "type": "subtitle" }
+                },
+                {
+                    "index": 1, "codec": "aac", "profile": null, "level": null,
+                    "bitRate": null, "durationSeconds": null, "startSeconds": 0.021_333,
+                    "timeBase": { "num": 1, "den": 48000 }, "isDefault": true,
+                    "kind": { "type": "subtitle" }
+                },
+                {
+                    "index": 2, "codec": null, "profile": null, "level": null,
+                    "bitRate": null, "durationSeconds": 3.0, "startSeconds": null,
+                    "timeBase": null, "isDefault": false,
+                    "kind": { "type": "subtitle" }
+                }
+            ]
+        }))
+        .expect("media info");
+        let found = extents(&info);
+        // A stream with no time base cannot be bounded in ticks.
+        assert_eq!(found.len(), 2);
+        assert_eq!(
+            (found[0].stream, found[0].start, found[0].end),
+            (0, 0, 900_900)
+        );
+        // No stream duration: the container's, from the stream's start.
+        assert_eq!(found[1].start, 1024);
+        assert_eq!(found[1].end, 481_503);
+    }
 
     #[test]
     fn a_sheet_request_names_a_percent_encoded_path() {

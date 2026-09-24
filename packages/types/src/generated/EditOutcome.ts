@@ -6,4 +6,9 @@ import type { ProjectView } from "./ProjectView";
  * What an edit, an undo or a redo returns: the project now, and the
  * selection and playhead to show with it.
  */
-export type EditOutcome = { view: ProjectView, context: EditContext, };
+export type EditOutcome = { view: ProjectView, context: EditContext, 
+/**
+ * A bound stopped the edit short of what was asked — the end of the
+ * source, a neighbouring clip — and the timeline says so.
+ */
+clamped: boolean, };
