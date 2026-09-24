@@ -37,6 +37,7 @@ function view(entries: string[], applied: number): ProjectView {
           pixelAspect: { num: 1, den: 1 },
           colour: "sdr",
         },
+        matchFirstClip: false,
         tracks: [],
       },
     },
@@ -44,6 +45,7 @@ function view(entries: string[], applied: number): ProjectView {
     history: { entries, applied },
     unavailable: {},
     affectedClips: [],
+    eligibility: {},
   };
 }
 

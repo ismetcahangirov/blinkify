@@ -28,13 +28,14 @@
 //! [`Document::begin_gesture`] and [`Document::end_gesture`]: everything in
 //! between is one history entry. There is no time-based guess.
 
-use std::collections::{BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
 
 use super::evaluate::evaluate;
+use super::settings::{CopyEligibility, SettingsError, StreamGeometry, copy_eligibility};
 use super::{
     Clip, ClipId, Operation, Project, ProjectError, SequenceSettings, SourceId, SourceRef, Track,
     TrackId, TrackKind,
@@ -123,6 +124,10 @@ pub enum Edit {
     RemoveClips {
         clips: Vec<ClipId>,
     },
+    /// Choose the sequence settings (#57): it stops waiting for a first clip.
+    SetSettings {
+        settings: SequenceSettings,
+    },
 }
 
 impl Edit {
@@ -149,6 +154,7 @@ impl Edit {
                 clips(ids.len(), "Change speed", "Change speed of")
             }
             Self::RemoveClips { clips: ids } => clips(ids.len(), "Delete clip", "Delete"),
+            Self::SetSettings { .. } => "Change sequence settings".to_owned(),
         }
     }
 }
@@ -167,6 +173,8 @@ pub enum EditError {
     /// The result would not evaluate; the reason is the evaluator's.
     #[error("{0}")]
     Refused(String),
+    #[error(transparent)]
+    Settings(#[from] SettingsError),
 }
 
 /// One primitive change to the graph. Applying it returns its inverse.
@@ -174,6 +182,8 @@ pub enum EditError {
 pub(super) enum Change {
     Name(String),
     Settings(SequenceSettings),
+    /// Whether the sequence waits for its first clip's settings.
+    MatchFirstClip(bool),
     /// Set a source, or remove it with `None`.
     Source(SourceId, Option<SourceRef>),
     /// Put a track at an index of the track list.
@@ -244,6 +254,10 @@ impl Change {
             Self::Settings(settings) => {
                 Self::Settings(std::mem::replace(&mut project.sequence.settings, settings))
             }
+            Self::MatchFirstClip(waits) => Self::MatchFirstClip(std::mem::replace(
+                &mut project.sequence.match_first_clip,
+                waits,
+            )),
             Self::Source(id, reference) => {
                 let previous = match reference {
                     Some(reference) => project.sources.insert(id, reference),
@@ -382,7 +396,12 @@ fn respeeded(clip: &Clip, ratio: Rational) -> Clip {
 type Compiled = (Vec<Change>, Vec<ClipId>);
 
 /// The primitive changes `edit` makes to `project`, and the selection after.
-fn compile(project: &Project, edit: &Edit, context: &EditContext) -> Result<Compiled, EditError> {
+fn compile(
+    project: &Project,
+    geometry: &BTreeMap<SourceId, StreamGeometry>,
+    edit: &Edit,
+    context: &EditContext,
+) -> Result<Compiled, EditError> {
     let kept = context.selection.clone();
     Ok(match edit {
         Edit::Rename { name } => {
@@ -423,7 +442,9 @@ fn compile(project: &Project, edit: &Edit, context: &EditContext) -> Result<Comp
                 index: None,
                 clip,
             };
-            (vec![insert], vec![id])
+            let mut changes = adopt_first_clip(project, geometry, *track, *source);
+            changes.push(insert);
+            (changes, vec![id])
         }
         Edit::MoveClips { moves } => (move_clips(project, moves)?, kept),
         Edit::TrimClip {
@@ -433,6 +454,17 @@ fn compile(project: &Project, edit: &Edit, context: &EditContext) -> Result<Comp
             start,
         } => (trim_clip(project, *clip, *from, *to, *start)?, kept),
         Edit::SetSpeed { clips, ratio } => (set_speed(project, clips, *ratio)?, kept),
+        Edit::SetSettings { settings } => {
+            settings.validate()?;
+            let mut changes = Vec::new();
+            if *settings != project.sequence.settings {
+                changes.push(Change::Settings(*settings));
+            }
+            if project.sequence.match_first_clip {
+                changes.push(Change::MatchFirstClip(false));
+            }
+            (changes, kept)
+        }
         Edit::RemoveClips { clips } => {
             let mut changes = Vec::new();
             for &id in &clips.iter().copied().collect::<BTreeSet<_>>() {
@@ -443,6 +475,29 @@ fn compile(project: &Project, edit: &Edit, context: &EditContext) -> Result<Comp
             (changes, remaining)
         }
     })
+}
+
+/// The `match first clip` default (#57): the first video clip placed on a
+/// sequence still waiting for one gives it the clip's own geometry and frame
+/// rate, in the same edit, so undoing the placement gives the settings back.
+/// A clip whose shape no sequence can have leaves the settings as they are,
+/// and the eligibility report says why it cannot be copied.
+fn adopt_first_clip(
+    project: &Project,
+    geometry: &BTreeMap<SourceId, StreamGeometry>,
+    track: TrackId,
+    source: SourceId,
+) -> Vec<Change> {
+    let video = find_track(project, track).is_ok_and(|t| t.kind == TrackKind::Video);
+    let empty = project.clips().next().is_none();
+    if !(project.sequence.match_first_clip && video && empty) {
+        return Vec::new();
+    }
+    geometry
+        .get(&source)
+        .and_then(|shape| SequenceSettings::matching(shape).ok())
+        .map(|settings| vec![Change::Settings(settings), Change::MatchFirstClip(false)])
+        .unwrap_or_default()
 }
 
 /// A new track below the last of its kind — or, the first of its kind,
@@ -572,6 +627,21 @@ pub struct HistoryView {
     pub applied: usize,
 }
 
+/// What a change of sequence settings would do to copying (#57).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct SettingsImpact {
+    /// Clips copy-eligible now that would have to be re-encoded.
+    pub losing_clips: u32,
+    pub losing_seconds: f64,
+    /// Clips re-encoded now that could be copied.
+    pub gaining_clips: u32,
+    pub gaining_seconds: f64,
+    /// Clips that could not be copied under the new settings, in all.
+    pub ineligible_after: u32,
+}
+
 /// An open project and its history.
 #[derive(Debug)]
 pub struct Document {
@@ -585,6 +655,10 @@ pub struct Document {
     /// refused for breaking a graph that worked, not for failing to mend one
     /// that did not.
     evaluates: bool,
+    /// What each source's pictures are, as probed. Not part of the graph and
+    /// not saved: it is read from the files, and it is what copy eligibility
+    /// and the first-clip default are decided from.
+    geometry: BTreeMap<SourceId, StreamGeometry>,
 }
 
 impl Document {
@@ -612,6 +686,7 @@ impl Document {
             gesture: None,
             depth: depth.max(1),
             evaluates,
+            geometry: BTreeMap::new(),
         })
     }
 
@@ -629,7 +704,7 @@ impl Document {
     /// The edit names something that does not exist, or its result would not
     /// evaluate. The graph and the history are then unchanged.
     pub fn apply(&mut self, edit: &Edit, context: &EditContext) -> Result<EditContext, EditError> {
-        let (changes, selection) = compile(&self.project, edit, context)?;
+        let (changes, selection) = compile(&self.project, &self.geometry, edit, context)?;
         let after = EditContext {
             selection,
             playhead: context.playhead,
@@ -788,6 +863,80 @@ impl Document {
         self.push(entry);
         self.evaluates = evaluate(&self.project).is_ok();
         Some(context)
+    }
+
+    /// Record what `source`'s pictures are, or with `None` that it has none
+    /// or could not be read.
+    pub fn describe_source(&mut self, source: SourceId, geometry: Option<StreamGeometry>) {
+        match geometry {
+            Some(geometry) => self.geometry.insert(source, geometry),
+            None => self.geometry.remove(&source),
+        };
+    }
+
+    /// Whether each source with pictures can be stream-copied into the
+    /// sequence as it is now: the model's one answer, for the timeline, the
+    /// inspector, the export dialog and the planner to read.
+    #[must_use]
+    pub fn eligibility(&self) -> BTreeMap<SourceId, CopyEligibility> {
+        self.eligibility_at(&self.project.sequence.settings)
+    }
+
+    fn eligibility_at(&self, settings: &SequenceSettings) -> BTreeMap<SourceId, CopyEligibility> {
+        self.geometry
+            .iter()
+            .filter(|(id, _)| self.project.sources.contains_key(id))
+            .map(|(&id, shape)| (id, copy_eligibility(settings, shape)))
+            .collect()
+    }
+
+    /// What changing the sequence to `settings` would do to copying, before
+    /// it is done: the clips that would stop being copy-eligible and those
+    /// that would start, with their duration.
+    ///
+    /// # Errors
+    ///
+    /// The settings are ones no file can carry.
+    pub fn settings_impact(
+        &self,
+        settings: &SequenceSettings,
+    ) -> Result<SettingsImpact, SettingsError> {
+        settings.validate()?;
+        let now = self.eligibility();
+        let then = self.eligibility_at(settings);
+        let timeline = evaluate(&self.project).ok();
+        let rate = self.project.sequence.settings.frame_rate;
+        let mut impact = SettingsImpact::default();
+        for (track, clip) in self.project.clips() {
+            if track.kind != TrackKind::Video {
+                continue;
+            }
+            let (Some(before), Some(after)) = (now.get(&clip.source), then.get(&clip.source))
+            else {
+                continue;
+            };
+            let frames = timeline
+                .as_ref()
+                .and_then(|t| t.placements().find(|p| p.clip == clip.id))
+                .map_or(0, |p| p.length);
+            #[allow(clippy::cast_precision_loss)]
+            let seconds = frames as f64 * rate.den as f64 / rate.num.max(1) as f64;
+            match (before.eligible, after.eligible) {
+                (true, false) => {
+                    impact.losing_clips += 1;
+                    impact.losing_seconds += seconds;
+                }
+                (false, true) => {
+                    impact.gaining_clips += 1;
+                    impact.gaining_seconds += seconds;
+                }
+                _ => {}
+            }
+            if !after.eligible {
+                impact.ineligible_after += 1;
+            }
+        }
+        Ok(impact)
     }
 
     #[must_use]
@@ -1244,6 +1393,196 @@ mod tests {
             Some(&Operation::Speed {
                 ratio: Rational { num: 1, den: 2 }
             })
+        );
+    }
+
+    fn uhd() -> StreamGeometry {
+        StreamGeometry {
+            width: 3840,
+            height: 2160,
+            frame_rate: Rational { num: 25, den: 1 },
+            pixel_aspect: Rational { num: 1, den: 1 },
+            variable_frame_rate: false,
+            hdr: false,
+        }
+    }
+
+    /// An empty project waiting for its first clip, with one video and one
+    /// audio track and one source whose pictures are 4K at 25 fps.
+    fn waiting() -> Document {
+        let mut project = Project::matching_first_clip("New");
+        project.sources.insert(1, source(1));
+        project.sequence.tracks = vec![
+            Track {
+                id: 1,
+                kind: TrackKind::Video,
+                clips: Vec::new(),
+            },
+            Track {
+                id: 2,
+                kind: TrackKind::Audio,
+                clips: Vec::new(),
+            },
+        ];
+        let mut document = Document::new(project).expect("valid");
+        document.describe_source(1, Some(uhd()));
+        document
+    }
+
+    fn add(track: TrackId, start: i64) -> Edit {
+        Edit::AddClip {
+            track,
+            source: 1,
+            stream: 0,
+            time_base: TB,
+            start,
+            from: 0,
+            to: 1000,
+        }
+    }
+
+    #[test]
+    fn the_first_video_clip_gives_the_sequence_its_settings_in_the_same_edit() {
+        let mut document = waiting();
+        let before = json(&document);
+        document
+            .apply(&add(1, 0), &EditContext::default())
+            .expect("add");
+        let sequence = &document.project().sequence;
+        assert!(!sequence.match_first_clip);
+        assert_eq!(
+            (sequence.settings.width, sequence.settings.height),
+            (3840, 2160)
+        );
+        assert_eq!(sequence.settings.frame_rate, Rational { num: 25, den: 1 });
+        assert!(
+            document.eligibility()[&1].eligible,
+            "the clip plans as copy"
+        );
+        assert_eq!(document.history().entries, vec!["Add clip"]);
+
+        // One undo takes the clip and the settings back together.
+        document.undo();
+        assert_eq!(json(&document), before);
+
+        // A second clip does not re-adopt.
+        document.redo();
+        document.describe_source(
+            1,
+            Some(StreamGeometry {
+                width: 1280,
+                height: 720,
+                ..uhd()
+            }),
+        );
+        document
+            .apply(&add(1, 100), &EditContext::default())
+            .expect("add");
+        assert_eq!(document.project().sequence.settings.width, 3840);
+    }
+
+    #[test]
+    fn only_a_video_clip_with_a_usable_shape_is_adopted() {
+        let mut document = waiting();
+        document
+            .apply(&add(2, 0), &EditContext::default())
+            .expect("add");
+        assert!(
+            document.project().sequence.match_first_clip,
+            "audio is not a picture"
+        );
+
+        let mut odd = waiting();
+        odd.describe_source(
+            1,
+            Some(StreamGeometry {
+                width: 1081,
+                ..uhd()
+            }),
+        );
+        odd.apply(&add(1, 0), &EditContext::default()).expect("add");
+        assert!(odd.project().sequence.match_first_clip);
+        assert_eq!(odd.project().sequence.settings, SequenceSettings::default());
+        assert!(!odd.eligibility()[&1].eligible);
+
+        let mut unknown = waiting();
+        unknown.describe_source(1, None);
+        unknown
+            .apply(&add(1, 0), &EditContext::default())
+            .expect("add");
+        assert!(unknown.project().sequence.match_first_clip);
+        assert!(unknown.eligibility().is_empty());
+    }
+
+    #[test]
+    fn choosing_settings_stops_the_wait_and_is_undoable() {
+        let mut document = waiting();
+        let before = json(&document);
+        let chosen = SequenceSettings {
+            width: 1280,
+            height: 720,
+            ..SequenceSettings::default()
+        };
+        document
+            .apply(
+                &Edit::SetSettings { settings: chosen },
+                &EditContext::default(),
+            )
+            .expect("set");
+        assert!(!document.project().sequence.match_first_clip);
+        assert_eq!(document.project().sequence.settings, chosen);
+        document.undo();
+        assert_eq!(json(&document), before);
+
+        let odd = SequenceSettings {
+            width: 1279,
+            ..SequenceSettings::default()
+        };
+        assert!(matches!(
+            document.apply(
+                &Edit::SetSettings { settings: odd },
+                &EditContext::default()
+            ),
+            Err(EditError::Settings(SettingsError::Size { .. }))
+        ));
+        assert_eq!(json(&document), before);
+    }
+
+    #[test]
+    fn a_settings_change_states_what_it_costs_before_it_is_made() {
+        let mut document = waiting();
+        document
+            .apply(&add(1, 0), &EditContext::default())
+            .expect("add");
+        document
+            .apply(&add(1, 50), &EditContext::default())
+            .expect("add");
+        let hd = SequenceSettings {
+            width: 1920,
+            height: 1080,
+            frame_rate: Rational { num: 25, den: 1 },
+            ..SequenceSettings::default()
+        };
+        let impact = document.settings_impact(&hd).expect("valid");
+        assert_eq!(impact.losing_clips, 2);
+        assert_eq!(impact.ineligible_after, 2);
+        // Two one-second clips at 25 fps.
+        assert!((impact.losing_seconds - 2.0).abs() < 1e-9, "{impact:?}");
+        assert_eq!(impact.gaining_clips, 0);
+        // Nothing was changed by asking.
+        assert_eq!(document.project().sequence.settings.width, 3840);
+        let same = document.project().sequence.settings;
+        assert_eq!(
+            document.settings_impact(&same).expect("valid"),
+            SettingsImpact::default()
+        );
+        assert!(
+            document
+                .settings_impact(&SequenceSettings {
+                    frame_rate: Rational { num: 0, den: 1 },
+                    ..same
+                })
+                .is_err()
         );
     }
 

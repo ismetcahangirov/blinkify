@@ -45,6 +45,8 @@ How Blinkify is put together and why the structure holds under change.
 - [`timeline-rendering.md`](./timeline-rendering.md) — the canvas timeline:
   two layers and a dirty-layer scheduler, virtualisation, anchored zoom, crisp
   lines at every display scaling, thumbnails and waveforms (#33)
+- [`sequence-settings.md`](./sequence-settings.md) — the settings, matching
+  the first clip, the one copy-eligibility predicate and who reads it (#57)
 
 ## What does not belong here
 

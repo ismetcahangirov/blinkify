@@ -24,6 +24,7 @@ use blinkify_engine::playback::{
     PlaybackStatus, Player, PlayerOptions, SourceMedia, TransportCommand,
 };
 use blinkify_engine::probe::{MediaInfo, Prober};
+use blinkify_engine::project::StreamGeometry;
 use blinkify_engine::proxy::{Proxies, Proxy, ProxyReason, proxy_advice};
 use blinkify_engine::waveform::{Peaks, WaveformStatus, Waveforms};
 use blinkify_engine::{EncoderCapabilities, Sidecar};
@@ -654,6 +655,16 @@ impl MediaEngine {
     /// # Errors
     ///
     /// The sidecar is missing, or the file cannot be probed or indexed.
+    /// What the pictures of the file at `path` are, for the sequence
+    /// settings (#57): its first video stream that is not a cover image.
+    /// `None` when it has none, or cannot be probed.
+    pub(crate) fn geometry_of(&self, path: &Path) -> Option<StreamGeometry> {
+        let info = self.prober().ok()?.probe(path).ok()?;
+        info.video()
+            .filter(|(_, video)| !video.is_attached_picture)
+            .find_map(|(_, video)| StreamGeometry::of(video))
+    }
+
     pub(crate) fn source_media(&self, path: &Path) -> Result<SourceMedia, String> {
         let info = self.prober()?.probe(path).map_err(|e| e.to_string())?;
         let index = self.index(path, &info)?;

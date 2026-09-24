@@ -10,4 +10,11 @@ export type Sequence = {
  * Resolution, frame rate, aspect and colour — defined, and bound to copy
  * eligibility, by #57; referenced here, never duplicated.
  */
-settings: SequenceSettings, tracks: Array<Track>, };
+settings: SequenceSettings, 
+/**
+ * Whether the settings are still waiting for the first clip: the next
+ * video clip placed on an empty sequence gives it its own geometry and
+ * frame rate (#57). Cleared the moment the settings are chosen or
+ * adopted.
+ */
+matchFirstClip: boolean, tracks: Array<Track>, };

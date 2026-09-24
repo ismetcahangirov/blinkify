@@ -64,12 +64,13 @@ Why it was plausible. Why it lost.
 
 ## Index
 
-| ADR                                                              | Title                                                               | Status   |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------- | -------- |
-| [0001](./ADR-0001-tauri-over-electron.md)                        | Tauri 2 over Electron for the application shell                     | Accepted |
-| [0002](./ADR-0002-lgpl-ffmpeg-sidecar.md)                        | Bundle an LGPL FFmpeg build as a sidecar process                    | Accepted |
-| [0003](./ADR-0003-re-encode-encoder-strategy.md)                 | Probe encoders at runtime and decline rather than degrade           | Accepted |
-| [0004](./ADR-0004-build-the-ffmpeg-sidecar-ourselves.md)         | Build the FFmpeg sidecar from a committed configure line            | Accepted |
-| [0005](./ADR-0005-preview-frames-over-a-custom-scheme.md)        | Preview frames cross into the renderer over a custom URI scheme     | Accepted |
-| [0006](./ADR-0006-project-file-format.md)                        | The project file is versioned, deterministic JSON over integer time | Accepted |
-| [0007](./ADR-0007-edits-are-invertible-changes-in-the-engine.md) | Edits are invertible changes, applied by the engine                 | Accepted |
+| ADR                                                              | Title                                                                        | Status   |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- |
+| [0001](./ADR-0001-tauri-over-electron.md)                        | Tauri 2 over Electron for the application shell                              | Accepted |
+| [0002](./ADR-0002-lgpl-ffmpeg-sidecar.md)                        | Bundle an LGPL FFmpeg build as a sidecar process                             | Accepted |
+| [0003](./ADR-0003-re-encode-encoder-strategy.md)                 | Probe encoders at runtime and decline rather than degrade                    | Accepted |
+| [0004](./ADR-0004-build-the-ffmpeg-sidecar-ourselves.md)         | Build the FFmpeg sidecar from a committed configure line                     | Accepted |
+| [0005](./ADR-0005-preview-frames-over-a-custom-scheme.md)        | Preview frames cross into the renderer over a custom URI scheme              | Accepted |
+| [0006](./ADR-0006-project-file-format.md)                        | The project file is versioned, deterministic JSON over integer time          | Accepted |
+| [0007](./ADR-0007-edits-are-invertible-changes-in-the-engine.md) | Edits are invertible changes, applied by the engine                          | Accepted |
+| [0008](./ADR-0008-sequence-settings-and-copy-eligibility.md)     | Sequences match their first clip, and one predicate decides copy eligibility | Accepted |
