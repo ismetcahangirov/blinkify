@@ -1885,6 +1885,7 @@
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
         "apps/desktop/src/timeline/draw.ts",
         "apps/desktop/src/timeline/editActions.ts",
@@ -3142,6 +3143,134 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/timeline/TrackHeaders.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./TrackHeaders.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/TrackHeaders.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./editActions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/editActions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./interaction.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/interaction.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./rows.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/rows.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/timeline/TrackHeaders.tsx",
       "dependencies": [
         {
@@ -3194,10 +3323,46 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
-        "apps/desktop/src/shell/zones/TimelineZone.tsx"
+        "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.test.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -3441,6 +3606,7 @@
       ],
       "dependents": [
         "apps/desktop/src/timeline/EditToolbar.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/editActions.test.ts"
       ],
       "orphan": false,
@@ -3585,6 +3751,7 @@
       "dependents": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/interaction.test.ts",
         "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
@@ -3955,6 +4122,7 @@
       ],
       "dependents": [
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
@@ -6574,6 +6742,24 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./TrackKind",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/TrackKind.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -6807,6 +6993,7 @@
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/EvaluatedTrack.ts",
         "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/Track.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -8634,6 +8821,8 @@
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/timeline/EditToolbar.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.test.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.tsx",
         "apps/desktop/src/timeline/draw.test.ts",
         "apps/desktop/src/timeline/draw.ts",
         "apps/desktop/src/timeline/editActions.test.ts",
@@ -10295,7 +10484,9 @@
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
-        "apps/desktop/src/timeline/EditToolbar.tsx"
+        "apps/desktop/src/timeline/EditToolbar.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.test.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -10706,8 +10897,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 242,
-    "totalDependenciesCruised": 474,
+    "totalCruised": 243,
+    "totalDependenciesCruised": 484,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

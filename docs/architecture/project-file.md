@@ -41,11 +41,12 @@ eligibility — is [`sequence-settings.md`](./sequence-settings.md) (#57).
 
 ### Schema history
 
-| Version | What changed                                                                                                                                           |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1       | The first schema (#32).                                                                                                                                |
-| 3       | The `freeze` and `reverse` operations (#35). Nothing to migrate; bumped so that a version-2 build refuses a file holding one as newer, not damaged.    |
-| 2       | `sequence.matchFirstClip` (#57). Migrated as `true` for a version-1 sequence with no clip — its settings were the placeholder — and `false` otherwise. |
+| Version | What changed                                                                                                                                                           |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1       | The first schema (#32).                                                                                                                                                |
+| 4       | Each track has `name`, `muted`, `solo`, `locked` and `collapsed`; a clip may be `detached` and carry a `link` (#36). Migrated with default names and every switch off. |
+| 3       | The `freeze` and `reverse` operations (#35). Nothing to migrate; bumped so that a version-2 build refuses a file holding one as newer, not damaged.                    |
+| 2       | `sequence.matchFirstClip` (#57). Migrated as `true` for a version-1 sequence with no clip — its settings were the placeholder — and `false` otherwise.                 |
 
 ## Time
 

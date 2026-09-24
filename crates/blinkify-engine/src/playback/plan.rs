@@ -334,6 +334,10 @@ impl Segment {
 #[derive(Debug, Clone)]
 pub struct PlaybackPlan {
     segments: Vec<Segment>,
+    /// Whether the main segments' own sound is heard. A dropped file's is;
+    /// an edit graph's is not, because every track's sound is a track of its
+    /// own there (#36), and the pictures are only pictures.
+    main_sound: bool,
     /// Further tracks of sound only — detached audio, music — mixed with the
     /// main segments' own.
     audio_tracks: Vec<AudioTrack>,
@@ -368,6 +372,7 @@ impl PlaybackPlan {
             .unwrap_or(DEFAULT_FRAME_RATE);
         Ok(Self {
             segments,
+            main_sound: true,
             audio_tracks: Vec::new(),
             frame_rate,
         })
@@ -390,7 +395,10 @@ impl PlaybackPlan {
     /// Every track that carries sound, main first, as `(id, segments)`.
     #[must_use]
     pub fn sound_tracks(&self) -> Vec<(TrackId, &[Segment])> {
-        std::iter::once((MAIN_TRACK, self.segments.as_slice()))
+        let main = self
+            .main_sound
+            .then_some((MAIN_TRACK, self.segments.as_slice()));
+        main.into_iter()
             .chain(
                 self.audio_tracks
                     .iter()
@@ -401,11 +409,13 @@ impl PlaybackPlan {
 
     /// The preview of an evaluated edit graph (#30).
     ///
-    /// The pictures, and their own sound, come from the first video track;
-    /// every audio track is a sound-only track with the project's track id.
-    /// A further video track is not composited — Blinkify is not a
-    /// compositor — so it is not previewed. A clip whose source is not in
-    /// `sources` (offline, #32) leaves a gap: black and silence.
+    /// The pictures are the evaluator's composite of the visible video
+    /// tracks, the top one in front (#36). Every audible track's sound is a
+    /// sound-only track with the project's track id — a video track's too,
+    /// less its detached clips, whose sound is on an audio track of its own.
+    /// A muted track is neither seen nor heard, as in the export. A clip
+    /// whose source is not in `sources` (offline, #32) leaves a gap: black
+    /// and silence.
     ///
     /// `sources` decides the preview's *quality* — a source may carry a
     /// proxy. The *content* is the timeline's, which is what the export
@@ -438,35 +448,27 @@ impl PlaybackPlan {
                 })
                 .collect()
         };
-        let main = timeline
-            .tracks
-            .iter()
-            .find(|track| track.kind == TrackKind::Video)
-            .map(|track| segments_of(&track.placements))
-            .transpose()?
-            .unwrap_or_default();
-        let mut plan = if main.is_empty() {
-            Self {
-                segments: Vec::new(),
-                audio_tracks: Vec::new(),
-                frame_rate: timeline.frame_rate,
-            }
-        } else {
-            check(&main)?;
-            Self {
-                segments: main,
-                audio_tracks: Vec::new(),
-                frame_rate: timeline.frame_rate,
-            }
+        let main = segments_of(&timeline.picture())?;
+        check(&main)?;
+        let mut plan = Self {
+            segments: main,
+            main_sound: false,
+            audio_tracks: Vec::new(),
+            frame_rate: timeline.frame_rate,
         };
-        for track in timeline
-            .tracks
-            .iter()
-            .filter(|track| track.kind == TrackKind::Audio)
-        {
+        for track in timeline.tracks.iter().filter(|track| track.audible) {
+            let sounding: Vec<Placement> = track
+                .placements
+                .iter()
+                .filter(|placement| !placement.silent)
+                .cloned()
+                .collect();
+            if sounding.is_empty() && track.kind == TrackKind::Video {
+                continue;
+            }
             plan = plan.with_audio_track(AudioTrack {
                 id: track.id,
-                segments: segments_of(&track.placements)?,
+                segments: segments_of(&sounding)?,
             })?;
         }
         if plan.segments.is_empty() && plan.audio_tracks.iter().all(|t| t.segments.is_empty()) {
@@ -490,10 +492,22 @@ impl PlaybackPlan {
         &self.segments
     }
 
+    /// The main track and every sound track: what has a place in time,
+    /// heard or not.
+    fn timed_tracks(&self) -> Vec<(TrackId, &[Segment])> {
+        std::iter::once((MAIN_TRACK, self.segments.as_slice()))
+            .chain(
+                self.audio_tracks
+                    .iter()
+                    .map(|track| (track.id, track.segments.as_slice())),
+            )
+            .collect()
+    }
+
     /// The end of the last segment on any track.
     #[must_use]
     pub fn duration(&self) -> ProgramTime {
-        self.sound_tracks()
+        self.timed_tracks()
             .iter()
             .filter_map(|(_, segments)| segments.last().map(Segment::timeline_end))
             .max()
@@ -523,7 +537,7 @@ impl PlaybackPlan {
     #[must_use]
     pub fn next_boundary(&self, t: ProgramTime) -> ProgramTime {
         let end = self.duration();
-        self.sound_tracks()
+        self.timed_tracks()
             .iter()
             .map(|(_, segments)| next_boundary(segments, t, end))
             .min()

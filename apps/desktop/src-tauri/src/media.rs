@@ -23,9 +23,9 @@ use blinkify_engine::playback::{
     AudioChoice, DecodeStats, DefaultDevice, MonitorCommand, MonitorStatus, PlaybackPlan,
     PlaybackStatus, Player, PlayerOptions, SourceMedia, TransportCommand,
 };
-use blinkify_engine::probe::{MediaInfo, Prober};
-use blinkify_engine::project::StreamGeometry;
+use blinkify_engine::probe::{MediaInfo, Prober, StreamKind};
 use blinkify_engine::project::trim::StreamExtent;
+use blinkify_engine::project::{StreamGeometry, TrackKind};
 use blinkify_engine::proxy::{Proxies, Proxy, ProxyReason, proxy_advice};
 use blinkify_engine::waveform::{Peaks, WaveformStatus, Waveforms};
 use blinkify_engine::{EncoderCapabilities, Sidecar};
@@ -886,6 +886,11 @@ fn extents(info: &MediaInfo) -> Vec<StreamExtent> {
     info.streams
         .iter()
         .filter_map(|stream| {
+            let kind = match stream.kind {
+                StreamKind::Video(_) => TrackKind::Video,
+                StreamKind::Audio(_) => TrackKind::Audio,
+                _ => return None,
+            };
             let time_base = stream.time_base.filter(|tb| tb.num > 0 && tb.den > 0)?;
             let duration = stream
                 .duration_seconds
@@ -904,6 +909,7 @@ fn extents(info: &MediaInfo) -> Vec<StreamExtent> {
             (end > start).then_some(StreamExtent {
                 source: 0,
                 stream: stream.index,
+                kind,
                 time_base,
                 start,
                 end,
@@ -984,13 +990,13 @@ mod tests {
                     "index": 0, "codec": "h264", "profile": null, "level": null,
                     "bitRate": null, "durationSeconds": 10.01, "startSeconds": 0.0,
                     "timeBase": { "num": 1, "den": 90000 }, "isDefault": true,
-                    "kind": { "type": "subtitle" }
+                    "kind": { "type": "audio", "sampleRate": 48000, "channels": 2, "channelLayout": null, "sampleFormat": null, "bitsPerSample": null }
                 },
                 {
                     "index": 1, "codec": "aac", "profile": null, "level": null,
                     "bitRate": null, "durationSeconds": null, "startSeconds": 0.021_333,
                     "timeBase": { "num": 1, "den": 48000 }, "isDefault": true,
-                    "kind": { "type": "subtitle" }
+                    "kind": { "type": "audio", "sampleRate": 48000, "channels": 2, "channelLayout": null, "sampleFormat": null, "bitsPerSample": null }
                 },
                 {
                     "index": 2, "codec": null, "profile": null, "level": null,

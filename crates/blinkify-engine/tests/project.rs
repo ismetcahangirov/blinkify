@@ -57,6 +57,7 @@ fn project_of(path: &Path) -> Project {
                 to: 90_000,
             }],
         )],
+        ..Track::default()
     });
     project
 }

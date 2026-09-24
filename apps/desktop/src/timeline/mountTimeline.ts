@@ -129,7 +129,7 @@ export function mountTimeline(
 
   const fromProject = (): void => {
     const view = useProjectStore.getState().view;
-    rows = layoutRows(view?.timeline);
+    rows = layoutRows(view?.timeline, view?.project.sequence.tracks);
     ineligible = ineligibleClips(view, rows);
     const sources = view?.project.sources ?? {};
     labels = new Map(

@@ -21,6 +21,16 @@ timeBase: Rational,
  */
 start: number, 
 /**
+ * Its sound plays from an audio clip of its own (#36): the clip's
+ * pictures are all it contributes.
+ */
+detached?: boolean, 
+/**
+ * Clips with the same link move, trim and select together; `None` for
+ * a clip on its own. Detaching links the sound to its pictures.
+ */
+link?: number, 
+/**
  * What is done to the clip, in order. Data only, and private: the
  * evaluator ([`evaluate`], #30) is the one reader, so there is no second
  * interpretation to disagree with it.

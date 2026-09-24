@@ -109,6 +109,8 @@ pub struct Placement {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub motion: Option<Motion>,
+    /// Its own sound is not played: it was detached to an audio clip (#36).
+    pub silent: bool,
     /// Why the clip must be re-encoded whole, if something forces it — a
     /// hold or a reverse. Recorded here so the planner and the export report
     /// cannot miss it.
@@ -197,6 +199,10 @@ impl Placement {
 pub struct EvaluatedTrack {
     pub id: TrackId,
     pub kind: TrackKind,
+    /// Its pictures are composited: a video track that is not muted (#36).
+    pub visible: bool,
+    /// Its sound is heard: not muted, and soloed if any track is (#36).
+    pub audible: bool,
     /// In timeline order, none overlapping.
     pub placements: Vec<Placement>,
 }
@@ -237,6 +243,51 @@ pub struct AppliedClip {
 }
 
 impl Timeline {
+    /// The picture, as the viewer sees it (#36): the visible video tracks
+    /// composited in their order — a track higher in the list in front of
+    /// the ones below — as one track of placements, each cropped to where
+    /// it is the one in front. v1 composites whole opaque frames, so at any
+    /// frame the picture is the top clip there.
+    #[must_use]
+    pub fn picture(&self) -> Vec<Placement> {
+        let layers: Vec<&EvaluatedTrack> = self
+            .tracks
+            .iter()
+            .filter(|track| track.kind == TrackKind::Video && track.visible)
+            .collect();
+        let mut edges: Vec<i64> = layers
+            .iter()
+            .flat_map(|track| track.placements.iter())
+            .flat_map(|p| [p.start, p.end()])
+            .collect();
+        edges.sort_unstable();
+        edges.dedup();
+        let mut picture: Vec<Placement> = Vec::new();
+        for pair in edges.windows(2) {
+            let &[from, to] = pair else { continue };
+            let Some(top) = layers
+                .iter()
+                .find_map(|track| placement_at(&track.placements, from))
+            else {
+                continue;
+            };
+            // A run of the same clip stays one piece.
+            if let Some(last) = picture.last_mut()
+                && last.clip == top.clip
+                && last.end() == from
+            {
+                if let Some(longer) = crop(top, last.start, to) {
+                    *last = longer;
+                }
+                continue;
+            }
+            if let Some(piece) = crop(top, from, to) {
+                picture.push(piece);
+            }
+        }
+        picture
+    }
+
     /// Every placement, track by track.
     pub fn placements(&self) -> impl Iterator<Item = &Placement> {
         self.tracks.iter().flat_map(|track| track.placements.iter())
@@ -267,6 +318,32 @@ impl Timeline {
             })
             .collect();
         OperationsAt { position, clips }
+    }
+}
+
+/// `placement` cut down to sequence frames `from..to`, which must lie
+/// inside it: the source range where those frames are, found as a split
+/// finds it.
+fn crop(placement: &Placement, from: i64, to: i64) -> Option<Placement> {
+    let mut piece = placement.clone();
+    if from > piece.start {
+        let (_, right) = super::split::halves(&piece, from)?;
+        piece = with_half(&piece, right);
+    }
+    if to < piece.end() {
+        let (left, _) = super::split::halves(&piece, to)?;
+        piece = with_half(&piece, left);
+    }
+    Some(piece)
+}
+
+fn with_half(placement: &Placement, half: super::split::Half) -> Placement {
+    Placement {
+        source_in: half.from,
+        source_out: half.to,
+        start: half.start,
+        length: half.length,
+        ..placement.clone()
     }
 }
 
@@ -308,6 +385,7 @@ pub fn evaluate(project: &Project) -> Result<Timeline, EvaluateError> {
     let settings = &project.sequence.settings;
     let sequence = settings.time_base();
     let mut tracks = Vec::with_capacity(project.sequence.tracks.len());
+    let soloing = project.sequence.tracks.iter().any(|track| track.solo);
     for track in &project.sequence.tracks {
         let mut placements = track
             .clips
@@ -329,6 +407,8 @@ pub fn evaluate(project: &Project) -> Result<Timeline, EvaluateError> {
         tracks.push(EvaluatedTrack {
             id: track.id,
             kind: track.kind,
+            visible: track.kind == TrackKind::Video && !track.muted,
+            audible: !track.muted && (!soloing || track.solo),
             placements,
         });
     }
@@ -396,6 +476,7 @@ fn place(
             None
         },
         forced: clip.operations.iter().find_map(forces_re_encode),
+        silent: clip.detached,
     };
     let played = placement.played_time_base();
     if played.num <= 0 || played.den <= 0 {
@@ -447,6 +528,7 @@ mod tests {
             id: 1,
             kind: TrackKind::Video,
             clips,
+            ..Track::default()
         });
         project
     }
