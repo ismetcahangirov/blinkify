@@ -204,6 +204,11 @@ pub enum Edit {
     Unlink {
         clips: Vec<ClipId>,
     },
+    /// Remove a source from the project, and every clip of it (#53). The
+    /// file is not touched: only the reference goes.
+    RemoveSource {
+        source: SourceId,
+    },
     /// Choose the sequence settings (#57): it stops waiting for a first clip.
     SetSettings {
         settings: SequenceSettings,
@@ -250,6 +255,7 @@ impl Edit {
             Self::SetTrack { .. } => "Change track".to_owned(),
             Self::DetachAudio { clips: ids } => clips(ids.len(), "Detach audio", "Detach audio of"),
             Self::Unlink { clips: ids } => clips(ids.len(), "Unlink clip", "Unlink"),
+            Self::RemoveSource { .. } => "Remove from project".to_owned(),
             Self::SetSpeed { clips: ids, .. } => {
                 clips(ids.len(), "Change speed", "Change speed of")
             }
@@ -532,6 +538,8 @@ struct Facts {
     geometry: BTreeMap<SourceId, StreamGeometry>,
     /// Which ticks of each source stream exist (#34).
     extents: BTreeMap<(SourceId, u32), StreamExtent>,
+    /// What the library shows of each source (#53).
+    assets: BTreeMap<SourceId, super::asset::AssetInfo>,
 }
 
 impl Facts {
@@ -616,6 +624,20 @@ fn compile(
         | Edit::RenameTrack { .. }
         | Edit::SetTrack { .. }
         | Edit::Unlink { .. } => return track_edit(project, edit, kept),
+        Edit::RemoveSource { source } => {
+            if !project.sources.contains_key(source) {
+                return Err(EditError::NoSource(*source));
+            }
+            let clips = project.clips_of(*source);
+            let mut changes: Vec<Change> = clips.iter().map(|&id| Change::RemoveClip(id)).collect();
+            changes.push(Change::Source(*source, None));
+            let remaining = kept.into_iter().filter(|c| !clips.contains(c)).collect();
+            return Ok(Compiled {
+                changes,
+                selection: remaining,
+                clamped: false,
+            });
+        }
         Edit::TrimEdge { .. }
         | Edit::Roll { .. }
         | Edit::RippleDelete { .. }
@@ -1989,6 +2011,26 @@ impl Document {
                 .extents
                 .insert((source, extent.stream), StreamExtent { source, ..*extent });
         }
+    }
+
+    /// Record what the library shows of `source` — or with `None`, that it
+    /// could not be read.
+    pub fn describe_asset(&mut self, source: SourceId, asset: Option<super::asset::AssetInfo>) {
+        match asset {
+            Some(asset) => self.facts.assets.insert(source, asset),
+            None => self.facts.assets.remove(&source),
+        };
+    }
+
+    /// What the library shows of each source it could read.
+    #[must_use]
+    pub fn assets(&self) -> BTreeMap<SourceId, super::asset::AssetInfo> {
+        self.facts
+            .assets
+            .iter()
+            .filter(|(id, _)| self.project.sources.contains_key(id))
+            .map(|(&id, asset)| (id, asset.clone()))
+            .collect()
     }
 
     /// Every known stream extent — what the timeline bounds a trim preview

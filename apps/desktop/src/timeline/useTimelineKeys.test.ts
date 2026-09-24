@@ -71,6 +71,7 @@ function view(): ProjectView {
     affectedClips: [],
     eligibility: {},
     extents: [],
+    assets: {},
   };
 }
 

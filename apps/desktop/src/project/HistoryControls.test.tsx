@@ -48,6 +48,7 @@ function view(entries: string[], applied: number): ProjectView {
     affectedClips: [],
     eligibility: {},
     extents: [],
+    assets: {},
   };
 }
 

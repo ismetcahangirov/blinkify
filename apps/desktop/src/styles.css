@@ -285,3 +285,241 @@ body {
 .sources-banner__error {
   color: var(--danger);
 }
+
+/* The media library (#53). */
+.library__tabs {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.library__tabs .bk-tabs__content[data-state="active"] {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.library {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.library__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.library__search {
+  flex: 1;
+  min-width: 96px;
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--type-label-size);
+}
+
+.library__progress {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: var(--type-caption-size);
+  color: var(--text-secondary);
+}
+
+.library__refused {
+  padding: var(--space-2);
+  border: var(--border-width) solid var(--warning);
+  border-radius: var(--radius-sm);
+  font-size: var(--type-caption-size);
+  overflow-wrap: anywhere;
+}
+
+.library__refused p,
+.library__refused ul {
+  margin: 0 0 var(--space-1);
+}
+
+.library__assets {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+}
+
+.library__assets--grid {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+
+.library__assets--list {
+  grid-template-columns: 1fr;
+}
+
+.asset {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.library__assets--list .asset {
+  flex-direction: row;
+  align-items: center;
+}
+
+.asset:hover {
+  background: var(--surface-hover);
+}
+
+.asset[aria-selected="true"] {
+  background: var(--surface-active);
+  outline: var(--border-width) solid var(--accent);
+}
+
+.asset__picture {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.library__assets--list .asset__picture {
+  width: 64px;
+  flex: none;
+}
+
+.asset[data-state="missing"] .asset__picture {
+  opacity: 0.4;
+}
+
+.asset__canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.asset__glyph {
+  color: var(--text-secondary);
+  font-size: var(--type-body-size);
+}
+
+.asset__preparing,
+.asset__duration {
+  position: absolute;
+  bottom: 2px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--background);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+}
+
+.asset__preparing {
+  left: 2px;
+  color: var(--text-secondary);
+}
+
+.asset__duration {
+  right: 2px;
+  color: var(--text-primary);
+}
+
+.asset__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+}
+
+.asset__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.asset__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  color: var(--text-secondary);
+}
+
+.asset__badge {
+  padding: 0 var(--space-1);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.asset__problem {
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}
+
+.asset__notice {
+  color: var(--warning);
+}
+
+.asset__action {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.asset__remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--background);
+  color: var(--text-secondary);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.asset:hover .asset__remove,
+.asset__remove:focus-visible {
+  opacity: 1;
+}
+
+.library__ghost {
+  position: fixed;
+  z-index: 10;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--elevation-2-background);
+  border: var(--border-width) solid var(--elevation-2-border);
+  color: var(--text-primary);
+  font-size: var(--type-caption-size);
+  pointer-events: none;
+}

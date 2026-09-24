@@ -24,6 +24,7 @@ use blinkify_engine::playback::{
     PlaybackStatus, Player, PlayerOptions, SourceMedia, TransportCommand,
 };
 use blinkify_engine::probe::{MediaInfo, Prober, StreamKind};
+use blinkify_engine::project::asset::AssetInfo;
 use blinkify_engine::project::trim::StreamExtent;
 use blinkify_engine::project::{StreamGeometry, TrackKind};
 use blinkify_engine::proxy::{Proxies, Proxy, ProxyReason, proxy_advice};
@@ -664,17 +665,30 @@ impl MediaEngine {
 
     /// What the file at `path` is, for the document: its pictures — the
     /// first video stream that is not a cover image — for the sequence
-    /// settings (#57), and which ticks of each stream exist, for trim bounds
-    /// (#34). Nothing when it cannot be probed.
-    pub(crate) fn facts_of(&self, path: &Path) -> (Option<StreamGeometry>, Vec<StreamExtent>) {
-        let Some(info) = self.prober().ok().and_then(|p| p.probe(path).ok()) else {
-            return (None, Vec::new());
-        };
-        let geometry = info
-            .video()
-            .filter(|(_, video)| !video.is_attached_picture)
-            .find_map(|(_, video)| StreamGeometry::of(video));
-        (geometry, extents(&info))
+    /// settings (#57), which ticks of each stream exist, for trim bounds
+    /// (#34), and what the library shows (#53). Probed once, here. Nothing
+    /// when it cannot be probed.
+    pub(crate) fn facts_of(&self, path: &Path) -> SourceFacts {
+        match self
+            .prober()
+            .and_then(|p| p.probe(path).map_err(|e| e.to_string()))
+        {
+            Ok(info) => SourceFacts::of(&info),
+            Err(_) => SourceFacts::default(),
+        }
+    }
+
+    /// Probe `path` for an import: its facts, or why it cannot be used.
+    pub(crate) fn import_facts(&self, path: &Path) -> Result<SourceFacts, String> {
+        let info = self
+            .prober()?
+            .probe(path)
+            .map_err(|error| error.to_string())?;
+        let facts = SourceFacts::of(&info);
+        if facts.asset.is_none() {
+            return Err("it has no pictures or sound Blinkify can use".to_owned());
+        }
+        Ok(facts)
     }
 
     /// Close one preview session; returns once its decoders have exited.
@@ -880,6 +894,27 @@ pub fn serve_frame(engine: &MediaEngine, path: &str) -> Response<Vec<u8>> {
     match preview.next_frame(after, FRAME_WAIT) {
         Some(frame) => respond(StatusCode::OK, frame.wire()),
         None => respond(StatusCode::NO_CONTENT, Vec::new()),
+    }
+}
+
+/// What the document is told about a source: read from one probe.
+#[derive(Debug, Default)]
+pub(crate) struct SourceFacts {
+    pub(crate) geometry: Option<StreamGeometry>,
+    pub(crate) extents: Vec<StreamExtent>,
+    pub(crate) asset: Option<AssetInfo>,
+}
+
+impl SourceFacts {
+    fn of(info: &MediaInfo) -> Self {
+        Self {
+            geometry: info
+                .video()
+                .filter(|(_, video)| !video.is_attached_picture)
+                .find_map(|(_, video)| StreamGeometry::of(video)),
+            extents: extents(info),
+            asset: AssetInfo::of(info),
+        }
     }
 }
 

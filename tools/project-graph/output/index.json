@@ -5,15 +5,17 @@
     "tools"
   ],
   "totals": {
-    "files": 247,
-    "tests": 34,
+    "files": 264,
+    "tests": 37,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 82,
-      "tests": 28,
+      "files": 93,
+      "tests": 31,
       "untested": [
+        "apps/desktop/src/library/AssetCard.tsx",
+        "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
@@ -29,20 +31,23 @@
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
+        "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/theme.ts",
         "apps/desktop/src/timeline/timeline.perf.ts",
         "apps/desktop/vite.config.ts"
       ]
     },
     "packages/types": {
-      "files": 96,
+      "files": 102,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
         "packages/types/src/generated/AppliedClip.ts",
+        "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/AudioInfo.ts",
         "packages/types/src/generated/AudioOperation.ts",
         "packages/types/src/generated/AudioOutputState.ts",
+        "packages/types/src/generated/AudioSummary.ts",
         "packages/types/src/generated/Chapter.ts",
         "packages/types/src/generated/Chroma.ts",
         "packages/types/src/generated/ChromaSubsampling.ts",
@@ -80,6 +85,8 @@
         "packages/types/src/generated/Hdr.ts",
         "packages/types/src/generated/HdrTransfer.ts",
         "packages/types/src/generated/HistoryView.ts",
+        "packages/types/src/generated/ImportOutcome.ts",
+        "packages/types/src/generated/ImportProgress.ts",
         "packages/types/src/generated/IndexProgress.ts",
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/JobProgress.ts",
@@ -112,6 +119,7 @@
         "packages/types/src/generated/ReEncodeReason.ts",
         "packages/types/src/generated/RecentProject.ts",
         "packages/types/src/generated/RecoveryOffer.ts",
+        "packages/types/src/generated/Refusal.ts",
         "packages/types/src/generated/SeamReason.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/SequenceSettings.ts",
@@ -130,6 +138,7 @@
         "packages/types/src/generated/UpdateOffer.ts",
         "packages/types/src/generated/VideoCodec.ts",
         "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/VideoSummary.ts",
         "packages/types/src/generated/WaveformStatus.ts",
         "packages/types/src/generated/WaveformUpdate.ts",
         "packages/types/src/generated/index.ts"
@@ -302,6 +311,138 @@
       "coveredByTests": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts"
       ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/library/AssetCard.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/library/assets.ts",
+        "apps/desktop/src/library/libraryMedia.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/library/MediaLibrary.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/library/MediaLibrary.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/library/MediaLibrary.tsx",
+        "apps/desktop/src/library/assets.ts",
+        "apps/desktop/src/library/library.store.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/library/MediaLibrary.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/library/AssetCard.tsx",
+        "apps/desktop/src/library/assetDrag.ts",
+        "apps/desktop/src/library/assets.ts",
+        "apps/desktop/src/library/library.store.ts",
+        "apps/desktop/src/library/libraryMedia.ts",
+        "apps/desktop/src/player/useFileDrop.ts",
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/shell/zones/LibraryZone.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/library/MediaLibrary.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/library/assetDrag.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/library/assetDrag.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/library/assetDrag.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "apps/desktop/src/library/MediaLibrary.tsx",
+        "apps/desktop/src/library/assetDrag.test.ts",
+        "apps/desktop/src/timeline/assetDropTarget.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/library/assetDrag.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/library/assets.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/library/AssetCard.tsx",
+        "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/library/MediaLibrary.tsx",
+        "apps/desktop/src/library/library.store.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/library/MediaLibrary.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/library/library.store.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/library/assets.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/library/MediaLibrary.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/library/MediaLibrary.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/library/libraryMedia.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/timelineMedia.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/library/AssetCard.tsx",
+        "apps/desktop/src/library/MediaLibrary.tsx"
+      ],
+      "coveredByTests": [],
       "hasNoDependents": false
     },
     "apps/desktop/src/main.tsx": {
@@ -644,9 +785,11 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/project/SourcesBanner.tsx",
-        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+        "apps/desktop/src/shell/zones/PlayerZone.tsx",
+        "apps/desktop/src/timeline/TimelineCanvas.tsx"
       ],
       "coveredByTests": [
         "apps/desktop/src/player/preview.store.test.ts"
@@ -762,6 +905,7 @@
         "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/shell/AppBar.tsx"
@@ -811,6 +955,10 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/library/MediaLibrary.tsx",
+        "apps/desktop/src/library/assets.ts",
+        "apps/desktop/src/library/library.store.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
@@ -829,6 +977,8 @@
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/assetDrop.ts",
+        "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/draw.ts",
         "apps/desktop/src/timeline/editActions.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
@@ -839,6 +989,7 @@
         "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
@@ -1001,7 +1152,9 @@
       "workspace": "apps/desktop",
       "layer": "renderer",
       "isTest": false,
-      "dependsOn": [],
+      "dependsOn": [
+        "apps/desktop/src/library/MediaLibrary.tsx"
+      ],
       "dependedOnBy": [
         "apps/desktop/src/App.tsx"
       ],
@@ -1106,7 +1259,9 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/player/useFileDrop.ts",
         "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/draw.ts",
         "apps/desktop/src/timeline/interaction.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
@@ -1172,6 +1327,58 @@
       ],
       "hasNoDependents": false
     },
+    "apps/desktop/src/timeline/assetDrop.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/timeline/assetDrop.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/timeline/assetDrop.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/interaction.ts",
+        "apps/desktop/src/timeline/interaction.ts",
+        "apps/desktop/src/timeline/viewport.ts",
+        "apps/desktop/src/timeline/viewport.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/timeline/assetDrop.test.ts",
+        "apps/desktop/src/timeline/assetDropTarget.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/timeline/assetDrop.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/assetDropTarget.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/library/assetDrag.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/assetDrop.ts",
+        "apps/desktop/src/timeline/rows.ts",
+        "apps/desktop/src/timeline/timeline.store.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/timeline/TimelineCanvas.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/timeline/draw.test.ts": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -1197,7 +1404,10 @@
       "dependedOnBy": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/assetDrop.test.ts",
+        "apps/desktop/src/timeline/assetDrop.ts",
         "apps/desktop/src/timeline/draw.test.ts",
         "apps/desktop/src/timeline/editActions.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
@@ -1212,6 +1422,7 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/timeline/assetDrop.test.ts",
         "apps/desktop/src/timeline/draw.test.ts",
         "apps/desktop/src/timeline/interaction.test.ts"
       ],
@@ -1276,6 +1487,8 @@
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
+        "apps/desktop/src/timeline/assetDrop.ts",
+        "apps/desktop/src/timeline/assetDrop.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
         "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
@@ -1354,6 +1567,7 @@
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
         "apps/desktop/src/timeline/useTimelineKeys.ts"
@@ -1419,6 +1633,7 @@
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
         "apps/desktop/src/timeline/mountTimeline.ts"
       ],
@@ -1448,6 +1663,7 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/timelineMedia.test.ts"
       ],
@@ -1508,6 +1724,8 @@
       "dependedOnBy": [
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
+        "apps/desktop/src/timeline/assetDrop.ts",
+        "apps/desktop/src/timeline/assetDrop.ts",
         "apps/desktop/src/timeline/draw.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
         "apps/desktop/src/timeline/interaction.ts",
@@ -1573,6 +1791,22 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/AssetInfo.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/AudioSummary.ts",
+        "packages/types/src/generated/SequenceSettings.ts",
+        "packages/types/src/generated/VideoSummary.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/ProjectView.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/AudioInfo.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -1604,6 +1838,18 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/PlaybackStatus.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/AudioSummary.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2093,6 +2339,31 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/ImportOutcome.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/ProjectView.ts",
+        "packages/types/src/generated/Refusal.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/ImportProgress.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/IndexProgress.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2417,6 +2688,7 @@
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
+        "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/CopyEligibility.ts",
         "packages/types/src/generated/HistoryView.ts",
         "packages/types/src/generated/Project.ts",
@@ -2426,6 +2698,7 @@
       ],
       "dependedOnBy": [
         "packages/types/src/generated/EditOutcome.ts",
+        "packages/types/src/generated/ImportOutcome.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2486,6 +2759,7 @@
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/Timeline.ts",
         "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/VideoSummary.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2521,6 +2795,18 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/Refusal.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/ImportOutcome.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2562,6 +2848,7 @@
         "packages/types/src/generated/Rational.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/index.ts"
@@ -2779,6 +3066,20 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/VideoSummary.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Rational.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/AssetInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/WaveformStatus.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2811,9 +3112,11 @@
       "dependsOn": [
         "packages/types/src/generated/Applied.ts",
         "packages/types/src/generated/AppliedClip.ts",
+        "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/AudioInfo.ts",
         "packages/types/src/generated/AudioOperation.ts",
         "packages/types/src/generated/AudioOutputState.ts",
+        "packages/types/src/generated/AudioSummary.ts",
         "packages/types/src/generated/Chapter.ts",
         "packages/types/src/generated/Chroma.ts",
         "packages/types/src/generated/ChromaSubsampling.ts",
@@ -2851,6 +3154,8 @@
         "packages/types/src/generated/Hdr.ts",
         "packages/types/src/generated/HdrTransfer.ts",
         "packages/types/src/generated/HistoryView.ts",
+        "packages/types/src/generated/ImportOutcome.ts",
+        "packages/types/src/generated/ImportProgress.ts",
         "packages/types/src/generated/IndexProgress.ts",
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/JobProgress.ts",
@@ -2883,6 +3188,7 @@
         "packages/types/src/generated/ReEncodeReason.ts",
         "packages/types/src/generated/RecentProject.ts",
         "packages/types/src/generated/RecoveryOffer.ts",
+        "packages/types/src/generated/Refusal.ts",
         "packages/types/src/generated/SeamReason.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/SequenceSettings.ts",
@@ -2901,6 +3207,7 @@
         "packages/types/src/generated/UpdateOffer.ts",
         "packages/types/src/generated/VideoCodec.ts",
         "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/VideoSummary.ts",
         "packages/types/src/generated/WaveformStatus.ts",
         "packages/types/src/generated/WaveformUpdate.ts"
       ],
@@ -2920,6 +3227,10 @@
       "dependedOnBy": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/library/MediaLibrary.tsx",
+        "apps/desktop/src/library/assets.ts",
+        "apps/desktop/src/library/library.store.ts",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/OperationsPanel.test.tsx",
@@ -2943,6 +3254,8 @@
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/assetDrop.test.ts",
+        "apps/desktop/src/timeline/assetDrop.ts",
         "apps/desktop/src/timeline/draw.test.ts",
         "apps/desktop/src/timeline/draw.ts",
         "apps/desktop/src/timeline/editActions.test.ts",
@@ -2961,6 +3274,7 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/OperationsPanel.test.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
@@ -2972,6 +3286,7 @@
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
+        "apps/desktop/src/timeline/assetDrop.test.ts",
         "apps/desktop/src/timeline/draw.test.ts",
         "apps/desktop/src/timeline/editActions.test.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
@@ -3513,6 +3828,7 @@
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",

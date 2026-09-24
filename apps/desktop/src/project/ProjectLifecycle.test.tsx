@@ -50,6 +50,7 @@ function view(dirty = false, path: string | null = null): ProjectView {
     affectedClips: [],
     eligibility: {},
     extents: [],
+    assets: {},
   };
 }
 

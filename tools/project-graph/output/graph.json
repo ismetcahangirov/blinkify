@@ -443,6 +443,520 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/library/AssetCard.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./assets.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/assets.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./libraryMedia.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/libraryMedia.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/library/MediaLibrary.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/library/MediaLibrary.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./MediaLibrary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/MediaLibrary.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./assets.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/assets.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./library.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/library.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/library/MediaLibrary.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AssetCard.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/AssetCard.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./assetDrag.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/assetDrag.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./assets.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/assets.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./library.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/library.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./libraryMedia.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/libraryMedia.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../player/useFileDrop.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/useFileDrop.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/SequenceSettingsDialog.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/SequenceSettingsDialog.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/shell/zones/LibraryZone.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/library/assetDrag.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./assetDrag.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/assetDrag.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/library/assetDrag.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/desktop/src/library/MediaLibrary.tsx",
+        "apps/desktop/src/library/assetDrag.test.ts",
+        "apps/desktop/src/timeline/assetDropTarget.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/library/assets.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/library/AssetCard.tsx",
+        "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/library/MediaLibrary.tsx",
+        "apps/desktop/src/library/library.store.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/library/library.store.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./assets.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/assets.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/library/MediaLibrary.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/library/libraryMedia.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../timeline/draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/timelineMedia.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/timelineMedia.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/library/AssetCard.tsx",
+        "apps/desktop/src/library/MediaLibrary.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/main.tsx",
       "dependencies": [
         {
@@ -1442,9 +1956,11 @@
       "source": "apps/desktop/src/player/useFileDrop.ts",
       "dependencies": [],
       "dependents": [
+        "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/project/SourcesBanner.tsx",
-        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+        "apps/desktop/src/shell/zones/PlayerZone.tsx",
+        "apps/desktop/src/timeline/TimelineCanvas.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -1912,6 +2428,7 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/shell/AppBar.tsx"
@@ -2065,6 +2582,10 @@
       ],
       "dependents": [
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/library/MediaLibrary.tsx",
+        "apps/desktop/src/library/assets.ts",
+        "apps/desktop/src/library/library.store.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
@@ -2083,6 +2604,8 @@
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/assetDrop.ts",
+        "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/draw.ts",
         "apps/desktop/src/timeline/editActions.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
@@ -2537,7 +3060,25 @@
     },
     {
       "source": "apps/desktop/src/shell/zones/LibraryZone.tsx",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../library/MediaLibrary.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/MediaLibrary.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "apps/desktop/src/App.tsx"
       ],
@@ -3169,6 +3710,23 @@
         },
         {
           "dynamic": false,
+          "module": "../player/useFileDrop.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/useFileDrop.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../project/project.store.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3177,6 +3735,23 @@
             "import"
           ],
           "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./assetDropTarget.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/assetDropTarget.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3581,6 +4156,296 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/timeline/assetDrop.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./assetDrop.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/assetDrop.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/timeline/assetDrop.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./interaction.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/interaction.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./interaction.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/interaction.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./viewport.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/viewport.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./viewport.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/viewport.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/timeline/assetDrop.test.ts",
+        "apps/desktop/src/timeline/assetDropTarget.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/timeline/assetDropTarget.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../library/assetDrag.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/assetDrag.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./assetDrop.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/assetDrop.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./rows.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/rows.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./timeline.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/timeline.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/timeline/TimelineCanvas.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/timeline/draw.test.ts",
       "dependencies": [
         {
@@ -3700,7 +4565,10 @@
       "dependents": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/assetDrop.test.ts",
+        "apps/desktop/src/timeline/assetDrop.ts",
         "apps/desktop/src/timeline/draw.test.ts",
         "apps/desktop/src/timeline/editActions.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
@@ -3965,6 +4833,7 @@
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
+        "apps/desktop/src/timeline/assetDrop.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
         "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
@@ -4337,6 +5206,7 @@
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
         "apps/desktop/src/timeline/useTimelineKeys.ts"
@@ -4522,6 +5392,7 @@
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
         "apps/desktop/src/timeline/mountTimeline.ts"
       ],
@@ -4612,6 +5483,7 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/timelineMedia.test.ts"
       ],
@@ -4789,6 +5661,7 @@
       "dependents": [
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
+        "apps/desktop/src/timeline/assetDrop.ts",
         "apps/desktop/src/timeline/draw.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
         "apps/desktop/src/timeline/interaction.ts",
@@ -4910,6 +5783,71 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/AssetInfo.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AudioSummary",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/AudioSummary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SequenceSettings",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/SequenceSettings.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VideoSummary",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/VideoSummary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/ProjectView.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/AudioInfo.ts",
       "dependencies": [],
       "dependents": [
@@ -4934,6 +5872,16 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/PlaybackStatus.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/AudioSummary.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -5877,6 +6825,61 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/ImportOutcome.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ProjectView",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ProjectView.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Refusal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Refusal.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/ImportProgress.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/IndexProgress.ts",
       "dependencies": [],
       "dependents": [
@@ -6560,6 +7563,24 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./AssetInfo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/AssetInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./CopyEligibility",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6669,6 +7690,7 @@
       ],
       "dependents": [
         "packages/types/src/generated/EditOutcome.ts",
+        "packages/types/src/generated/ImportOutcome.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -6738,6 +7760,7 @@
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/Timeline.ts",
         "packages/types/src/generated/VideoInfo.ts",
+        "packages/types/src/generated/VideoSummary.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -6767,6 +7790,16 @@
       "source": "packages/types/src/generated/RecoveryOffer.ts",
       "dependencies": [],
       "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Refusal.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/ImportOutcome.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -6870,6 +7903,7 @@
         }
       ],
       "dependents": [
+        "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/index.ts"
@@ -7398,6 +8432,35 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/VideoSummary.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/AssetInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/WaveformStatus.ts",
       "dependencies": [],
       "dependents": [
@@ -7474,6 +8537,23 @@
         },
         {
           "dynamic": false,
+          "module": "./AssetInfo",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/AssetInfo.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./AudioInfo",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7516,6 +8596,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/AudioOutputState.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./AudioSummary",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/AudioSummary.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8154,6 +9251,40 @@
         },
         {
           "dynamic": false,
+          "module": "./ImportOutcome",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ImportOutcome.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ImportProgress",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ImportProgress.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./IndexProgress",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -8698,6 +9829,23 @@
         },
         {
           "dynamic": false,
+          "module": "./Refusal",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Refusal.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./SeamReason",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -9004,6 +10152,23 @@
         },
         {
           "dynamic": false,
+          "module": "./VideoSummary",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/VideoSummary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./WaveformStatus",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -9067,6 +10232,10 @@
       "dependents": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/library/MediaLibrary.tsx",
+        "apps/desktop/src/library/assets.ts",
+        "apps/desktop/src/library/library.store.ts",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/OperationsPanel.test.tsx",
@@ -9090,6 +10259,8 @@
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/assetDrop.test.ts",
+        "apps/desktop/src/timeline/assetDrop.ts",
         "apps/desktop/src/timeline/draw.test.ts",
         "apps/desktop/src/timeline/draw.ts",
         "apps/desktop/src/timeline/editActions.test.ts",
@@ -10736,6 +11907,7 @@
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
@@ -11166,8 +12338,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 247,
-    "totalDependenciesCruised": 497,
+    "totalCruised": 264,
+    "totalDependenciesCruised": 553,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

@@ -54,6 +54,9 @@ How Blinkify is put together and why the structure holds under change.
 - [`tracks.md`](./tracks.md) — the compositing order, mute, solo and lock as
   graph state, lock enforcement in the edit layer, detached and linked
   sound (#36)
+- [`media-library.md`](./media-library.md) — import as source references,
+  never copies; refusals with a reason; a drag between zones as data; library
+  thumbnails from the filmstrip (#53)
 - [`sequence-settings.md`](./sequence-settings.md) — the settings, matching
   the first clip, the one copy-eligibility predicate and who reads it (#57)
 

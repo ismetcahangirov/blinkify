@@ -2,6 +2,7 @@ import type {
   Edit,
   EditContext,
   EditOutcome,
+  ImportOutcome,
   ProjectView,
   RecentProject,
   RecoveryOffer,
@@ -71,6 +72,12 @@ interface ProjectState {
   autosave: () => Promise<void>;
   /** Why the last lifecycle command failed, in the engine's words. */
   lifecycleError: string | null;
+  /**
+   * Import files into the open project (#53): references, never copies; one
+   * undoable step however many files. Resolves with what was taken and what
+   * was refused, and why.
+   */
+  importMedia: (paths: readonly string[]) => Promise<ImportOutcome | null>;
   relink: (source: number, path: string) => Promise<void>;
   /**
    * Apply one edit. Resolves with the engine's refusal, if it refused; the
@@ -263,6 +270,21 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       await command("close_project", { discard });
       await usePreviewStore.getState().close();
       set({ view: null, selection: [] });
+    },
+
+    importMedia: async (paths) => {
+      if (!get().view || paths.length === 0) return null;
+      try {
+        const outcome = await invoke<ImportOutcome>("import_media", {
+          paths: [...paths],
+          context: context(),
+        });
+        set({ view: outcome.view, lifecycleError: null });
+        return outcome;
+      } catch (cause) {
+        set({ lifecycleError: message(cause) });
+        return null;
+      }
     },
 
     autosave: async () => {
