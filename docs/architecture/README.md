@@ -39,6 +39,9 @@ How Blinkify is put together and why the structure holds under change.
 - [`edit-graph-evaluation.md`](./edit-graph-evaluation.md) — the one
   evaluator the preview and the export share, how the single path is
   enforced, frame-to-microsecond rounding, and live graph changes (#30)
+- [`edits-and-history.md`](./edits-and-history.md) — the one path by which
+  the open graph changes, primitive invertible changes, gestures and the
+  undo history (#37)
 
 ## What does not belong here
 

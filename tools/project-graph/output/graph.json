@@ -1188,6 +1188,7 @@
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
+        "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
@@ -1295,6 +1296,128 @@
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/project/HistoryControls.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./HistoryControls.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/HistoryControls.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/project/HistoryControls.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/shell/AppBar.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -1409,6 +1532,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../player/preview.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/preview.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "@blinkify/types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1427,6 +1567,8 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
@@ -1448,6 +1590,23 @@
     {
       "source": "apps/desktop/src/shell/AppBar.tsx",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../project/HistoryControls.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/HistoryControls.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "../project/project.store.js",
@@ -2343,6 +2502,16 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/ClipMove.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/CodecCapability.ts",
       "dependencies": [
         {
@@ -2562,6 +2731,80 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Edit.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ClipMove",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ClipMove.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./TrackKind",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/TrackKind.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/EditContext.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/EditOutcome.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/EditList.ts",
       "dependencies": [
         {
@@ -2595,6 +2838,52 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/EditList.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/EditOutcome.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./EditContext",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/EditContext.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ProjectView",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ProjectView.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -2944,6 +3233,16 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/HistoryView.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/ProjectView.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -3558,6 +3857,24 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./HistoryView",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/HistoryView.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Project",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3591,9 +3908,28 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Timeline",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Timeline.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
+        "packages/types/src/generated/EditOutcome.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -3651,6 +3987,7 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/Clip.ts",
+        "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/FrameRate.ts",
         "packages/types/src/generated/Operation.ts",
         "packages/types/src/generated/Placement.ts",
@@ -3980,6 +4317,7 @@
         }
       ],
       "dependents": [
+        "packages/types/src/generated/ProjectView.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -4037,6 +4375,7 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/AppliedClip.ts",
+        "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/EvaluatedTrack.ts",
         "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/Track.ts",
@@ -4390,6 +4729,23 @@
         },
         {
           "dynamic": false,
+          "module": "./ClipMove",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ClipMove.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./CodecCapability",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4543,6 +4899,40 @@
         },
         {
           "dynamic": false,
+          "module": "./Edit",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Edit.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./EditContext",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/EditContext.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./EditList",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4568,6 +4958,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/EditListEntry.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./EditOutcome",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/EditOutcome.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4789,6 +5196,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/HdrTransfer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./HistoryView",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/HistoryView.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -5601,6 +6025,7 @@
         "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/player/timecode.ts",
         "apps/desktop/src/player/useTransportShortcuts.ts",
+        "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
@@ -7242,6 +7667,8 @@
         "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
@@ -7399,6 +7826,40 @@
       "source": "tools/design-token-gate.mjs",
       "dependencies": [],
       "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/edit-gate-test.mjs",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./edit-gate.mjs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "tools/edit-gate.mjs",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/edit-gate.mjs",
+      "dependencies": [],
+      "dependents": [
+        "tools/edit-gate-test.mjs"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -7622,8 +8083,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 195,
-    "totalDependenciesCruised": 328,
+    "totalCruised": 204,
+    "totalDependenciesCruised": 349,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

@@ -79,7 +79,11 @@ pub fn run() {
             project::launch_project,
             project::relink_source,
             project::open_project_preview,
-            project::update_project,
+            project::edit_project,
+            project::undo_edit,
+            project::redo_edit,
+            project::begin_gesture,
+            project::end_gesture,
             project::operations_at,
             updater::pending_update,
             updater::install_update

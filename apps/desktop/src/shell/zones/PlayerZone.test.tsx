@@ -173,6 +173,8 @@ describe("PlayerZone", () => {
         },
         unavailable: {},
         affectedClips: [],
+        timeline: null,
+        history: { entries: [], applied: 0 },
       },
     });
     render(

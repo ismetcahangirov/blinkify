@@ -14,6 +14,7 @@ import {
   onWindowResized,
   toggleMaximiseWindow,
 } from "./windowChrome.js";
+import { HistoryControls } from "../project/HistoryControls.js";
 import { projectName, useProjectStore } from "../project/project.store.js";
 
 /**
@@ -37,9 +38,9 @@ import { projectName, useProjectStore } from "../project/project.store.js";
  *
  * ── Every command here is inert on purpose ─────────────────────────────────
  *
- * New, Open, Save, undo, redo and Export are wired to nothing, because the
- * project file is #32 and #54, the command stack is #37 and the export dialog
- * is #50. They are present and disabled rather than absent, so the bar is the
+ * New, Open, Save and Export are wired to nothing, because the project file
+ * is #32 and #54 and the export dialog is #50. Undo and redo are live since
+ * #37. They are present and disabled rather than absent, so the bar is the
  * shape the reference describes and the issues that fill it have somewhere to
  * attach. A disabled control that will work is honest; a working control that
  * silently does nothing is not.
@@ -101,15 +102,13 @@ const MENUS: readonly {
             id: "undo",
             label: "Undo",
             shortcut: "Ctrl+Z",
-            disabled: true,
-            onSelect: noop,
+            onSelect: () => void useProjectStore.getState().undo(),
           },
           {
             id: "redo",
             label: "Redo",
             shortcut: "Ctrl+Y",
-            disabled: true,
-            onSelect: noop,
+            onSelect: () => void useProjectStore.getState().redo(),
           },
         ],
       },
@@ -146,36 +145,6 @@ const MENUS: readonly {
     ],
   },
 ];
-
-function UndoGlyph() {
-  return (
-    <svg viewBox="0 0 16 16" aria-hidden="true">
-      <path
-        d="M6 4.5L3 7.5l3 3M3.5 7.5H10a3 3 0 0 1 0 6H8"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function RedoGlyph() {
-  return (
-    <svg viewBox="0 0 16 16" aria-hidden="true">
-      <path
-        d="M10 4.5l3 3-3 3M12.5 7.5H6a3 3 0 0 0 0 6h2"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 export function AppBar() {
   const [maximised, setMaximised] = useState(false);
@@ -234,20 +203,7 @@ export function AppBar() {
         {name}
       </span>
 
-      <div className="shell__history">
-        <IconButton
-          label="Undo"
-          shortcut="Ctrl+Z"
-          icon={<UndoGlyph />}
-          disabled
-        />
-        <IconButton
-          label="Redo"
-          shortcut="Ctrl+Y"
-          icon={<RedoGlyph />}
-          disabled
-        />
-      </div>
+      <HistoryControls />
 
       <Tooltip
         label="The export planner has not run. Blinkify will not claim a tier it has not computed."

@@ -38,6 +38,8 @@ const VIEW: ProjectView = {
     2: { state: "changed", found: { ...fingerprint, size: 11 } },
   },
   affectedClips: [4, 5, 9],
+  timeline: null,
+  history: { entries: [], applied: 0 },
 };
 
 beforeEach(() => {
@@ -96,6 +98,7 @@ describe("the project store", () => {
     expect(invoked).toHaveBeenCalledWith("relink_source", {
       source: 1,
       path: "D:\\Moved\\beach.mp4",
+      context: { selection: [], playhead: 0 },
     });
     expect(useProjectStore.getState().view).toBe(relinked);
   });
@@ -112,21 +115,49 @@ describe("the project store", () => {
     });
   });
 
-  it("sends a changed graph to the engine and reports a refusal", async () => {
-    useProjectStore.setState({ view: VIEW });
-    const changed = { ...VIEW.project, name: "Trip 2" };
-    invoked.mockResolvedValueOnce({ ...VIEW, project: changed });
-    expect(await useProjectStore.getState().update(changed)).toBeNull();
-    expect(invoked).toHaveBeenCalledWith("update_project", {
-      project: changed,
+  it("sends an edit with its context and shows what came back", async () => {
+    useProjectStore.setState({ view: VIEW, selection: [4] });
+    const renamed = {
+      ...VIEW,
+      project: { ...VIEW.project, name: "Trip 2" },
+      history: { entries: ["Rename project"], applied: 1 },
+    };
+    invoked.mockResolvedValueOnce({
+      view: renamed,
+      context: { selection: [4], playhead: 0 },
+    });
+    const edit = { edit: "rename", name: "Trip 2" } as const;
+    expect(await useProjectStore.getState().edit(edit)).toBeNull();
+    expect(invoked).toHaveBeenCalledWith("edit_project", {
+      edit,
+      context: { selection: [4], playhead: 0 },
     });
     expect(useProjectStore.getState().view?.project.name).toBe("Trip 2");
 
     invoked.mockRejectedValueOnce("clips 1 and 2 overlap on track 1");
-    expect(await useProjectStore.getState().update(VIEW.project)).toBe(
+    expect(await useProjectStore.getState().edit(edit)).toBe(
       "clips 1 and 2 overlap on track 1",
     );
+    expect(useProjectStore.getState()).toMatchObject({
+      editError: "clips 1 and 2 overlap on track 1",
+    });
     expect(useProjectStore.getState().view?.project.name).toBe("Trip 2");
+  });
+
+  it("restores the selection that came with an undone edit", async () => {
+    useProjectStore.setState({ view: VIEW, selection: [] });
+    invoked.mockResolvedValueOnce({
+      view: VIEW,
+      context: { selection: [4, 5], playhead: 0 },
+    });
+    await useProjectStore.getState().undo();
+    expect(invoked).toHaveBeenCalledWith("undo_edit");
+    expect(useProjectStore.getState().selection).toEqual([4, 5]);
+
+    // Nothing to redo: the engine says so with null, and nothing changes.
+    invoked.mockResolvedValueOnce(null);
+    await useProjectStore.getState().redo();
+    expect(useProjectStore.getState().selection).toEqual([4, 5]);
   });
 
   it("names the project, or says it has none", () => {
