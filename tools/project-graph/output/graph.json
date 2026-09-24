@@ -1426,6 +1426,146 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./SequenceSettingsDialog.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/SequenceSettingsDialog.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/project/SequenceSettingsDialog.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
+        "apps/desktop/src/shell/AppBar.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/project/SourcesBanner.test.tsx",
       "dependencies": [
         {
@@ -1572,6 +1712,8 @@
       "dependents": [
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
@@ -1612,6 +1754,23 @@
             "import"
           ],
           "resolved": "apps/desktop/src/project/HistoryControls.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/SequenceSettingsDialog.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/SequenceSettingsDialog.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3796,6 +3955,63 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/CopyEligibility.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./CopyNote",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/CopyNote.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Mismatch",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Mismatch.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/ProjectView.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/CopyNote.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/CopyEligibility.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/DecodeStats.ts",
       "dependencies": [],
       "dependents": [
@@ -3922,6 +4138,24 @@
             "import"
           ],
           "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SequenceSettings",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/SequenceSettings.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4587,6 +4821,35 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Mismatch.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/CopyEligibility.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/MonitorCommand.ts",
       "dependencies": [],
       "dependents": [
@@ -5017,6 +5280,24 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./CopyEligibility",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/CopyEligibility.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./HistoryView",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -5149,10 +5430,12 @@
         "packages/types/src/generated/Clip.ts",
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/FrameRate.ts",
+        "packages/types/src/generated/Mismatch.ts",
         "packages/types/src/generated/Operation.ts",
         "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/SequenceSettings.ts",
+        "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/Timeline.ts",
         "packages/types/src/generated/VideoInfo.ts",
@@ -5269,7 +5552,17 @@
         }
       ],
       "dependents": [
+        "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/Sequence.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/SettingsImpact.ts",
+      "dependencies": [],
+      "dependents": [
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -5337,6 +5630,34 @@
       ],
       "dependents": [
         "packages/types/src/generated/ProjectView.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/StreamGeometry.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -5991,6 +6312,40 @@
         },
         {
           "dynamic": false,
+          "module": "./CopyEligibility",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/CopyEligibility.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./CopyNote",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/CopyNote.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./DecodeStats",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6501,6 +6856,23 @@
         },
         {
           "dynamic": false,
+          "module": "./Mismatch",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Mismatch.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./MonitorCommand",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6909,6 +7281,23 @@
         },
         {
           "dynamic": false,
+          "module": "./SettingsImpact",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/SettingsImpact.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./SheetReady",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6951,6 +7340,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/SourceStatus.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./StreamGeometry",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/StreamGeometry.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7186,6 +7592,8 @@
         "apps/desktop/src/player/timecode.ts",
         "apps/desktop/src/player/useTransportShortcuts.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
@@ -8838,6 +9246,8 @@
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
@@ -9253,8 +9663,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 221,
-    "totalDependenciesCruised": 405,
+    "totalCruised": 228,
+    "totalDependenciesCruised": 424,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

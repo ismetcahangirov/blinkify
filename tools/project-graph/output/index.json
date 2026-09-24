@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 221,
-    "tests": 27,
+    "files": 228,
+    "tests": 28,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 68,
-      "tests": 21,
+      "files": 70,
+      "tests": 22,
       "untested": [
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
@@ -36,7 +36,7 @@
       ]
     },
     "packages/types": {
-      "files": 84,
+      "files": 89,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/AppliedClip.ts",
@@ -53,6 +53,8 @@
         "packages/types/src/generated/ColourPolicy.ts",
         "packages/types/src/generated/ContainerInfo.ts",
         "packages/types/src/generated/ContentLight.ts",
+        "packages/types/src/generated/CopyEligibility.ts",
+        "packages/types/src/generated/CopyNote.ts",
         "packages/types/src/generated/DecodeStats.ts",
         "packages/types/src/generated/DiagnosticClip.ts",
         "packages/types/src/generated/DiagnosticOperation.ts",
@@ -83,6 +85,7 @@
         "packages/types/src/generated/LoopRange.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
         "packages/types/src/generated/MediaInfo.ts",
+        "packages/types/src/generated/Mismatch.ts",
         "packages/types/src/generated/MonitorCommand.ts",
         "packages/types/src/generated/MonitorLevels.ts",
         "packages/types/src/generated/MonitorStatus.ts",
@@ -107,9 +110,11 @@
         "packages/types/src/generated/SeamReason.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/SequenceSettings.ts",
+        "packages/types/src/generated/SettingsImpact.ts",
         "packages/types/src/generated/SheetReady.ts",
         "packages/types/src/generated/SourceRef.ts",
         "packages/types/src/generated/SourceStatus.ts",
+        "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/StreamKind.ts",
         "packages/types/src/generated/Timeline.ts",
@@ -656,6 +661,38 @@
       ],
       "hasNoDependents": false
     },
+    "apps/desktop/src/project/SequenceSettingsDialog.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/project/SequenceSettingsDialog.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
+        "apps/desktop/src/shell/AppBar.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/project/SequenceSettingsDialog.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/project/SourcesBanner.test.tsx": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -697,6 +734,8 @@
       "dependedOnBy": [
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
@@ -714,6 +753,7 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/timeline/mountTimeline.test.ts"
@@ -737,6 +777,7 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/project/HistoryControls.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/windowChrome.ts",
         "packages/ui/src/index.ts"
@@ -1428,6 +1469,33 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/CopyEligibility.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/CopyNote.ts",
+        "packages/types/src/generated/Mismatch.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/ProjectView.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/CopyNote.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/CopyEligibility.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/DecodeStats.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -1487,6 +1555,7 @@
       "dependsOn": [
         "packages/types/src/generated/ClipMove.ts",
         "packages/types/src/generated/Rational.ts",
+        "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/TrackKind.ts"
       ],
       "dependedOnBy": [
@@ -1820,6 +1889,20 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Mismatch.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Rational.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/CopyEligibility.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/MonitorCommand.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2026,6 +2109,7 @@
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
+        "packages/types/src/generated/CopyEligibility.ts",
         "packages/types/src/generated/HistoryView.ts",
         "packages/types/src/generated/Project.ts",
         "packages/types/src/generated/SourceStatus.ts",
@@ -2083,10 +2167,12 @@
         "packages/types/src/generated/Clip.ts",
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/FrameRate.ts",
+        "packages/types/src/generated/Mismatch.ts",
         "packages/types/src/generated/Operation.ts",
         "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/SequenceSettings.ts",
+        "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/Timeline.ts",
         "packages/types/src/generated/VideoInfo.ts",
@@ -2143,7 +2229,19 @@
         "packages/types/src/generated/Rational.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/Sequence.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/SettingsImpact.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2183,6 +2281,19 @@
       ],
       "dependedOnBy": [
         "packages/types/src/generated/ProjectView.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/StreamGeometry.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Rational.ts"
+      ],
+      "dependedOnBy": [
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2363,6 +2474,8 @@
         "packages/types/src/generated/ColourPolicy.ts",
         "packages/types/src/generated/ContainerInfo.ts",
         "packages/types/src/generated/ContentLight.ts",
+        "packages/types/src/generated/CopyEligibility.ts",
+        "packages/types/src/generated/CopyNote.ts",
         "packages/types/src/generated/DecodeStats.ts",
         "packages/types/src/generated/DiagnosticClip.ts",
         "packages/types/src/generated/DiagnosticOperation.ts",
@@ -2393,6 +2506,7 @@
         "packages/types/src/generated/LoopRange.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
         "packages/types/src/generated/MediaInfo.ts",
+        "packages/types/src/generated/Mismatch.ts",
         "packages/types/src/generated/MonitorCommand.ts",
         "packages/types/src/generated/MonitorLevels.ts",
         "packages/types/src/generated/MonitorStatus.ts",
@@ -2417,9 +2531,11 @@
         "packages/types/src/generated/SeamReason.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/SequenceSettings.ts",
+        "packages/types/src/generated/SettingsImpact.ts",
         "packages/types/src/generated/SheetReady.ts",
         "packages/types/src/generated/SourceRef.ts",
         "packages/types/src/generated/SourceStatus.ts",
+        "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/StreamKind.ts",
         "packages/types/src/generated/Timeline.ts",
@@ -2458,6 +2574,8 @@
         "apps/desktop/src/player/timecode.ts",
         "apps/desktop/src/player/useTransportShortcuts.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
@@ -2480,6 +2598,7 @@
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/timeline/draw.test.ts",
@@ -3027,6 +3146,8 @@
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
@@ -3038,6 +3159,7 @@
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
+        "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx"
       ],

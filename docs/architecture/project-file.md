@@ -15,6 +15,7 @@ Project
 ├── sources: { id → SourceRef { path, fingerprint { size, modified, contentHash } } }
 └── sequence
     ├── settings: SequenceSettings   (width, height, frameRate, pixelAspect, colour — #57)
+    ├── matchFirstClip               (schema 2: waiting for the first clip's settings)
     └── tracks: [ Track { id, kind: video | audio,
                           clips: [ Clip { id, source, stream, timeBase, start,
                                           operations: [ Operation ] } ] } ]
@@ -36,7 +37,14 @@ parameters in range.
 
 Sequence settings are defined once, in `project::settings`, and referred to
 by the sequence. What they mean — how they are chosen, and how they bind copy
-eligibility — is #57.
+eligibility — is [`sequence-settings.md`](./sequence-settings.md) (#57).
+
+### Schema history
+
+| Version | What changed                                                                                                                                           |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1       | The first schema (#32).                                                                                                                                |
+| 2       | `sequence.matchFirstClip` (#57). Migrated as `true` for a version-1 sequence with no clip — its settings were the placeholder — and `false` otherwise. |
 
 ## Time
 

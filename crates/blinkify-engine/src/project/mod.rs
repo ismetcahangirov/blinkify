@@ -39,14 +39,17 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
 
-pub use settings::{ColourPolicy, SequenceSettings};
+pub use settings::{
+    ColourPolicy, CopyEligibility, CopyNote, Mismatch, SequenceSettings, SettingsError,
+    StreamGeometry, copy_eligibility,
+};
 pub use source::{Fingerprint, RelinkError, SourceRef, SourceStatus};
 
 use crate::probe::Rational;
 use crate::proxy::ExportSource;
 
 /// The schema this build writes, and the newest it reads.
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 
 /// The project file extension, without the dot.
 pub const EXTENSION: &str = "blinkify";
@@ -80,6 +83,11 @@ pub struct Sequence {
     /// Resolution, frame rate, aspect and colour — defined, and bound to copy
     /// eligibility, by #57; referenced here, never duplicated.
     pub settings: SequenceSettings,
+    /// Whether the settings are still waiting for the first clip: the next
+    /// video clip placed on an empty sequence gives it its own geometry and
+    /// frame rate (#57). Cleared the moment the settings are chosen or
+    /// adopted.
+    pub match_first_clip: bool,
     pub tracks: Vec<Track>,
 }
 
@@ -195,7 +203,7 @@ pub enum ProjectError {
 }
 
 impl Project {
-    /// An empty project with the given sequence settings.
+    /// An empty project with the given sequence settings, chosen.
     #[must_use]
     pub fn new(name: &str, settings: SequenceSettings) -> Self {
         Self {
@@ -204,9 +212,19 @@ impl Project {
             sources: BTreeMap::new(),
             sequence: Sequence {
                 settings,
+                match_first_clip: false,
                 tracks: Vec::new(),
             },
         }
+    }
+
+    /// An empty project whose sequence takes its settings from the first
+    /// video clip placed on it: the default (#57).
+    #[must_use]
+    pub fn matching_first_clip(name: &str) -> Self {
+        let mut project = Self::new(name, SequenceSettings::default());
+        project.sequence.match_first_clip = true;
+        project
     }
 
     /// The project as its file: pretty JSON, deterministic, one trailing
@@ -339,15 +357,8 @@ impl Project {
         if self.schema_version != SCHEMA_VERSION {
             return invalid(format!("schema {} after migration", self.schema_version));
         }
-        let settings = &self.sequence.settings;
-        if settings.width == 0 || settings.height == 0 {
-            return invalid("the sequence has no size".to_owned());
-        }
-        if settings.frame_rate.num <= 0 || settings.frame_rate.den <= 0 {
-            return invalid("the sequence has no frame rate".to_owned());
-        }
-        if settings.pixel_aspect.num <= 0 || settings.pixel_aspect.den <= 0 {
-            return invalid("the sequence has no pixel aspect".to_owned());
+        if let Err(error) = self.sequence.settings.validate() {
+            return invalid(error.to_string());
         }
         let mut tracks = BTreeSet::new();
         let mut clips = BTreeSet::new();
@@ -446,7 +457,7 @@ mod tests {
             .expect("json");
         assert_eq!(text, again);
         assert!(text.ends_with("}\n"));
-        assert!(text.contains("\"schemaVersion\": 1"));
+        assert!(text.contains(&format!("\"schemaVersion\": {SCHEMA_VERSION}")));
     }
 
     /// xorshift64*: enough randomness to generate graphs, and a fixed seed

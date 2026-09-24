@@ -1,9 +1,13 @@
-import type { WaveformUpdate } from "@blinkify/types";
+import type { ProjectView, WaveformUpdate } from "@blinkify/types";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
 import { usePreviewStore } from "../player/preview.store.js";
-import { fileName, useProjectStore } from "../project/project.store.js";
+import {
+  fileName,
+  useProjectStore,
+  type DeepReadonly,
+} from "../project/project.store.js";
 import {
   drawContent,
   drawOverlay,
@@ -27,6 +31,25 @@ function loadImage(url: string): Promise<CanvasImageSource> {
     image.onerror = () => reject(new Error(`could not load ${url}`));
     image.src = url;
   });
+}
+
+/**
+ * The video clips whose source the model says cannot be stream-copied into
+ * the sequence (#57) — the ones the timeline marks. The model's answer per
+ * source, applied to its clips; nothing here decides eligibility.
+ */
+export function ineligibleClips(
+  view: DeepReadonly<ProjectView> | null,
+  rows: readonly TrackRow[],
+): Set<number> {
+  const eligibility = view?.eligibility ?? {};
+  return new Set(
+    rows
+      .filter((row) => row.kind === "video")
+      .flatMap((row) => row.placements)
+      .filter((p) => eligibility[p.source]?.eligible === false)
+      .map((p) => p.clip),
+  );
 }
 
 export interface MountedTimeline {
@@ -57,6 +80,7 @@ export function mountTimeline(
   const text = new TextCache();
   let rows: TrackRow[] = [];
   let labels = new Map<number, string>();
+  let ineligible = new Set<number>();
 
   const scene = (): Scene => {
     const { view, selection } = {
@@ -74,7 +98,7 @@ export function mountTimeline(
         den: 1,
       },
       selection: new Set(selection),
-      ineligible: new Set(),
+      ineligible,
       labels,
       theme,
       media,
@@ -101,6 +125,7 @@ export function mountTimeline(
   const fromProject = (): void => {
     const view = useProjectStore.getState().view;
     rows = layoutRows(view?.timeline);
+    ineligible = ineligibleClips(view, rows);
     const sources = view?.project.sources ?? {};
     labels = new Map(
       Object.entries(sources).map(([id, source]) => [

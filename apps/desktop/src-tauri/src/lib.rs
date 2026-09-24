@@ -89,6 +89,7 @@ pub fn run() {
             project::redo_edit,
             project::begin_gesture,
             project::end_gesture,
+            project::preview_settings,
             project::operations_at,
             updater::pending_update,
             updater::install_update

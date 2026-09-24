@@ -3,7 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { usePreviewStore } from "../player/preview.store.js";
 import { useProjectStore } from "../project/project.store.js";
-import { mountTimeline, type MountedTimeline } from "./mountTimeline.js";
+import {
+  ineligibleClips,
+  mountTimeline,
+  type MountedTimeline,
+} from "./mountTimeline.js";
 import { RedrawScheduler, type FrameSource } from "./scheduler.js";
 import { useTimelineStore } from "./timeline.store.js";
 
@@ -72,6 +76,7 @@ function view(): ProjectView {
           pixelAspect: { num: 1, den: 1 },
           colour: "sdr",
         },
+        matchFirstClip: false,
         tracks: [],
       },
     },
@@ -91,6 +96,7 @@ function view(): ProjectView {
     history: { entries: [], applied: 0 },
     unavailable: {},
     affectedClips: [],
+    eligibility: {},
   };
 }
 
@@ -178,5 +184,49 @@ describe("the mounted timeline", () => {
     usePreviewStore.setState({ frameNumber: 9 });
     frames.run();
     expect(draws).toEqual(before);
+  });
+});
+
+describe("the copy-ineligible mark", () => {
+  it("marks the video clips of every source the model says cannot be copied", () => {
+    const base = view();
+    const rows = [
+      {
+        id: 1,
+        kind: "video" as const,
+        top: 0,
+        height: 56,
+        placements: [
+          { ...base.timeline!.tracks[0]!.placements[0]!, clip: 1, source: 1 },
+          { ...base.timeline!.tracks[0]!.placements[1]!, clip: 2, source: 2 },
+        ],
+      },
+      {
+        id: 2,
+        kind: "audio" as const,
+        top: 56,
+        height: 40,
+        placements: [
+          { ...base.timeline!.tracks[0]!.placements[2]!, clip: 3, source: 1 },
+        ],
+      },
+    ];
+    const eligibility = {
+      1: {
+        eligible: false,
+        mismatches: [
+          {
+            reason: "frame-rate" as const,
+            sequence: { num: 30, den: 1 },
+            source: { num: 25, den: 1 },
+          },
+        ],
+        notes: [],
+      },
+      2: { eligible: true, mismatches: [], notes: [] },
+    };
+    // Only the video clip of source 1: sound is not what the rule is about.
+    expect([...ineligibleClips({ ...base, eligibility }, rows)]).toEqual([1]);
+    expect(ineligibleClips(null, rows).size).toBe(0);
   });
 });

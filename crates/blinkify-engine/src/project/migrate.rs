@@ -19,9 +19,36 @@ use super::{ProjectError, SCHEMA_VERSION};
 /// One step: the JSON of version `from`, as the JSON of version `from + 1`.
 type Migration = fn(Value) -> Result<Value, ProjectError>;
 
-/// `MIGRATIONS[n]` migrates version `n + 1` to `n + 2`. Version 1 is the
-/// first, so there is nothing to migrate yet.
-const MIGRATIONS: &[Migration] = &[];
+/// `MIGRATIONS[n]` migrates version `n + 1` to `n + 2`.
+const MIGRATIONS: &[Migration] = &[v1_to_v2];
+
+/// Schema 2 (#57): the sequence records whether its settings still wait for
+/// the first clip. A version-1 sequence with no clip had never been given
+/// settings — they were the placeholder default — so it waits; one with clips
+/// keeps the settings it was edited at.
+fn v1_to_v2(mut value: Value) -> Result<Value, ProjectError> {
+    let object = value
+        .as_object_mut()
+        .ok_or_else(|| ProjectError::Corrupt("the project is not an object".to_owned()))?;
+    let sequence = object
+        .get_mut("sequence")
+        .and_then(Value::as_object_mut)
+        .ok_or_else(|| ProjectError::Corrupt("no sequence".to_owned()))?;
+    let empty = sequence
+        .get("tracks")
+        .and_then(Value::as_array)
+        .is_none_or(|tracks| {
+            tracks.iter().all(|track| {
+                track
+                    .get("clips")
+                    .and_then(Value::as_array)
+                    .is_none_or(Vec::is_empty)
+            })
+        });
+    sequence.insert("matchFirstClip".to_owned(), Value::Bool(empty));
+    object.insert("schemaVersion".to_owned(), Value::from(2));
+    Ok(value)
+}
 
 /// The version a project file declares.
 ///
@@ -71,7 +98,11 @@ fn to(mut value: Value, target: u32, migrations: &[Migration]) -> Result<Value, 
 }
 
 #[cfg(test)]
-#[allow(clippy::expect_used, clippy::unnecessary_wraps)]
+#[allow(
+    clippy::expect_used,
+    clippy::unnecessary_wraps,
+    clippy::indexing_slicing
+)]
 mod tests {
     use serde_json::json;
 
@@ -129,6 +160,26 @@ mod tests {
         let registry: &[Migration] = &[forgets_the_version];
         let error = to(json!({ "schemaVersion": 1 }), 2, registry).expect_err("refused");
         assert!(matches!(error, ProjectError::Invalid(_)));
+    }
+
+    #[test]
+    fn schema_1_waits_for_a_first_clip_only_when_it_has_none() {
+        let empty = json!({
+            "schemaVersion": 1,
+            "sequence": { "settings": {}, "tracks": [{ "clips": [] }] }
+        });
+        let migrated = v1_to_v2(empty).expect("migrate");
+        assert_eq!(migrated["schemaVersion"], 2);
+        assert_eq!(migrated["sequence"]["matchFirstClip"], true);
+        let edited = json!({
+            "schemaVersion": 1,
+            "sequence": { "settings": {}, "tracks": [{ "clips": [{ "id": 1 }] }] }
+        });
+        assert_eq!(
+            v1_to_v2(edited).expect("migrate")["sequence"]["matchFirstClip"],
+            false
+        );
+        assert!(v1_to_v2(json!({ "schemaVersion": 1 })).is_err());
     }
 
     #[test]

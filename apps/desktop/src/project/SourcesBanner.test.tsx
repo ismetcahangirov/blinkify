@@ -30,6 +30,7 @@ const VIEW: ProjectView = {
         pixelAspect: { num: 1, den: 1 },
         colour: "sdr",
       },
+      matchFirstClip: false,
       tracks: [],
     },
   },
@@ -38,6 +39,7 @@ const VIEW: ProjectView = {
     2: { state: "changed", found: { ...fingerprint, size: 11 } },
   },
   affectedClips: [4, 5, 9],
+  eligibility: {},
   timeline: null,
   history: { entries: [], applied: 0 },
 };
@@ -92,6 +94,7 @@ describe("the project store", () => {
       ...VIEW,
       unavailable: {},
       affectedClips: [],
+      eligibility: {},
     };
     invoked.mockResolvedValueOnce(relinked);
     await useProjectStore.getState().relink(1, "D:\\Moved\\beach.mp4");

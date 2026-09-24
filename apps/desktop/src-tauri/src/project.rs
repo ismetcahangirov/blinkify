@@ -22,9 +22,11 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use blinkify_engine::playback::{PlaybackPlan, SourceMedia, chain_rendered};
-use blinkify_engine::project::edit::{Document, Edit, EditContext, HistoryView};
+use blinkify_engine::project::edit::{Document, Edit, EditContext, HistoryView, SettingsImpact};
 use blinkify_engine::project::evaluate::{OperationsAt, Timeline, audio_operation, evaluate};
-use blinkify_engine::project::{self, ClipId, Operation, Project, SourceId, SourceStatus};
+use blinkify_engine::project::{
+    self, ClipId, CopyEligibility, Operation, Project, SequenceSettings, SourceId, SourceStatus,
+};
 use blinkify_engine::proxy::MediaAsset;
 use blinkify_engine::time::{self, MICROSECONDS, Rounding};
 use serde::Serialize;
@@ -98,6 +100,11 @@ pub struct ProjectView {
     pub unavailable: BTreeMap<SourceId, SourceStatus>,
     /// The clips that play an unavailable source — the ones to mark.
     pub affected_clips: Vec<ClipId>,
+    /// Whether each source's pictures can be stream-copied into the sequence
+    /// (#57): the model's answer, which the timeline marks and nothing in the
+    /// renderer works out again. A source not listed has no pictures, or is
+    /// offline.
+    pub eligibility: BTreeMap<SourceId, CopyEligibility>,
 }
 
 /// What an edit, an undo or a redo returns: the project now, and the
@@ -129,6 +136,7 @@ impl ProjectView {
             history: document.history(),
             unavailable,
             affected_clips,
+            eligibility: document.eligibility(),
         }
     }
 }
@@ -139,9 +147,25 @@ impl Opened {
     }
 }
 
-fn open(state: &OpenProject, path: &Path) -> Result<ProjectView, String> {
+/// Probe each source that is present for its pictures, so the document can
+/// decide copy eligibility and the first-clip default (#57).
+fn describe_sources(engine: &MediaEngine, document: &mut Document) {
+    let present: Vec<(SourceId, PathBuf)> = document
+        .project()
+        .sources
+        .iter()
+        .filter(|(_, source)| source.check().is_present())
+        .map(|(&id, source)| (id, source.path().to_path_buf()))
+        .collect();
+    for (id, path) in present {
+        document.describe_source(id, engine.geometry_of(&path));
+    }
+}
+
+fn open(engine: &MediaEngine, state: &OpenProject, path: &Path) -> Result<ProjectView, String> {
     let project = Project::load(path).map_err(|error| error.to_string())?;
-    let document = Document::new(project).map_err(|error| error.to_string())?;
+    let mut document = Document::new(project).map_err(|error| error.to_string())?;
+    describe_sources(engine, &mut document);
     let opened = Opened {
         path: path.to_path_buf(),
         timeline: evaluate(document.project()).ok(),
@@ -203,13 +227,14 @@ fn plan_for(
 #[allow(clippy::needless_pass_by_value)]
 pub fn launch_project(
     app: AppHandle,
+    engine: State<'_, MediaEngine>,
     launch: State<'_, LaunchFile>,
     state: State<'_, OpenProject>,
 ) -> Result<Option<ProjectView>, String> {
     let Some(path) = launch.0.as_deref() else {
         return Ok(None);
     };
-    let view = open(&state, path)?;
+    let view = open(&engine, &state, path)?;
     // The taskbar names the project, as the app bar does. A title that
     // cannot be set costs the user nothing, so it is not an error.
     if let Some(window) = app.get_webview_window("main") {
@@ -262,6 +287,13 @@ pub fn relink_source(
         .document
         .relink(source, relinked, &context)
         .map_err(|error| error.to_string())?;
+    let found = opened
+        .document
+        .project()
+        .sources
+        .get(&source)
+        .and_then(|reference| engine.geometry_of(reference.path()));
+    opened.document.describe_source(source, found);
     opened
         .document
         .project()
@@ -371,6 +403,29 @@ pub fn redo_edit(
         .document
         .redo()
         .map(|context| settle(&engine, opened, context)))
+}
+
+/// What changing the open project's sequence to `settings` would do to
+/// copying (#57): asked by the settings dialog before anything is changed.
+///
+/// # Errors
+///
+/// No project is open, or no file can carry those settings — the message
+/// says why.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn preview_settings(
+    state: State<'_, OpenProject>,
+    settings: SequenceSettings,
+) -> Result<SettingsImpact, String> {
+    let guard = state.lock()?;
+    let opened = guard.as_ref().ok_or("no project is open")?;
+    opened
+        .document
+        .settings_impact(&settings)
+        .map_err(|error| error.to_string())
 }
 
 /// Start a gesture — a slider being dragged — whose edits are one history

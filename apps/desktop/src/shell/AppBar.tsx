@@ -15,6 +15,7 @@ import {
   toggleMaximiseWindow,
 } from "./windowChrome.js";
 import { HistoryControls } from "../project/HistoryControls.js";
+import { SequenceSettingsDialog } from "../project/SequenceSettingsDialog.js";
 import { projectName, useProjectStore } from "../project/project.store.js";
 
 /**
@@ -48,10 +49,18 @@ import { projectName, useProjectStore } from "../project/project.store.js";
 
 const noop = (): void => undefined;
 
-const MENUS: readonly {
+/** What the menus can do that depends on the open project. */
+interface MenuActions {
+  /** Open the sequence settings (#57); `null` with no project open. */
+  readonly sequenceSettings: (() => void) | null;
+}
+
+const menus = (
+  actions: MenuActions,
+): readonly {
   readonly label: string;
   readonly groups: readonly MenuGroupDefinition[];
-}[] = [
+}[] => [
   {
     label: "File",
     groups: [
@@ -77,6 +86,16 @@ const MENUS: readonly {
             shortcut: "Ctrl+S",
             disabled: true,
             onSelect: noop,
+          },
+        ],
+      },
+      {
+        items: [
+          {
+            id: "sequence-settings",
+            label: "Sequence settings…",
+            disabled: actions.sequenceSettings === null,
+            onSelect: actions.sequenceSettings ?? noop,
           },
         ],
       },
@@ -149,6 +168,8 @@ const MENUS: readonly {
 export function AppBar() {
   const [maximised, setMaximised] = useState(false);
   const name = useProjectStore((state) => projectName(state.view));
+  const hasProject = useProjectStore((state) => state.view !== null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -183,7 +204,9 @@ export function AppBar() {
       data-testid="app-bar"
     >
       <nav className="shell__menus" aria-label="Main menu">
-        {MENUS.map((menu) => (
+        {menus({
+          sequenceSettings: hasProject ? () => setSettingsOpen(true) : null,
+        }).map((menu) => (
           <DropdownMenu
             key={menu.label}
             groups={menu.groups}
@@ -253,6 +276,10 @@ export function AppBar() {
           />
         </div>
       ) : null}
+      <SequenceSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+      />
     </header>
   );
 }
