@@ -20,6 +20,7 @@
     "test": "pnpm run test:ts && pnpm run test:rust",
     "test:ts": "vitest run",
     "test:rust": "cargo test --workspace",
+    "bench:timeline": "vitest run --config vitest.perf.config.ts",
     "types:generate": "cargo test --workspace export_bindings && node tools/generate-types-index.mjs",
     "types:check": "node tools/types-gate.mjs",
     "types:check:test": "node tools/types-gate-test.mjs",

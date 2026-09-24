@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 204,
-    "tests": 23,
+    "files": 221,
+    "tests": 27,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 51,
-      "tests": 17,
+      "files": 68,
+      "tests": 21,
       "untested": [
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
@@ -26,6 +26,12 @@
         "apps/desktop/src/shell/zones/LibraryZone.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
         "apps/desktop/src/styles.css",
+        "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/TimelineScrollbar.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/rows.ts",
+        "apps/desktop/src/timeline/theme.ts",
+        "apps/desktop/src/timeline/timeline.perf.ts",
         "apps/desktop/vite.config.ts"
       ]
     },
@@ -533,14 +539,18 @@
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
-        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+        "apps/desktop/src/shell/zones/PlayerZone.tsx",
+        "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/mountTimeline.test.ts",
+        "apps/desktop/src/timeline/mountTimeline.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
-        "apps/desktop/src/shell/zones/PlayerZone.test.tsx"
+        "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
+        "apps/desktop/src/timeline/mountTimeline.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -691,12 +701,22 @@
         "apps/desktop/src/project/SourcesBanner.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
-        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+        "apps/desktop/src/shell/zones/PlayerZone.tsx",
+        "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/TimelineScrollbar.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/mountTimeline.test.ts",
+        "apps/desktop/src/timeline/mountTimeline.ts",
+        "apps/desktop/src/timeline/rows.ts",
+        "apps/desktop/src/timeline/timeline.store.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
-        "apps/desktop/src/shell/zones/PlayerZone.test.tsx"
+        "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
+        "apps/desktop/src/timeline/mountTimeline.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -900,7 +920,14 @@
       "workspace": "apps/desktop",
       "layer": "renderer",
       "isTest": false,
-      "dependsOn": [],
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/TimelineScrollbar.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "packages/ui/src/index.ts"
+      ],
       "dependedOnBy": [
         "apps/desktop/src/App.tsx"
       ],
@@ -916,6 +943,284 @@
         "apps/desktop/src/main.tsx"
       ],
       "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/TimelineCanvas.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/mountTimeline.ts",
+        "apps/desktop/src/timeline/rows.ts",
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/viewport.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shell/zones/TimelineZone.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/TimelineScrollbar.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/viewport.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shell/zones/TimelineZone.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/TrackHeaders.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/rows.ts",
+        "apps/desktop/src/timeline/timeline.store.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shell/zones/TimelineZone.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/draw.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/recordingPainter.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/timeline/draw.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/viewport.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/draw.test.ts",
+        "apps/desktop/src/timeline/mountTimeline.ts",
+        "apps/desktop/src/timeline/recordingPainter.ts",
+        "apps/desktop/src/timeline/rows.ts",
+        "apps/desktop/src/timeline/theme.ts",
+        "apps/desktop/src/timeline/timeline.perf.ts",
+        "apps/desktop/src/timeline/timelineMedia.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/timeline/draw.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/mountTimeline.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/mountTimeline.ts",
+        "apps/desktop/src/timeline/scheduler.ts",
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/timeline/mountTimeline.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/rows.ts",
+        "apps/desktop/src/timeline/scheduler.ts",
+        "apps/desktop/src/timeline/theme.ts",
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/timelineMedia.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/mountTimeline.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/timeline/mountTimeline.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/recordingPainter.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/timeline/draw.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/timeline/draw.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/timeline/draw.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/rows.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/mountTimeline.ts",
+        "apps/desktop/src/timeline/timeline.store.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/scheduler.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "apps/desktop/src/timeline/mountTimeline.test.ts",
+        "apps/desktop/src/timeline/mountTimeline.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/timeline/mountTimeline.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/theme.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/timeline/draw.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/timeline/mountTimeline.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/timeline.perf.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/timeline/timeline.store.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/rows.ts",
+        "apps/desktop/src/timeline/viewport.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/TimelineScrollbar.tsx",
+        "apps/desktop/src/timeline/TrackHeaders.tsx",
+        "apps/desktop/src/timeline/mountTimeline.test.ts",
+        "apps/desktop/src/timeline/mountTimeline.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/timeline/mountTimeline.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/timelineMedia.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/timeline/timelineMedia.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/timeline/timelineMedia.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/timeline/mountTimeline.ts",
+        "apps/desktop/src/timeline/timelineMedia.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/timeline/timelineMedia.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/viewport.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/timeline/viewport.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/timeline/viewport.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "apps/desktop/src/timeline/TimelineCanvas.tsx",
+        "apps/desktop/src/timeline/TimelineScrollbar.tsx",
+        "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/viewport.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/timeline/viewport.test.ts"
+      ],
       "hasNoDependents": false
     },
     "apps/desktop/src/update.store.ts": {
@@ -2157,6 +2462,15 @@
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
+        "apps/desktop/src/timeline/draw.test.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "apps/desktop/src/timeline/mountTimeline.test.ts",
+        "apps/desktop/src/timeline/mountTimeline.ts",
+        "apps/desktop/src/timeline/rows.ts",
+        "apps/desktop/src/timeline/timeline.perf.ts",
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/timelineMedia.test.ts",
+        "apps/desktop/src/timeline/timelineMedia.ts",
         "apps/desktop/src/update.store.ts"
       ],
       "coveredByTests": [
@@ -2167,7 +2481,10 @@
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
-        "apps/desktop/src/shell/zones/PlayerZone.test.tsx"
+        "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
+        "apps/desktop/src/timeline/draw.test.ts",
+        "apps/desktop/src/timeline/mountTimeline.test.ts",
+        "apps/desktop/src/timeline/timelineMedia.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -2713,7 +3030,8 @@
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
-        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+        "apps/desktop/src/shell/zones/PlayerZone.tsx",
+        "apps/desktop/src/shell/zones/TimelineZone.tsx"
       ],
       "coveredByTests": [
         "apps/desktop/src/App.test.tsx",

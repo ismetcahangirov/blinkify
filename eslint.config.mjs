@@ -66,6 +66,7 @@ export default tseslint.config(
         {
           devDependencies: [
             "**/*.test.{ts,tsx}",
+            "**/*.perf.ts",
             "**/*.config.{ts,mts,mjs}",
             "**/vitest.setup.ts",
           ],
