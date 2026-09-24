@@ -9,6 +9,7 @@
 //! process boundary, so a per-frame or per-clip command is a performance bug
 //! waiting to be written.
 
+pub mod library;
 pub mod lifecycle;
 pub mod media;
 pub mod project;
@@ -105,6 +106,7 @@ pub fn run() {
             lifecycle::restore_recovery,
             lifecycle::discard_recovery,
             lifecycle::quit_app,
+            library::import_media,
             project::operations_at,
             updater::pending_update,
             updater::install_update

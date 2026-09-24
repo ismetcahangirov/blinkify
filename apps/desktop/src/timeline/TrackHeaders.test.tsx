@@ -66,6 +66,7 @@ function view(tracks: Track[]): ProjectView {
     affectedClips: [],
     eligibility: {},
     extents: [],
+    assets: {},
   };
 }
 

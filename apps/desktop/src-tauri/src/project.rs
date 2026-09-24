@@ -22,6 +22,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use blinkify_engine::playback::{PlaybackPlan, SourceMedia, chain_rendered};
+use blinkify_engine::project::asset::AssetInfo;
 use blinkify_engine::project::edit::{Document, Edit, EditContext, HistoryView, SettingsImpact};
 use blinkify_engine::project::evaluate::{
     OperationsAt, Timeline, audio_operation, evaluate, forces_re_encode,
@@ -38,7 +39,7 @@ use serde::Serialize;
 use tauri::{AppHandle, State};
 use ts_rs::TS;
 
-use crate::media::{MediaEngine, PreviewOpened};
+use crate::media::{MediaEngine, PreviewOpened, SourceFacts};
 
 /// The project file the application was started with, if any.
 #[derive(Debug, Default)]
@@ -116,6 +117,8 @@ pub struct ProjectView {
     /// Which ticks of each source stream exist (#34): what the timeline
     /// bounds a trim preview by. The engine bounds the trim itself.
     pub extents: Vec<StreamExtent>,
+    /// What the library shows of each source, from its probe (#53).
+    pub assets: BTreeMap<SourceId, AssetInfo>,
 }
 
 /// What an edit, an undo or a redo returns: the project now, and the
@@ -154,6 +157,7 @@ impl ProjectView {
             affected_clips,
             eligibility: document.eligibility(),
             extents: document.extents(),
+            assets: document.assets(),
         }
     }
 }
@@ -174,6 +178,13 @@ impl Opened {
     }
 }
 
+/// Tell the document what a probe found about `source`.
+pub(crate) fn describe(document: &mut Document, source: SourceId, facts: SourceFacts) {
+    document.describe_source(source, facts.geometry);
+    document.describe_streams(source, &facts.extents);
+    document.describe_asset(source, facts.asset);
+}
+
 /// Probe each source that is present for its pictures, so the document can
 /// decide copy eligibility and the first-clip default (#57).
 fn describe_sources(engine: &MediaEngine, document: &mut Document) {
@@ -185,9 +196,7 @@ fn describe_sources(engine: &MediaEngine, document: &mut Document) {
         .map(|(&id, source)| (id, source.path().to_path_buf()))
         .collect();
     for (id, path) in present {
-        let (geometry, extents) = engine.facts_of(&path);
-        document.describe_source(id, geometry);
-        document.describe_streams(id, &extents);
+        describe(document, id, engine.facts_of(&path));
     }
 }
 
@@ -288,7 +297,7 @@ pub fn relink_source(
         .document_mut()
         .relink(source, relinked, &context)
         .map_err(|error| error.to_string())?;
-    let (geometry, extents) = opened
+    let facts = opened
         .session
         .document()
         .project()
@@ -296,14 +305,7 @@ pub fn relink_source(
         .get(&source)
         .map(|reference| engine.facts_of(reference.path()))
         .unwrap_or_default();
-    opened
-        .session
-        .document_mut()
-        .describe_source(source, geometry);
-    opened
-        .session
-        .document_mut()
-        .describe_streams(source, &extents);
+    describe(opened.session.document_mut(), source, facts);
     if opened.session.path().is_some() {
         opened.session.save().map_err(|error| error.to_string())?;
     }

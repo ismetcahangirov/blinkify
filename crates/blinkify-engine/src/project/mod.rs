@@ -26,6 +26,7 @@
 //!   order, and the output ends with one newline, so saving an unchanged
 //!   project changes no byte — no spurious diff, no "unsaved changes" prompt.
 
+pub mod asset;
 pub mod edit;
 pub mod evaluate;
 pub mod migrate;

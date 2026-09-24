@@ -177,6 +177,7 @@ describe("PlayerZone", () => {
         affectedClips: [],
         eligibility: {},
         extents: [],
+        assets: {},
         timeline: null,
         history: { entries: [], applied: 0 },
       },

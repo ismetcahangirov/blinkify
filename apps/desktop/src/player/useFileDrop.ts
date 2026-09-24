@@ -26,6 +26,19 @@ export function useFileDrop(
   target: RefObject<HTMLElement | null>,
   onDrop: (path: string) => void,
 ): void {
+  useFilesDrop(target, ([path]) => {
+    if (path !== undefined) onDrop(path);
+  });
+}
+
+/**
+ * Call `onDrop` with every path dropped onto `target`, and where it was
+ * dropped, in CSS pixels in the window.
+ */
+export function useFilesDrop(
+  target: RefObject<HTMLElement | null>,
+  onDrop: (paths: readonly string[], point: { x: number; y: number }) => void,
+): void {
   const onDropRef = useRef(onDrop);
   useEffect(() => {
     onDropRef.current = onDrop;
@@ -37,16 +50,14 @@ export function useFileDrop(
     const handle = (event: { payload: DragDropEvent }) => {
       if (event.payload.type !== "drop") return;
       const element = target.current;
-      const [path] = event.payload.paths;
-      if (!element || path === undefined) return;
-      if (
-        droppedOn(
-          event.payload.position,
-          element.getBoundingClientRect(),
-          window.devicePixelRatio || 1,
-        )
-      ) {
-        onDropRef.current(path);
+      const { paths, position } = event.payload;
+      if (!element || paths.length === 0) return;
+      const ratio = window.devicePixelRatio || 1;
+      if (droppedOn(position, element.getBoundingClientRect(), ratio)) {
+        onDropRef.current(paths, {
+          x: position.x / ratio,
+          y: position.y / ratio,
+        });
       }
     };
     let listening: Promise<() => void>;

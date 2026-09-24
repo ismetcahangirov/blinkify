@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 
 import { usePreviewStore } from "../player/preview.store.js";
+import { useFilesDrop } from "../player/useFileDrop.js";
 import { useProjectStore } from "../project/project.store.js";
+import { acceptAssetDrops, commitDrop, dropOver } from "./assetDropTarget.js";
 import type { TrackRow } from "./draw.js";
 import {
   clickSelection,
@@ -73,6 +75,32 @@ export function TimelineCanvas() {
     if (!element || !content || !overlay) return;
     return mountTimeline(element, content, overlay).dispose;
   }, []);
+
+  // Library assets dragged here (#53).
+  useEffect(() => {
+    const element = host.current;
+    if (!element) return;
+    return acceptAssetDrops(element);
+  }, []);
+
+  // Files dropped here from the desktop: imported, then placed where they
+  // were dropped — one step to import, one to place.
+  useFilesDrop(host, (paths, point) => {
+    void useProjectStore
+      .getState()
+      .importMedia(paths)
+      .then((outcome) => {
+        const element = host.current;
+        if (!outcome || !element) return;
+        const [refusal] = outcome.refused;
+        if (outcome.imported.length > 0)
+          void commitDrop(dropOver(element, outcome.imported, point, false));
+        else if (refusal)
+          useTimelineStore
+            .getState()
+            .setNotice(`Not imported: ${refusal.reason}.`);
+      });
+  });
 
   // Escape abandons a drag in progress: nothing is committed.
   useEffect(() => {
