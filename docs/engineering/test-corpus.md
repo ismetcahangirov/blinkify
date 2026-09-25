@@ -55,12 +55,29 @@ distributes, and the corpus tool is neither linked nor distributed.
 | `portrait-phone.mp4`       | A landscape-coded stream with a 90-degree display rotation              |
 | `vfr-screen.mp4`           | Variable frame rate: 30 fps, then 10 fps; keyframes at 0, 1, 2.5, 3.2 s |
 | `edit-list.mp4`            | Stream-copied from inside a GOP; the MP4 edit list hides the pre-roll   |
-| `multi-audio.mkv`          | VP9 with Opus stereo and AAC 5.1 audio tracks, and two chapters         |
+| `multi-audio.mkv`          | VP9 with Opus stereo (aze) and AAC 5.1 (eng) tracks, and two chapters   |
 | `vp9.webm`                 | VP9 profile 0 and Opus                                                  |
 | `av1.mp4`                  | AV1 and AAC                                                             |
+| `hevc-main10.mp4`          | HEVC Main 10 without HDR: ten bits in BT.709                            |
+| `h264-high10.mp4`          | H.264 High 10: ten-bit H.264                                            |
+| `vp9-keyframes.webm`       | VP9 with a keyframe every second: GOPs to cut between                   |
+| `av1-keyframes.mkv`        | AV1 with a keyframe every second                                        |
 
 Broken files — zero bytes, truncated, not media at all — are made by the tests
 themselves, next to the case that needs them.
+
+## Reproducible, on any machine
+
+```bash
+pnpm corpus:verify
+```
+
+Generates every file again in `target/corpus-verify/` and fails unless each is
+byte-identical to what `corpus/manifest.json` records. Encoders run
+single-threaded where threading would change their output, and Matroska and
+WebM are written `+bitexact`, because the muxer otherwise stamps random UIDs
+and the date. The heavy workflow runs it, so a result in
+[`losslessness.md`](./losslessness.md) is a result on any machine.
 
 ## Adding a file
 
@@ -69,6 +86,5 @@ add a row above, and run `pnpm corpus`. Keep files short and small: the corpus
 is regenerated on CI runners, and a recipe that takes a minute to encode is a
 minute on every cache miss.
 
-The full losslessness corpus — real phone captures, long files, the packet-hash
-suite — is [#45](https://github.com/ismetcahangirov/blinkify/issues/45), and
-builds on this one.
+The losslessness suite that runs against this corpus, and its published
+results, are in [`losslessness.md`](./losslessness.md) (#45).

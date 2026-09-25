@@ -19,6 +19,8 @@
  * Usage:
  *   node tools/corpus/generate.mjs          generate anything missing or stale
  *   node tools/corpus/generate.mjs --force  regenerate everything
+ *   node tools/corpus/generate.mjs --verify generate again elsewhere and
+ *                                           require identical bytes
  */
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
@@ -41,6 +43,7 @@ const LOCK = JSON.parse(
   readFileSync(join(HERE, "corpus-tool.lock.json"), "utf8"),
 );
 const FORCE = process.argv.includes("--force");
+const VERIFY = process.argv.includes("--verify");
 
 // Windows' own bsdtar, by full path: it reads zip archives, and a GNU tar
 // earlier on PATH (Git Bash ships one) reads `C:` as a remote host name.
@@ -175,7 +178,7 @@ const RECIPES = [
   },
   {
     file: "multi-audio.mkv",
-    note: "VP9 video, Opus stereo and AAC 5.1 audio, two chapters",
+    note: "VP9 video, Opus stereo (aze) and AAC 5.1 (eng) audio, two chapters",
     steps: [
       [
         ...VIDEO(),
@@ -184,7 +187,10 @@ const RECIPES = [
         "-f", "ffmetadata", "-i", "{chapters}",
         "-map", "0:v", "-map", "1:a", "-map", "2:a", "-map_chapters", "3",
         "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "40", "-deadline", "realtime",
+        "-threads", "1",
         "-c:a:0", "libopus", "-c:a:1", "aac",
+        "-metadata:s:a:0", "language=aze", "-metadata:s:a:1", "language=eng",
+        "-fflags", "+bitexact",
         "{out}",
       ],
     ],
@@ -197,7 +203,9 @@ const RECIPES = [
         ...VIDEO(),
         ...TONE(),
         "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "40", "-deadline", "realtime",
+        "-threads", "1",
         "-c:a", "libopus",
+        "-fflags", "+bitexact",
         "{out}",
       ],
     ],
@@ -211,6 +219,63 @@ const RECIPES = [
         ...TONE(),
         "-c:v", "libsvtav1", "-preset", "12", "-crf", "45",
         "-c:a", "aac",
+        "{out}",
+      ],
+    ],
+  },
+  {
+    file: "hevc-main10.mp4",
+    note: "HEVC Main 10, SDR (BT.709): ten bits without HDR, a keyframe every second, AAC",
+    steps: [
+      [
+        ...VIDEO(),
+        ...TONE(),
+        "-c:v", "libx265", "-pix_fmt", "yuv420p10le", "-tag:v", "hvc1",
+        "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709",
+        "-x265-params", "keyint=30:min-keyint=30:scenecut=0:bframes=4:open-gop=0:frame-threads=1:pools=none:log-level=error",
+        "-c:a", "aac",
+        "{out}",
+      ],
+    ],
+  },
+  {
+    file: "h264-high10.mp4",
+    note: "H.264 High 10: ten-bit H.264, a keyframe every second",
+    steps: [
+      [
+        ...VIDEO(),
+        "-c:v", "libx264", "-profile:v", "high10", "-pix_fmt", "yuv420p10le",
+        "-x264-params", "keyint=30:min-keyint=30:scenecut=0:bframes=3:open-gop=0:threads=1",
+        "{out}",
+      ],
+    ],
+  },
+  {
+    file: "vp9-keyframes.webm",
+    note: "VP9 with a keyframe every second: GOPs a copy and a smart-cut can cut between",
+    steps: [
+      [
+        ...VIDEO(),
+        ...TONE(),
+        "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "40", "-deadline", "realtime",
+        "-g", "30", "-keyint_min", "30", "-threads", "1",
+        "-c:a", "libopus",
+        "-fflags", "+bitexact",
+        "{out}",
+      ],
+    ],
+  },
+  {
+    file: "av1-keyframes.mkv",
+    note: "AV1 with a keyframe every second",
+    steps: [
+      [
+        ...VIDEO(),
+        ...TONE(),
+        "-c:v", "libsvtav1", "-preset", "12", "-crf", "45",
+        "-g", "30", "-svtav1-params", "lp=1",
+        "-c:a", "libopus",
+        "-fflags", "+bitexact",
         "{out}",
       ],
     ],
@@ -229,6 +294,10 @@ START=2000
 END=4000
 title=Closing
 `;
+
+// Matroska and WebM outputs carry `-fflags +bitexact`: the muxer otherwise
+// writes random segment and track UIDs and the wall-clock date, and the same
+// recipe would not give the same bytes twice (`--verify`).
 
 /** The recipes' own fingerprint: a change to any of them regenerates. */
 const RECIPE_HASH = sha256(JSON.stringify({ RECIPES, CHAPTERS, LOCK }));
@@ -286,7 +355,74 @@ function run(tool, args) {
   }
 }
 
+/**
+ * Make every recipe's file in `dir`, and return each file's note and SHA-256.
+ */
+function generate(tool, dir) {
+  mkdirSync(dir, { recursive: true });
+  const chapters = join(dir, "chapters.ffmetadata");
+  writeFileSync(chapters, CHAPTERS);
+  const files = {};
+  for (const recipe of RECIPES) {
+    const out = join(dir, recipe.file);
+    const partial = `${out}.partial${recipe.file.slice(recipe.file.lastIndexOf("."))}`;
+    const tmp = join(dir, `tmp-${recipe.file}`);
+    for (const step of recipe.steps) {
+      run(
+        tool,
+        step.map((arg) =>
+          arg
+            .replace("{out}", partial)
+            .replace("{tmp}", tmp)
+            // Inputs made by an earlier recipe come from this run's own
+            // directory, so a verification run reads only what it made.
+            .replace("{corpus}", dir)
+            .replace("{chapters}", chapters),
+        ),
+      );
+    }
+    rmSync(tmp, { force: true });
+    renameSync(partial, out);
+    files[recipe.file] = {
+      note: recipe.note,
+      sha256: sha256(readFileSync(out)),
+    };
+    console.log(`corpus: ${recipe.file} — ${recipe.note}`);
+  }
+  rmSync(chapters, { force: true });
+  return files;
+}
+
+/**
+ * Generate the corpus again, elsewhere, and compare every file with the
+ * manifest: the corpus is reproducible only if the same recipes give the same
+ * bytes. Fails naming each file that differs.
+ */
+async function verify() {
+  const manifestPath = join(CORPUS, "manifest.json");
+  if (!existsSync(manifestPath)) {
+    throw new Error("no corpus to verify against; run `pnpm corpus` first");
+  }
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  if (manifest.recipeHash !== RECIPE_HASH) {
+    throw new Error("the corpus is stale; run `pnpm corpus` first");
+  }
+  const tool = await ensureTool();
+  const scratch = join(ROOT, "target", "corpus-verify");
+  rmSync(scratch, { recursive: true, force: true });
+  const again = generate(tool, scratch);
+  rmSync(scratch, { recursive: true, force: true });
+  const differ = Object.entries(again)
+    .filter(([file, entry]) => manifest.files[file]?.sha256 !== entry.sha256)
+    .map(([file]) => file);
+  if (differ.length > 0) {
+    throw new Error(`not reproducible: ${differ.join(", ")}`);
+  }
+  console.log(`corpus: all ${RECIPES.length} files reproduced byte for byte.`);
+}
+
 async function main() {
+  if (VERIFY) return verify();
   mkdirSync(CORPUS, { recursive: true });
   const manifestPath = join(CORPUS, "manifest.json");
   const manifest = existsSync(manifestPath)
@@ -302,34 +438,7 @@ async function main() {
   }
 
   const tool = await ensureTool();
-  const chapters = join(CORPUS, "chapters.ffmetadata");
-  writeFileSync(chapters, CHAPTERS);
-  const files = {};
-  for (const recipe of RECIPES) {
-    const out = join(CORPUS, recipe.file);
-    const partial = `${out}.partial${recipe.file.slice(recipe.file.lastIndexOf("."))}`;
-    const tmp = join(CORPUS, `tmp-${recipe.file}`);
-    for (const step of recipe.steps) {
-      run(
-        tool,
-        step.map((arg) =>
-          arg
-            .replace("{out}", partial)
-            .replace("{tmp}", tmp)
-            .replace("{corpus}", CORPUS)
-            .replace("{chapters}", chapters),
-        ),
-      );
-    }
-    rmSync(tmp, { force: true });
-    renameSync(partial, out);
-    files[recipe.file] = {
-      note: recipe.note,
-      sha256: sha256(readFileSync(out)),
-    };
-    console.log(`corpus: ${recipe.file} — ${recipe.note}`);
-  }
-  rmSync(chapters, { force: true });
+  const files = generate(tool, CORPUS);
   writeFileSync(
     manifestPath,
     `${JSON.stringify({ recipeHash: RECIPE_HASH, files }, null, 2)}\n`,

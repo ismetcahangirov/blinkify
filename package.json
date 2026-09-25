@@ -54,6 +54,8 @@
     "deny:licenses": "cargo deny check licenses",
     "sidecar:fetch": "node tools/fetch-sidecar.mjs",
     "corpus": "node tools/corpus/generate.mjs",
+    "corpus:verify": "node tools/corpus/generate.mjs --verify",
+    "test:lossless": "cargo test -p blinkify-engine --test losslessness",
     "sidecar:check": "node tools/sidecar-gate.mjs",
     "sidecar:check:test": "node tools/sidecar-gate-test.mjs",
     "deny:test": "node tools/licence-gate-test.mjs",

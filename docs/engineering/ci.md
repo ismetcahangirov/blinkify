@@ -111,25 +111,25 @@ key, so bumping it is a deliberate edit rather than a silent `latest`.
 
 ## The release gate
 
-`heavy.yml` holds what does not fit in 15 minutes: the losslessness suite and
-its media corpus, and the timeline frame-rate benchmark.
+`heavy.yml` holds what does not fit in 15 minutes, or what a shared runner
+makes flaky:
 
-**Neither exists yet**, and the workflow says so in its own run summary rather
-than reporting a green tick it has not earned:
+| Suite                               | Owned by      | Where it also runs                               |
+| ----------------------------------- | ------------- | ------------------------------------------------ |
+| Losslessness suite                  | #45 (Epic #6) | the pull-request gate too: `cargo test` runs it  |
+| Corpus reproducibility (`--verify`) | #45 (Epic #6) | release gate only: it generates the corpus twice |
+| Timeline frame-rate benchmark       | #33 (Epic #5) | release gate only                                |
+| Engine timing benchmarks            | Epic #3/#4    | release gate only                                |
 
-| Suite                         | Owned by      | Status          |
-| ----------------------------- | ------------- | --------------- |
-| Losslessness suite + corpus   | #45 (Epic #6) | Not implemented |
-| Timeline frame-rate benchmark | #33 (Epic #5) | Not implemented |
+The losslessness suite fits the pull-request budget, and a regression in the
+product's one claim should block a merge, not wait for a release; the release
+gate runs it again on a freshly generated corpus. See
+[`losslessness.md`](./losslessness.md).
 
-It is written now, empty, because the split — what blocks a merge versus what
-blocks a release — is a decision from Epic #1 and belongs where the next person
-will find it. When #45 adds a `test:lossless` script and #33 adds
-`bench:timeline`, the placeholder branch stops being taken and no workflow edit
-is needed.
-
-**Until then, a green `heavy.yml` is not evidence of anything.** Do not treat it
-as a release sign-off.
+The split — what blocks a merge versus what blocks a release — is a decision
+from Epic #1, recorded here where the next person will find it. Each heavy job
+states in its run summary what it did; a job whose suite is absent says so
+rather than reporting a green tick it has not earned.
 
 The media corpus is never committed (`CLAUDE.md` section 20 rule 12). #45
 decides whether it is generated with the bundled FFmpeg at job start or fetched
