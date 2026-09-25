@@ -908,16 +908,20 @@ fn paste(project: &Project, clips: &[ClipId], at: i64) -> Result<Compiled, EditE
         return Err(EditError::Refused("nothing was copied".to_owned()));
     }
     let timeline = timeline_of(project)?;
-    let mut copied: Vec<(TrackId, &Placement)> = Vec::new();
+    let mut originals: Vec<(TrackId, &Placement)> = Vec::new();
     for &id in &wanted {
         let (track, placement) = placed(&timeline, id)?;
-        copied.push((track.id, placement));
+        originals.push((track.id, placement));
     }
-    // Every copy is placed; `copied` is not empty.
-    let origin = copied.iter().map(|(_, p)| p.start).min().unwrap_or(0);
-    let end = copied.iter().map(|(_, p)| p.end()).max().unwrap_or(origin);
+    // Every original is placed; `originals` is not empty.
+    let origin = originals.iter().map(|(_, p)| p.start).min().unwrap_or(0);
+    let end = originals
+        .iter()
+        .map(|(_, p)| p.end())
+        .max()
+        .unwrap_or(origin);
     let span = end - origin;
-    let targets: BTreeSet<TrackId> = copied.iter().map(|&(track, _)| track).collect();
+    let targets: BTreeSet<TrackId> = originals.iter().map(|&(track, _)| track).collect();
     for track in timeline.tracks.iter().filter(|t| targets.contains(&t.id)) {
         if track
             .placements
@@ -953,9 +957,12 @@ fn paste(project: &Project, clips: &[ClipId], at: i64) -> Result<Compiled, EditE
     // A link names its group; the copies form a group of their own.
     let mut groups: BTreeMap<ClipId, ClipId> = BTreeMap::new();
     let mut copies = Vec::new();
-    for &(track, placement) in &copied {
+    for &(track, placement) in &originals {
         let (_, clip) = find(project, placement.clip)?;
-        let id = fresh[&clip.id];
+        let id = fresh
+            .get(&clip.id)
+            .copied()
+            .ok_or(EditError::NoClip(clip.id))?;
         copies.push(id);
         let link = clip.link.map(|link| {
             *groups
