@@ -277,7 +277,9 @@ impl EncoderChoice {
     fn level_argument(&self, codec: VideoCodec) -> Option<String> {
         let level = self.level?;
         match (codec, self.source) {
-            (VideoCodec::Hevc, EncoderSource::Intel) => Some((level * 10).div_euclid(30).to_string()),
+            (VideoCodec::Hevc, EncoderSource::Intel) => {
+                Some((level * 10).div_euclid(30).to_string())
+            }
             _ => Some(level.to_string()),
         }
     }
