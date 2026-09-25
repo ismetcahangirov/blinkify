@@ -16,6 +16,10 @@ import {
 } from "./windowChrome.js";
 import { HistoryControls } from "../project/HistoryControls.js";
 import { SequenceSettingsDialog } from "../project/SequenceSettingsDialog.js";
+import { ShortcutReference } from "../shortcuts/ShortcutReference.js";
+import { keyFor } from "../shortcuts/shortcuts.js";
+import { useShortcutsUi } from "../shortcuts/shortcuts.store.js";
+import { useTimelineStore } from "../timeline/timeline.store.js";
 import { requestClose, runFileAction } from "../project/ProjectLifecycle.js";
 import {
   fileName,
@@ -78,26 +82,26 @@ const menus = (
           {
             id: "new",
             label: "New project…",
-            shortcut: "Ctrl+N",
+            shortcut: keyFor("new-project"),
             onSelect: () => runFileAction("new"),
           },
           {
             id: "open",
             label: "Open…",
-            shortcut: "Ctrl+O",
+            shortcut: keyFor("open-project"),
             onSelect: () => runFileAction("open"),
           },
           {
             id: "save",
             label: "Save",
-            shortcut: "Ctrl+S",
+            shortcut: keyFor("save"),
             disabled: !actions.hasProject,
             onSelect: () => runFileAction("save"),
           },
           {
             id: "save-as",
             label: "Save as…",
-            shortcut: "Ctrl+Shift+S",
+            shortcut: keyFor("save-as"),
             disabled: !actions.hasProject,
             onSelect: () => runFileAction("save-as"),
           },
@@ -153,13 +157,13 @@ const menus = (
           {
             id: "undo",
             label: "Undo",
-            shortcut: "Ctrl+Z",
+            shortcut: keyFor("undo"),
             onSelect: () => void useProjectStore.getState().undo(),
           },
           {
             id: "redo",
             label: "Redo",
-            shortcut: "Ctrl+Y",
+            shortcut: keyFor("redo"),
             onSelect: () => void useProjectStore.getState().redo(),
           },
         ],
@@ -174,8 +178,8 @@ const menus = (
           {
             id: "zoom-fit",
             label: "Zoom to fit",
-            disabled: true,
-            onSelect: noop,
+            shortcut: keyFor("zoom-to-fit"),
+            onSelect: () => useTimelineStore.getState().fitAll(),
           },
         ],
       },
@@ -186,6 +190,12 @@ const menus = (
     groups: [
       {
         items: [
+          {
+            id: "shortcuts",
+            label: "Keyboard shortcuts…",
+            shortcut: keyFor("show-shortcuts"),
+            onSelect: () => useShortcutsUi.getState().setReferenceOpen(true),
+          },
           {
             id: "about",
             label: "About Blinkify",
@@ -316,6 +326,7 @@ export function AppBar() {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
       />
+      <ShortcutReference />
     </header>
   );
 }

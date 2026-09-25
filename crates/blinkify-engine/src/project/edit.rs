@@ -158,6 +158,15 @@ pub enum Edit {
     Duplicate {
         clips: Vec<ClipId>,
     },
+    /// Copies of `clips`, and of every clip linked to one, placed from
+    /// sequence frame `at` on their own tracks in their relative positions
+    /// (#38). Clips at or after `at` on every unlocked track move later by
+    /// the pasted length, so nothing falls out of sync.
+    Paste {
+        clips: Vec<ClipId>,
+        #[ts(type = "number")]
+        at: i64,
+    },
     /// Hold the frame at `at` for `frames` sequence frames, inserted there;
     /// the rest of the track moves later by as much (#35).
     FreezeFrame {
@@ -241,6 +250,7 @@ impl Edit {
             Self::Split { .. } => "Split".to_owned(),
             Self::Join { .. } => "Join clips".to_owned(),
             Self::Duplicate { clips: ids } => clips(ids.len(), "Duplicate clip", "Duplicate"),
+            Self::Paste { clips: ids, .. } => clips(ids.len(), "Paste clip", "Paste"),
             Self::FreezeFrame { .. } => "Freeze frame".to_owned(),
             Self::SetReverse { reverse: true, .. } => "Reverse".to_owned(),
             Self::SetReverse { reverse: false, .. } => "Play forwards".to_owned(),
@@ -581,6 +591,7 @@ fn compile(
         Edit::Split { clips, at } => return split(project, clips, *at),
         Edit::Join { left, right } => return join(project, *left, *right, kept),
         Edit::Duplicate { clips } => return duplicate(project, clips),
+        Edit::Paste { clips, at } => return paste(project, clips, *at),
         Edit::FreezeFrame { clip, at, frames } => {
             return freeze_frame(project, *clip, *at, *frames);
         }
@@ -644,6 +655,7 @@ fn compile(
         | Edit::Split { .. }
         | Edit::Join { .. }
         | Edit::Duplicate { .. }
+        | Edit::Paste { .. }
         | Edit::FreezeFrame { .. }
         | Edit::DetachAudio { .. } => unreachable!("compiled above"),
     }))
@@ -877,6 +889,89 @@ fn duplicate(project: &Project, clips: &[ClipId]) -> Result<Compiled, EditError>
             }
         }
         changes.extend(inserts);
+    }
+    Ok(Compiled {
+        changes,
+        selection: copies,
+        clamped: false,
+    })
+}
+
+fn paste(project: &Project, clips: &[ClipId], at: i64) -> Result<Compiled, EditError> {
+    if at < 0 {
+        return Err(EditError::Refused(
+            "clips cannot be pasted before the start".to_owned(),
+        ));
+    }
+    let wanted: BTreeSet<ClipId> = with_links(project, clips).into_iter().collect();
+    if wanted.is_empty() {
+        return Err(EditError::Refused("nothing was copied".to_owned()));
+    }
+    let timeline = timeline_of(project)?;
+    let mut copied: Vec<(TrackId, &Placement)> = Vec::new();
+    for &id in &wanted {
+        let (track, placement) = placed(&timeline, id)?;
+        copied.push((track.id, placement));
+    }
+    // Every copy is placed; `copied` is not empty.
+    let origin = copied.iter().map(|(_, p)| p.start).min().unwrap_or(0);
+    let end = copied.iter().map(|(_, p)| p.end()).max().unwrap_or(origin);
+    let span = end - origin;
+    let targets: BTreeSet<TrackId> = copied.iter().map(|&(track, _)| track).collect();
+    for track in timeline.tracks.iter().filter(|t| targets.contains(&t.id)) {
+        if track
+            .placements
+            .iter()
+            .any(|p| p.start < at && at < p.end())
+        {
+            return Err(EditError::Refused(format!(
+                "the playhead is inside a clip on track {}: move it to a cut or a gap to paste there",
+                track.id
+            )));
+        }
+    }
+    let mut changes = Vec::new();
+    // Make room on every unlocked track, so linked pictures and sound
+    // elsewhere keep their places relative to each other.
+    for track in &project.sequence.tracks {
+        if track.locked && !targets.contains(&track.id) {
+            continue;
+        }
+        for clip in track.clips.iter().filter(|clip| clip.start >= at) {
+            changes.push(Change::ReplaceClip(Clip {
+                start: clip.start + span,
+                ..clip.clone()
+            }));
+        }
+    }
+    let first = next_id(project);
+    let fresh: BTreeMap<ClipId, ClipId> = wanted
+        .iter()
+        .zip(first..)
+        .map(|(&old, new)| (old, new))
+        .collect();
+    // A link names its group; the copies form a group of their own.
+    let mut groups: BTreeMap<ClipId, ClipId> = BTreeMap::new();
+    let mut copies = Vec::new();
+    for &(track, placement) in &copied {
+        let (_, clip) = find(project, placement.clip)?;
+        let id = fresh[&clip.id];
+        copies.push(id);
+        let link = clip.link.map(|link| {
+            *groups
+                .entry(link)
+                .or_insert_with(|| fresh.get(&link).copied().unwrap_or(id))
+        });
+        changes.push(Change::InsertClip {
+            track,
+            index: None,
+            clip: Clip {
+                id,
+                start: at + (clip.start - origin),
+                link,
+                ..clip.clone()
+            },
+        });
     }
     Ok(Compiled {
         changes,
@@ -3098,6 +3193,91 @@ mod tests {
             spans(&document, 0),
             vec![(1, 0, 30), (2, 30, 60), (3, 90, 120)]
         );
+    }
+
+    #[test]
+    fn a_paste_lands_at_the_playhead_and_pushes_everything_after_it() {
+        let mut document = bounded();
+        let applied = document
+            .apply(
+                &Edit::Paste {
+                    clips: vec![1],
+                    at: 60,
+                },
+                &EditContext::default(),
+            )
+            .expect("paste");
+        assert_eq!(applied.context.selection, vec![4]);
+        assert_eq!(
+            spans(&document, 0),
+            vec![(1, 0, 30), (2, 30, 60), (4, 60, 90), (3, 120, 150)]
+        );
+        assert_eq!(document.history().entries, vec!["Paste clip"]);
+        document.undo();
+        assert_eq!(
+            spans(&document, 0),
+            vec![(1, 0, 30), (2, 30, 60), (3, 90, 120)]
+        );
+    }
+
+    #[test]
+    fn a_paste_never_splits_a_clip_and_needs_something_copied() {
+        let mut document = bounded();
+        for (clips, at) in [(vec![1], 45), (vec![1], -1), (Vec::new(), 60)] {
+            let refused = document.apply(&Edit::Paste { clips, at }, &EditContext::default());
+            assert!(matches!(refused, Err(EditError::Refused(_))), "{at}");
+        }
+        // A copied clip deleted since is not there to paste.
+        document
+            .apply(
+                &Edit::RemoveClips { clips: vec![1] },
+                &EditContext::default(),
+            )
+            .expect("remove");
+        assert!(
+            document
+                .apply(
+                    &Edit::Paste {
+                        clips: vec![1],
+                        at: 60
+                    },
+                    &EditContext::default()
+                )
+                .is_err()
+        );
+        assert_eq!(document.history().entries, vec!["Delete clip"]);
+    }
+
+    #[test]
+    fn pasted_pictures_and_sound_stay_linked_to_each_other_only() {
+        let mut project = document().project().clone();
+        project.sequence.tracks[0].clips[0].link = Some(1);
+        let mut sound = Clip::new(9, 1, 1, TB, 0, vec![Operation::Trim { from: 0, to: 1000 }]);
+        sound.link = Some(1);
+        project.sequence.tracks[2].clips.push(sound);
+        let mut document = Document::new(project).expect("valid");
+        let applied = document
+            .apply(
+                &Edit::Paste {
+                    clips: vec![1],
+                    at: 120,
+                },
+                &EditContext::default(),
+            )
+            .expect("paste");
+        let copies = applied.context.selection;
+        assert_eq!(copies.len(), 2, "the linked sound comes too");
+        let links: Vec<Option<ClipId>> = copies
+            .iter()
+            .map(|&id| find(document.project(), id).expect("copy").1.link)
+            .collect();
+        assert_eq!(links[0], links[1]);
+        assert_ne!(links[0], Some(1), "a group of their own");
+        let starts: Vec<i64> = copies
+            .iter()
+            .map(|&id| find(document.project(), id).expect("copy").1.start)
+            .collect();
+        assert_eq!(starts, vec![120, 120]);
     }
 
     #[test]

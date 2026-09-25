@@ -1,7 +1,8 @@
 import type { PreviewSpeed } from "@blinkify/types";
 import { IconButton, Select } from "@blinkify/ui";
 
-import { usePreviewStore } from "./preview.store.js";
+import { keyFor } from "../shortcuts/shortcuts.js";
+import { loopRange, usePreviewStore } from "./preview.store.js";
 import { formatTimecode } from "./timecode.js";
 import {
   JumpEndGlyph,
@@ -13,7 +14,6 @@ import {
   StepForwardGlyph,
   StopGlyph,
 } from "./transportGlyphs.js";
-import { TRANSPORT_SHORTCUTS } from "./useTransportShortcuts.js";
 
 const SPEEDS: ReadonlyArray<{ value: PreviewSpeed; label: string }> = [
   { value: "quarter", label: "0.25×" },
@@ -37,14 +37,23 @@ function isSpeed(value: string): value is PreviewSpeed {
  * here keeps time. The timecode is formatted from the frame number the
  * engine sent with the frame being shown.
  *
- * Loop covers the whole timeline until the timeline has a selection to loop
- * over (#34); the engine already takes any range.
+ * Loop plays between the in and out points (I and O, #38), or the whole
+ * timeline without them; the points are shown beside the loop button.
  */
 export function TransportBar() {
   const playback = usePreviewStore((state) => state.playback);
   const frameNumber = usePreviewStore((state) => state.frameNumber);
   const transport = usePreviewStore((state) => state.transport);
+  const marks = usePreviewStore((state) => state.marks);
   if (!playback) return null;
+  const markTimecode = (position: number) =>
+    formatTimecode(
+      Math.floor(
+        (position * playback.frameRate.num) /
+          (1_000_000 * playback.frameRate.den),
+      ),
+      playback.frameRate,
+    );
 
   const playing = playback.state === "playing";
   const current =
@@ -61,35 +70,35 @@ export function TransportBar() {
       <IconButton
         size="sm"
         label="Jump to start"
-        shortcut={TRANSPORT_SHORTCUTS.jumpToStart}
+        shortcut={keyFor("jump-to-start")}
         icon={<JumpStartGlyph />}
         onClick={send({ type: "jump-to-start" })}
       />
       <IconButton
         size="sm"
         label="Previous frame"
-        shortcut={TRANSPORT_SHORTCUTS.previousFrame}
+        shortcut={keyFor("previous-frame")}
         icon={<StepBackGlyph />}
         onClick={send({ type: "step", frames: -1 })}
       />
       <IconButton
         size="sm"
         label={playing ? "Pause" : "Play"}
-        shortcut={TRANSPORT_SHORTCUTS.playPause}
+        shortcut={keyFor("play-pause")}
         icon={playing ? <PauseGlyph /> : <PlayGlyph />}
         onClick={send({ type: "toggle" })}
       />
       <IconButton
         size="sm"
         label="Next frame"
-        shortcut={TRANSPORT_SHORTCUTS.nextFrame}
+        shortcut={keyFor("next-frame")}
         icon={<StepForwardGlyph />}
         onClick={send({ type: "step", frames: 1 })}
       />
       <IconButton
         size="sm"
         label="Jump to end"
-        shortcut={TRANSPORT_SHORTCUTS.jumpToEnd}
+        shortcut={keyFor("jump-to-end")}
         icon={<JumpEndGlyph />}
         onClick={send({ type: "jump-to-end" })}
       />
@@ -125,6 +134,13 @@ export function TransportBar() {
               void transport({ type: "set-speed", speed: value });
           }}
         />
+        {marks.in === null && marks.out === null ? null : (
+          <span className="player__marks" data-testid="marks">
+            {marks.in === null ? "" : `In ${markTimecode(marks.in)}`}
+            {marks.in !== null && marks.out !== null ? " · " : ""}
+            {marks.out === null ? "" : `Out ${markTimecode(marks.out)}`}
+          </span>
+        )}
         <IconButton
           size="sm"
           label={looping ? "Stop looping" : "Loop playback"}
@@ -132,7 +148,7 @@ export function TransportBar() {
           icon={<LoopGlyph />}
           onClick={send({
             type: "set-loop",
-            range: looping ? null : { start: 0, end: playback.duration },
+            range: looping ? null : loopRange(marks, playback),
           })}
         />
       </div>

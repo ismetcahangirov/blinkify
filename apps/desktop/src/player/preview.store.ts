@@ -65,6 +65,42 @@ interface PreviewState {
   refreshStats: () => Promise<void>;
   /** The frame stream stopped working. */
   fail: (message: string) => void;
+  /** The in and out points (#38), in microseconds: the frames the loop
+   * range starts and ends on. A preview setting, never part of the graph. */
+  marks: Marks;
+  /** Put the in or out point on the frame on screen. While looping, the
+   * loop follows. */
+  mark: (point: "in" | "out") => Promise<void>;
+}
+
+export interface Marks {
+  readonly in: number | null;
+  readonly out: number | null;
+}
+
+/**
+ * The range a loop plays: from the in point, or the start, up to and
+ * including the frame at the out point, or to the end.
+ */
+export function loopRange(
+  marks: Marks,
+  playback: Pick<PlaybackStatus, "duration" | "frameRate">,
+): { start: number; end: number } {
+  const frame =
+    playback.frameRate.num > 0
+      ? Math.max(
+          1,
+          Math.round(
+            (1_000_000 * playback.frameRate.den) / playback.frameRate.num,
+          ),
+        )
+      : 1;
+  const start = marks.in ?? 0;
+  const end =
+    marks.out === null
+      ? playback.duration
+      : Math.min(playback.duration, marks.out + frame);
+  return { start, end: Math.max(end, start + 1) };
 }
 
 /** Incremented by every open and close, so a slow open that loses a race
@@ -96,6 +132,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => {
         framePosition: null,
         monitoring: { volume: 1, muted: false, soloed: [], mutedTracks: [] },
         levels: null,
+        marks: { in: null, out: null },
       });
     } catch (error) {
       if (mine !== generation) return;
@@ -115,6 +152,30 @@ export const usePreviewStore = create<PreviewState>((set, get) => {
     stats: null,
     monitoring: { volume: 1, muted: false, soloed: [], mutedTracks: [] },
     levels: null,
+    marks: { in: null, out: null },
+
+    mark: async (point) => {
+      const { playback, framePosition, marks } = get();
+      if (!playback) return;
+      const at = framePosition ?? playback.position;
+      // A point on the wrong side of the other one replaces the range.
+      const next: Marks =
+        point === "in"
+          ? {
+              in: at,
+              out: marks.out !== null && marks.out < at ? null : marks.out,
+            }
+          : {
+              out: at,
+              in: marks.in !== null && marks.in > at ? null : marks.in,
+            };
+      set({ marks: next });
+      if (playback.loopRange !== null)
+        await get().transport({
+          type: "set-loop",
+          range: loopRange(next, playback),
+        });
+    },
 
     monitor: async (command) => {
       const { session } = get();
@@ -174,6 +235,7 @@ export const usePreviewStore = create<PreviewState>((set, get) => {
         path: null,
         kind: null,
         stats: null,
+        marks: { in: null, out: null },
       });
       if (session !== null) {
         await invoke("close_preview", { session });

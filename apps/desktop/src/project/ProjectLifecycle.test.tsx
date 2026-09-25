@@ -5,12 +5,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  fileActionForKey,
-  ProjectLifecycle,
-  useLifecycleUi,
-  when,
-} from "./ProjectLifecycle.js";
+import { ProjectLifecycle, useLifecycleUi, when } from "./ProjectLifecycle.js";
 import { projectTitle, useProjectStore } from "./project.store.js";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
@@ -173,21 +168,8 @@ describe("the project lifecycle", () => {
     );
   });
 
-  it("marks unsaved work in the title and maps the File keys", () => {
+  it("marks unsaved work in the title", () => {
     expect(projectTitle(view(true))).toBe("Trip •");
     expect(projectTitle(view(false))).toBe("Trip");
-    const key = (key: string, extra: Partial<KeyboardEvent> = {}) => ({
-      key,
-      ctrlKey: true,
-      metaKey: false,
-      altKey: false,
-      shiftKey: false,
-      ...extra,
-    });
-    expect(fileActionForKey(key("n"))).toBe("new");
-    expect(fileActionForKey(key("o"))).toBe("open");
-    expect(fileActionForKey(key("s"))).toBe("save");
-    expect(fileActionForKey(key("S", { shiftKey: true }))).toBe("save-as");
-    expect(fileActionForKey(key("s", { ctrlKey: false }))).toBeNull();
   });
 });

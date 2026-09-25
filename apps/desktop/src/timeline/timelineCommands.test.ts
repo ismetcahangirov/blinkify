@@ -2,20 +2,11 @@ import type { ProjectView } from "@blinkify/types";
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useProjectStore } from "../project/project.store.js";
-import { runTimelineAction, timelineActionForKey } from "./useTimelineKeys.js";
+import { runTimelineAction } from "./timelineCommands.js";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
 const invoked = vi.mocked(invoke);
-
-const key = (key: string, modifiers: Partial<KeyboardEvent> = {}) => ({
-  key,
-  ctrlKey: false,
-  metaKey: false,
-  altKey: false,
-  shiftKey: false,
-  ...modifiers,
-});
 
 function view(): ProjectView {
   const placement = (clip: number, start: number) => ({
@@ -75,7 +66,7 @@ function view(): ProjectView {
   };
 }
 
-describe("the timeline's editing keys", () => {
+describe("the timeline's editing commands", () => {
   beforeEach(() => {
     invoked.mockReset();
     invoked.mockResolvedValue({
@@ -84,20 +75,6 @@ describe("the timeline's editing keys", () => {
       clamped: false,
     });
     useProjectStore.setState({ view: view(), selection: [2] });
-  });
-
-  it("maps Delete, Shift+Delete and Ctrl+A", () => {
-    expect(timelineActionForKey(key("Delete"))).toBe("delete");
-    expect(timelineActionForKey(key("Backspace"))).toBe("delete");
-    expect(timelineActionForKey(key("Delete", { shiftKey: true }))).toBe(
-      "ripple-delete",
-    );
-    expect(timelineActionForKey(key("a", { ctrlKey: true }))).toBe(
-      "select-all",
-    );
-    expect(timelineActionForKey(key("b", { ctrlKey: true }))).toBe("split");
-    expect(timelineActionForKey(key("a"))).toBeNull();
-    expect(timelineActionForKey(key("Delete", { altKey: true }))).toBeNull();
   });
 
   it("deletes, ripple-deletes and selects all as one edit each", async () => {

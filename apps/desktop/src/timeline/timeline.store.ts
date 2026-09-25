@@ -67,6 +67,13 @@ interface TimelineViewState {
   /** What the keyframe index says about a cut at the playhead. */
   cut: CutPoint | null;
   setCut: (cut: CutPoint | null) => void;
+  /** Whether clip edges snap while dragging (#34). On by default; Alt
+   * does the opposite of it for one drag. */
+  snapping: boolean;
+  setSnapping: (on: boolean) => void;
+  /** The clips Ctrl+C copied (#38), by id: what Ctrl+V pastes. */
+  clipboard: readonly number[];
+  setClipboard: (clips: readonly number[]) => void;
 }
 
 const length = (): number =>
@@ -80,6 +87,8 @@ export const useTimelineStore = create<TimelineViewState>((set, get) => ({
   notice: null,
   snapToKeyframe: false,
   cut: null,
+  snapping: true,
+  clipboard: [],
 
   setSize: (width, height) => {
     const view = { ...get().view, width, height };
@@ -122,4 +131,6 @@ export const useTimelineStore = create<TimelineViewState>((set, get) => ({
   setNotice: (notice) => set({ notice }),
   setSnapToKeyframe: (snapToKeyframe) => set({ snapToKeyframe }),
   setCut: (cut) => set({ cut }),
+  setSnapping: (snapping) => set({ snapping }),
+  setClipboard: (clips) => set({ clipboard: [...clips] }),
 }));
