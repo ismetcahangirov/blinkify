@@ -106,6 +106,14 @@ impl SidecarCommand {
         self.option("-i", file_url(path))
     }
 
+    /// Input read from the process's standard input, which the job feeds
+    /// ([`JobOptions::stdin`](super::JobOptions::stdin)): the export muxer
+    /// reads the packets the engine routes to it this way.
+    #[must_use]
+    pub fn stdin_input(self) -> Self {
+        self.option("-i", "pipe:0")
+    }
+
     /// Synthetic input from a `lavfi` graph — used by tests and by the encoder
     /// capability probe, never with user data.
     #[must_use]

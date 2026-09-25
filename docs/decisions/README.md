@@ -75,3 +75,4 @@ Why it was plausible. Why it lost.
 | [0007](./ADR-0007-edits-are-invertible-changes-in-the-engine.md)          | Edits are invertible changes, applied by the engine                          | Accepted |
 | [0008](./ADR-0008-sequence-settings-and-copy-eligibility.md)              | Sequences match their first clip, and one predicate decides copy eligibility | Accepted |
 | [0009](./ADR-0009-constant-speed-is-a-copy-within-a-frame-rate-window.md) | A constant speed is a copy while its frame rate is one a file can carry      | Accepted |
+| [0010](./ADR-0010-export-routes-packets-over-nut-pipes.md)                | The export routes packets between sidecar processes over NUT pipes           | Accepted |
