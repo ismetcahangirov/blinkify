@@ -7,6 +7,8 @@
 
 #![allow(dead_code, clippy::expect_used, unreachable_pub)]
 
+pub mod fixture;
+
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -110,6 +112,11 @@ pub fn decode_errors(path: &Path) -> Vec<String> {
                 .option("-v", "error")
                 .input(path)
                 .option("-map", "0")
+                // Every frame on its own timestamp: the check is of the
+                // decoders, not of converting a variable rate to a fixed one
+                // for the null output.
+                .option("-fps_mode", "passthrough")
+                .option("-enc_time_base", "demux")
                 .output_null(),
             Priority::Foreground,
         )
@@ -119,4 +126,50 @@ pub fn decode_errors(path: &Path) -> Vec<String> {
 
 pub fn md5s(hashes: &[Hashed]) -> Vec<String> {
     hashes.iter().map(|h| h.md5.clone()).collect()
+}
+
+/// Every packet's presentation time in seconds, sorted: the timeline of a
+/// stream, whatever order the packets are stored in.
+pub fn packet_times(path: &Path, selector: &str) -> Vec<f64> {
+    let output = orchestrator()
+        .run_to_end(
+            SidecarCommand::ffprobe()
+                .option("-v", "error")
+                .option("-select_streams", selector.to_owned())
+                .option("-show_entries", "packet=pts_time")
+                .option("-of", "csv=p=0")
+                .input(path),
+            Priority::Foreground,
+        )
+        .expect("ffprobe");
+    let mut times: Vec<f64> = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| line.trim().trim_end_matches(',').parse().ok())
+        .collect();
+    times.sort_by(f64::total_cmp);
+    times
+}
+
+/// Where a stream ends, in seconds: its last packet's time plus duration.
+pub fn stream_end(path: &Path, selector: &str) -> f64 {
+    let output = orchestrator()
+        .run_to_end(
+            SidecarCommand::ffprobe()
+                .option("-v", "error")
+                .option("-select_streams", selector.to_owned())
+                .option("-show_entries", "packet=pts_time,duration_time")
+                .option("-of", "csv=p=0")
+                .input(path),
+            Priority::Foreground,
+        )
+        .expect("ffprobe");
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| {
+            let mut fields = line.split(',');
+            let pts: f64 = fields.next()?.parse().ok()?;
+            let length: f64 = fields.next()?.parse().ok()?;
+            Some(pts + length)
+        })
+        .fold(0.0, f64::max)
 }

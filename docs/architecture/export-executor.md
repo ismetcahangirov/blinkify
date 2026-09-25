@@ -82,9 +82,8 @@ and no overlap, and the output starts at zero.
   its reader, which stops that process. Each reader has its own cancel
   switch, because a reader stopped on purpose once its segment is complete
   must not cancel the export.
-- A segment the executor cannot run yet — a smart-cut, a video re-encode, a
-  copied clip at another speed — is an `Unsupported` error before any output
-  is written. It is never substituted by a copy or by an encode the
+- A segment the executor cannot run yet — a smart-cut, a video re-encode —
+  is an `Unsupported` error before any output is written. It is never substituted by a copy or by an encode the
   plan did not choose.
 
 ## Encoded sound (#43)
@@ -131,3 +130,29 @@ source's real sound on either side of the segment (silence only where the
 stream has none), and only the packets whose samples are the segment's own
 are kept. A lossless codec has no priming and gets none, so a FLAC segment
 decodes to exactly the processed samples.
+
+## Constant speed (#42)
+
+A clip at a constant speed the plan keeps as a copy (ADR-0009: its rescaled
+frame rate is 1–240 fps) is copied like any other: the same packets, the same
+bytes. Only the timestamps change. Each packet's distance from the in-point is
+divided by the speed on its own timestamp —
+`output = segment start + (pts − in) ÷ speed` — so a variable-frame-rate
+source keeps its own rhythm, only faster or slower, and is never conformed to a
+nominal rate.
+
+| Speed                           | Pictures                                   | Sound                |
+| ------------------------------- | ------------------------------------------ | -------------------- |
+| rescaled rate 1–240 fps         | copied, retimed                            | `atempo`, re-encoded |
+| rescaled rate below 12 fps      | copied, retimed; the plan says it stutters | `atempo`, re-encoded |
+| rescaled rate outside 1–240 fps | re-encoded at the sequence rate (#55)      | `atempo`, re-encoded |
+| outside 0.1×–100×               | refused by the edit layer                  | —                    |
+
+The sound is always re-encoded at a speed other than normal: samples cannot be
+retimed without resampling. `atempo` keeps the pitch, exactly as the preview
+plays it. Sound and pictures are both made to the segment's exact length, so
+they stay in sync.
+
+The source's nominal frame-rate metadata is not carried into the output: once
+speeds and joins retime a stream it would misstate it, so the muxer derives the
+rate from the timestamps, down to the last frame's duration.

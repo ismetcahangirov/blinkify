@@ -382,6 +382,18 @@ fn reader_command(path: &Path, source: &SegmentSource) -> SidecarCommand {
         .output_stdout()
 }
 
+/// A copied packet's distance from its segment's in-point, played at
+/// `speed`, in ticks of `to` (#42). Every packet is rescaled on its own
+/// timestamp, so a variable-frame-rate source keeps its own rhythm, only
+/// faster or slower; the packet itself is not touched.
+fn retime(ticks: i64, from: Rational, to: Rational, speed: Rational) -> Result<i64, ExportError> {
+    let played = Rational {
+        num: from.num.saturating_mul(speed.den),
+        den: from.den.saturating_mul(speed.num),
+    };
+    convert(ticks, played, to)
+}
+
 /// `ticks` of `from` in `to`, to the nearest tick.
 fn convert(ticks: i64, from: Rational, to: Rational) -> Result<i64, ExportError> {
     rescale(ticks, from, to, Rounding::Nearest)
@@ -437,7 +449,12 @@ impl Context<'_> {
                     .filter(|(key, _)| key != "encoder")
                     .cloned()
                     .collect();
-                let _ = header.send(Ok((stream.clone(), global)));
+                // The source's nominal rate is not the output's once speeds
+                // and joins retime it; the muxer derives the rate from the
+                // timestamps instead, down to the last frame's duration.
+                let mut output = stream.clone();
+                output.metadata.retain(|(key, _)| key != "r_frame_rate");
+                let _ = header.send(Ok((output, global)));
                 output_time_base = Some(stream.time_base);
                 stream.time_base
             };
@@ -581,7 +598,7 @@ impl Context<'_> {
                 // Leading pictures of an open GOP: shown before the cut.
                 continue;
             }
-            let pts = start + convert(packet.pts - in_, nut_base, out_base)?;
+            let pts = start + retime(packet.pts - in_, nut_base, out_base, source.speed)?;
             packets
                 .send(Routed {
                     pts,
@@ -685,15 +702,14 @@ fn chapters(
     found
 }
 
-/// Whether this executor can carry out `segment`: a copy of one source at
-/// normal speed, or — for sound — an encode the audio path can make.
+/// Whether this executor can carry out `segment`: a copy of one source, at
+/// any speed the plan kept a copy (#42), or — for sound — an encode the audio
+/// path can make.
 /// Anything else is refused before any output is written, never copied or
 /// encoded differently from what the plan chose.
 fn runnable(segment: &Segment, encodes_audio: bool) -> Result<(), ExportError> {
     match (segment.tier, segment.sources.as_slice()) {
-        (ExportTier::StreamCopy, [source]) if source.speed == (Rational { num: 1, den: 1 }) => {
-            Ok(())
-        }
+        (ExportTier::StreamCopy, [_]) => Ok(()),
         (ExportTier::FullReEncode { .. }, _) if segment.media == Media::Audio && encodes_audio => {
             audio::check(segment)
         }

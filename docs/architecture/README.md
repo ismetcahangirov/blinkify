@@ -65,7 +65,8 @@ How Blinkify is put together and why the structure holds under change.
 - [`export-executor.md`](./export-executor.md) — the plan carried out in one
   pass: readers, routers and one muxer over NUT pipes, exact packet selection
   and rebasing, what is preserved, failure and cancellation (#40); encoded
-  sound beside copied pictures, the codec choice and clean joins (#43)
+  sound beside copied pictures, the codec choice and clean joins (#43);
+  constant speed by retiming copied packets (#42)
 
 ## What does not belong here
 
