@@ -671,9 +671,15 @@ impl MediaEngine {
     ) -> Result<blinkify_engine::export::plan::SourceFacts, String> {
         let info = self.prober()?.probe(path).map_err(|e| e.to_string())?;
         let index = self.index(path, &info)?;
+        let encoders = self
+            .capabilities
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone();
         Ok(blinkify_engine::export::facts::source_facts(
             &info,
             Some(&index),
+            encoders.as_ref(),
         ))
     }
 

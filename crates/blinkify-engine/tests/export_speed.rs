@@ -146,8 +146,11 @@ fn a_rate_no_container_carries_falls_back_with_its_reason() {
     match source.export(&plan, &target, AudioTarget::default()) {
         // The full re-encode executor (#55) carries it out where it exists.
         Ok(_) => assert!(common::decode_errors(&target).is_empty()),
-        // Until then it is refused, never copied.
-        Err(ExportError::Unsupported(_)) => assert!(!target.exists()),
+        // Where no encoder here can make it, the plan declines it; until the
+        // executor exists it is refused. Never copied either way.
+        Err(ExportError::Declined(_) | ExportError::Unsupported(_)) => {
+            assert!(!target.exists());
+        }
         Err(other) => panic!("{other}"),
     }
 }

@@ -46,7 +46,7 @@ fn source(name: &str) -> Source {
         .expect("probe");
     let index = KeyframeIndex::open(&path, &info, orchestrator, None).expect("index");
     index.complete_in_background(|_| {}).expect("indexed");
-    let facts = source_facts(&info, Some(&index));
+    let facts = source_facts(&info, Some(&index), None);
     Source { path, info, facts }
 }
 

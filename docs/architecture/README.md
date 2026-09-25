@@ -70,6 +70,9 @@ How Blinkify is put together and why the structure holds under change.
 - [`re-encode-profiles.md`](./re-encode-profiles.md) — matching a re-encode
   to the source it joins: the source's profile, the encoder that makes it or
   a named refusal, and the join checked on the SPS before writing (#44)
+- [`smart-cut.md`](./smart-cut.md) — frame-accurate cuts that re-encode only
+  the windows their frames depend on, leading pictures, in-band parameter
+  sets across the joins, and the decline where no encoder matches (#41)
 
 ## What does not belong here
 

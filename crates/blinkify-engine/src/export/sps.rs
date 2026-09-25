@@ -158,7 +158,8 @@ fn hevc(nal: &[u8]) -> Option<Sequence> {
 }
 
 /// The NAL units of an Annex B byte stream.
-fn annex_b(stream: &[u8]) -> Vec<&[u8]> {
+#[must_use]
+pub fn annex_b_units(stream: &[u8]) -> Vec<&[u8]> {
     let mut starts = Vec::new();
     let mut i = 0;
     while i + 3 <= stream.len() {
@@ -186,7 +187,9 @@ fn annex_b(stream: &[u8]) -> Vec<&[u8]> {
         .collect()
 }
 
-fn is_annex_b(record: &[u8]) -> bool {
+/// Whether `record` is Annex B: starts with a start code.
+#[must_use]
+pub fn is_annex_b(record: &[u8]) -> bool {
     record.starts_with(&[0, 0, 1]) || record.starts_with(&[0, 0, 0, 1])
 }
 
@@ -226,7 +229,7 @@ fn hvcc_sps(record: &[u8]) -> Option<&[u8]> {
 #[must_use]
 pub fn h264_sequence(record: &[u8]) -> Option<Sequence> {
     if is_annex_b(record) {
-        annex_b(record)
+        annex_b_units(record)
             .into_iter()
             .find(|nal| nal.first().is_some_and(|b| b & 0x1F == 7))
             .and_then(h264)
@@ -239,7 +242,7 @@ pub fn h264_sequence(record: &[u8]) -> Option<Sequence> {
 #[must_use]
 pub fn hevc_sequence(record: &[u8]) -> Option<Sequence> {
     if is_annex_b(record) {
-        annex_b(record)
+        annex_b_units(record)
             .into_iter()
             .find(|nal| nal.first().is_some_and(|b| (b >> 1) & 0x3F == 33))
             .and_then(hevc)

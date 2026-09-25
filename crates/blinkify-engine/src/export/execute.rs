@@ -34,6 +34,9 @@ use thiserror::Error;
 use super::audio::{self, AudioEncoding, AudioTarget};
 use super::nut::{self, Header, NutError, Packet, StreamHeader};
 use super::plan::{ExportPlan, Media, Segment, SegmentSource};
+use super::profile::{EncoderChoice, JoinMismatch, validate_join};
+use super::seam::{self, Piece, Stitch};
+use crate::capability::VideoCodec;
 use crate::orchestrator::{
     CancelToken, Flow, JobError, JobOptions, JobProgress, Orchestrator, Priority, SidecarCommand,
 };
@@ -154,6 +157,8 @@ pub enum ExportError {
     MissingSource(SourceId),
     #[error("the file does not match the plan: {0}")]
     Mismatch(String),
+    #[error("the re-encoded pictures cannot join the copied ones: {0}")]
+    Seam(#[from] JoinMismatch),
     #[error(transparent)]
     Engine(#[from] JobError),
     #[error(transparent)]
@@ -322,10 +327,75 @@ impl Opened {
     }
 }
 
+/// Where a segment's packets go: its source's in-point, the time base the
+/// producer writes in, and the output's.
+#[derive(Debug, Clone)]
+struct Place {
+    source: SourceId,
+    /// The source stream's time base: the unit of the plan's ticks.
+    source_base: Rational,
+    /// The producer's NUT time base.
+    nut_base: Rational,
+    /// The reader offset, in `nut_base` ticks.
+    offset: i64,
+    /// The segment's in-point, in source ticks.
+    origin: i64,
+    speed: Rational,
+    /// The segment's start on the output timeline, in `out_base` ticks.
+    start: i64,
+    out_base: Rational,
+}
+
+impl Place {
+    fn of(
+        plan: &ExportPlan,
+        segment: &Segment,
+        source: &SegmentSource,
+        stream: &StreamHeader,
+        out_base: Rational,
+    ) -> Result<Self, ExportError> {
+        let nut_base = stream.time_base;
+        Ok(Self {
+            source: source.source,
+            source_base: source.time_base,
+            nut_base,
+            offset: convert(READER_OFFSET_SECONDS, Rational { num: 1, den: 1 }, nut_base)?,
+            origin: source.source_in,
+            speed: source.speed,
+            start: convert(segment.start, plan.time_base, out_base)?,
+            out_base,
+        })
+    }
+
+    /// Source ticks as the producer writes them.
+    fn nut(&self, ticks: i64) -> Result<i64, ExportError> {
+        let offset = convert(
+            READER_OFFSET_SECONDS,
+            Rational { num: 1, den: 1 },
+            self.nut_base,
+        )?;
+        Ok(convert(ticks, self.source_base, self.nut_base)? + offset)
+    }
+
+    /// A producer's timestamp back in source ticks.
+    fn source_ticks(&self, pts: i64) -> Result<i64, ExportError> {
+        convert(pts - self.offset, self.nut_base, self.source_base)
+    }
+
+    /// Where a producer's packet at `pts` (in `base`) goes on the output.
+    fn output(&self, pts: i64, base: Rational) -> Result<i64, ExportError> {
+        let origin = self.nut(self.origin)?;
+        Ok(self.start + retime(pts - origin, base, self.out_base, self.speed)?)
+    }
+}
+
 /// Which of a producer's packets are its segment's.
 enum Window<'s> {
     /// A copy: the source's packets in the source's range.
     Copy(&'s SegmentSource),
+    /// A smart-cut: copied pieces from the reader, recoded pieces from seam
+    /// encoders.
+    SmartCut(&'s SegmentSource),
     /// An encode: after `preroll` samples of priming, `samples` of them;
     /// every timestamp offset by `offset` samples.
     Encoded {
@@ -419,12 +489,20 @@ impl Context<'_> {
     ) -> Result<u64, ExportError> {
         let mut output_time_base = None;
         let mut sent = 0;
+        let mut stitch: Option<Stitch> = None;
         for segment in &route.segments {
             runnable(segment, self.encoding.is_some())?;
             if self.cancel.is_cancelled() {
                 return Err(ExportError::Cancelled);
             }
             let (command, window) = self.producer(segment)?;
+            let window = if let (Window::Copy(source), ExportTier::SmartCut { .. }) =
+                (&window, segment.tier)
+            {
+                Window::SmartCut(source)
+            } else {
+                window
+            };
             self.commands
                 .lock()
                 .unwrap_or_else(PoisonError::into_inner)
@@ -458,16 +536,35 @@ impl Context<'_> {
                 output_time_base = Some(stream.time_base);
                 stream.time_base
             };
+            if route.media == Media::Video && stitch.is_none() {
+                stitch = video_codec(self.inputs, segment)
+                    .map(|codec| Stitch::new(codec, &stream.extradata));
+            }
             sent += match window {
-                Window::Copy(source) => self.copy_segment(
-                    route.media,
-                    segment,
-                    source,
-                    &mut opened,
-                    &stream,
-                    out_base,
-                    packets,
-                )?,
+                Window::Copy(source) => {
+                    let place = Place::of(self.plan, segment, source, &stream, out_base)?;
+                    self.copy_packets(
+                        route.media,
+                        &place,
+                        (source.source_in, source.source_out, false),
+                        &mut opened,
+                        packets,
+                        stitch.as_mut(),
+                    )?
+                    .0
+                }
+                Window::SmartCut(source) => {
+                    let place = Place::of(self.plan, segment, source, &stream, out_base)?;
+                    self.smart_cut(
+                        segment,
+                        source,
+                        &place,
+                        &stream.extradata,
+                        &mut opened,
+                        packets,
+                        stitch.as_mut(),
+                    )?
+                }
                 Window::Encoded {
                     preroll,
                     samples,
@@ -495,6 +592,24 @@ impl Context<'_> {
         if let (ExportTier::StreamCopy, [source]) = (segment.tier, segment.sources.as_slice()) {
             let path = self.path_of(source.source)?;
             return Ok((reader_command(path, source), Window::Copy(source)));
+        }
+        if let (ExportTier::SmartCut { .. }, [source]) = (segment.tier, segment.sources.as_slice())
+        {
+            // The reader opens at the first copied keyframe: its stream
+            // header is the output's, whatever the seams are made with.
+            let path = self.path_of(source.source)?;
+            let first_copy = seam::pieces(segment, source.source_in, source.source_out)
+                .into_iter()
+                .find_map(|piece| match piece {
+                    Piece::Remux { from, .. } => Some(from),
+                    Piece::Recode { .. } => None,
+                })
+                .unwrap_or(source.source_in);
+            let from = SegmentSource {
+                source_in: first_copy,
+                ..source.clone()
+            };
+            return Ok((reader_command(path, &from), Window::Copy(source)));
         }
         let encoding = self
             .encoding
@@ -551,25 +666,26 @@ impl Context<'_> {
         Ok(sent)
     }
 
-    /// Send the packets of `segment` that `opened` produces.
-    #[allow(clippy::too_many_arguments)]
-    fn copy_segment(
+    /// Send the copied packets of `from..to` (source ticks) that `opened`
+    /// produces: from the keyframe at `from`, those shown inside the range,
+    /// rebased against the segment's in-point. Where `leading` is asked for
+    /// and the copy stops on a keyframe, the packets after it that are shown
+    /// before it — its leading pictures — are read and not sent, and where
+    /// the first of them is shown is returned, in source ticks.
+    fn copy_packets(
         &self,
         media: Media,
-        segment: &Segment,
-        source: &SegmentSource,
+        place: &Place,
+        (from, to, leading): (i64, i64, bool),
         opened: &mut Opened,
-        stream: &StreamHeader,
-        out_base: Rational,
         packets: &SyncSender<Routed>,
-    ) -> Result<u64, ExportError> {
-        let nut_base = stream.time_base;
-        let offset = convert(READER_OFFSET_SECONDS, Rational { num: 1, den: 1 }, nut_base)?;
-        let in_ = convert(source.source_in, source.time_base, nut_base)? + offset;
-        let out = convert(source.source_out, source.time_base, nut_base)? + offset;
-        let start = convert(segment.start, self.plan.time_base, out_base)?;
+        mut stitch: Option<&mut Stitch>,
+    ) -> Result<(u64, Option<i64>), ExportError> {
+        let in_ = place.nut(from)?;
+        let out = place.nut(to)?;
         let mut started = media == Media::Audio;
         let mut sent = 0;
+        let mut stopped_at = None;
         while let Some(packet) = opened.reader.next_packet()? {
             if self.cancel.is_cancelled() {
                 return Err(ExportError::Cancelled);
@@ -579,8 +695,8 @@ impl Context<'_> {
                     started = true;
                 } else if packet.key && packet.pts > in_ {
                     return Err(ExportError::Mismatch(format!(
-                        "source {} has no keyframe at its in-point {}",
-                        source.source, source.source_in
+                        "source {} has no keyframe at {from}",
+                        place.source
                     )));
                 } else {
                     continue;
@@ -590,6 +706,7 @@ impl Context<'_> {
                 // Past the out-point: a keyframe there means everything
                 // before it has been decoded; audio packets are all such.
                 if packet.key {
+                    stopped_at = Some(packet.pts);
                     break;
                 }
                 continue;
@@ -598,20 +715,156 @@ impl Context<'_> {
                 // Leading pictures of an open GOP: shown before the cut.
                 continue;
             }
-            let pts = start + retime(packet.pts - in_, nut_base, out_base, source.speed)?;
+            let data = match stitch.as_deref_mut() {
+                Some(stitch) if media == Media::Video => stitch.copied(packet.data, packet.key),
+                _ => packet.data,
+            };
             packets
                 .send(Routed {
-                    pts,
+                    pts: place.output(packet.pts, place.nut_base)?,
                     key: packet.key,
-                    data: packet.data,
+                    data,
                 })
                 .map_err(|_| ExportError::Cancelled)?;
             sent += 1;
         }
         if !started {
             return Err(ExportError::Mismatch(format!(
-                "source {} ended before its in-point {}",
-                source.source, source.source_in
+                "source {} ended before {from}",
+                place.source
+            )));
+        }
+        let mut first_leading = None;
+        if let (true, Some(keyframe)) = (leading, stopped_at) {
+            while let Some(packet) = opened.reader.next_packet()? {
+                if packet.pts >= keyframe {
+                    break;
+                }
+                first_leading = Some(first_leading.map_or(packet.pts, |p: i64| p.min(packet.pts)));
+            }
+        }
+        let first_leading = first_leading
+            .map(|pts| place.source_ticks(pts))
+            .transpose()?;
+        Ok((sent, first_leading))
+    }
+
+    /// Carry out a smart-cut: the plan's pieces in order, the copied ones
+    /// from `opened`, the recoded ones each from a seam encoder.
+    #[allow(clippy::too_many_arguments)]
+    fn smart_cut(
+        &self,
+        segment: &Segment,
+        source: &SegmentSource,
+        place: &Place,
+        extradata: &[u8],
+        opened: &mut Opened,
+        packets: &SyncSender<Routed>,
+        mut stitch: Option<&mut Stitch>,
+    ) -> Result<u64, ExportError> {
+        let choice = segment.encoder.as_ref().ok_or_else(|| {
+            ExportError::Unsupported("a smart-cut with no encoder chosen".to_owned())
+        })?;
+        let mut sent = 0;
+        let mut recode_from = None;
+        for piece in seam::pieces(segment, source.source_in, source.source_out) {
+            match piece {
+                Piece::Recode { from, to } => {
+                    let from = recode_from
+                        .take()
+                        .map_or(from, |leading: i64| leading.min(from));
+                    sent += self.recode_piece(
+                        source,
+                        place,
+                        (from, to),
+                        choice,
+                        extradata,
+                        packets,
+                        stitch.as_deref_mut(),
+                    )?;
+                }
+                Piece::Remux { from, to, leading } => {
+                    let (copied, first_leading) = self.copy_packets(
+                        Media::Video,
+                        place,
+                        (from, to, leading),
+                        opened,
+                        packets,
+                        stitch.as_deref_mut(),
+                    )?;
+                    sent += copied;
+                    recode_from = first_leading;
+                }
+            }
+        }
+        Ok(sent)
+    }
+
+    /// Encode the pictures of `source` shown in `from..to` with `choice`,
+    /// check that they can join the copied stream before a packet of them is
+    /// sent, and send them.
+    #[allow(clippy::too_many_arguments)]
+    fn recode_piece(
+        &self,
+        source: &SegmentSource,
+        place: &Place,
+        (from, to): (i64, i64),
+        choice: &EncoderChoice,
+        extradata: &[u8],
+        packets: &SyncSender<Routed>,
+        stitch: Option<&mut Stitch>,
+    ) -> Result<u64, ExportError> {
+        let path = self.path_of(source.source)?;
+        let command = seam_command(path, source, (from, to), choice);
+        self.commands
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .push(command.to_string());
+        let mut opened = Opened::start(self.orchestrator, command)?;
+        let encoded = opened
+            .reader
+            .header()
+            .streams
+            .first()
+            .cloned()
+            .ok_or_else(|| ExportError::Mismatch("a seam encoder wrote no stream".to_owned()))?;
+        validate_join(choice.codec, extradata, &encoded.extradata)?;
+        let mut stitch = stitch;
+        if let Some(stitch) = stitch.as_deref_mut() {
+            stitch.begin_seam(&encoded.extradata);
+        }
+        let seam_place = Place {
+            nut_base: encoded.time_base,
+            ..place.clone()
+        };
+        let low = seam_place.nut(from)?;
+        let high = seam_place.nut(to)?;
+        let mut sent = 0;
+        while let Some(packet) = opened.reader.next_packet()? {
+            if self.cancel.is_cancelled() {
+                return Err(ExportError::Cancelled);
+            }
+            if packet.pts < low || packet.pts >= high {
+                continue;
+            }
+            let data = match stitch.as_deref_mut() {
+                Some(stitch) => stitch.seam(&packet.data),
+                None => packet.data,
+            };
+            packets
+                .send(Routed {
+                    pts: seam_place.output(packet.pts, encoded.time_base)?,
+                    key: packet.key,
+                    data,
+                })
+                .map_err(|_| ExportError::Cancelled)?;
+            sent += 1;
+        }
+        opened.finish()?;
+        if sent == 0 {
+            return Err(ExportError::Mismatch(format!(
+                "the seam of source {} from {from} to {to} produced no pictures",
+                source.source
             )));
         }
         Ok(sent)
@@ -710,6 +963,11 @@ fn chapters(
 fn runnable(segment: &Segment, encodes_audio: bool) -> Result<(), ExportError> {
     match (segment.tier, segment.sources.as_slice()) {
         (ExportTier::StreamCopy, [_]) => Ok(()),
+        (ExportTier::SmartCut { .. }, [_])
+            if segment.media == Media::Video && segment.encoder.is_some() =>
+        {
+            Ok(())
+        }
         (ExportTier::FullReEncode { .. }, _) if segment.media == Media::Audio && encodes_audio => {
             audio::check(segment)
         }
@@ -1019,15 +1277,88 @@ fn muxer_command(
         command = command.option("-display_rotation:v:0", angle.to_string());
     }
     let total = Duration::from_secs_f64(seconds(plan.length, plan.time_base).max(0.0));
-    command
+    let mut command = command
         .stdin_input()
         .option("-map", "0")
-        .option("-c", "copy")
+        .option("-c", "copy");
+    if let Some(tag) = in_band_tag(plan, inputs, container) {
+        command = command.option("-tag:v", tag);
+    }
+    command
         .option("-map_metadata", "0")
         .option("-map_chapters", "0")
         .option("-f", container.muxer())
         .output_file(partial)
         .report_progress(total)
+}
+
+/// Where seams put parameter sets in-band, the MP4 sample entry that says
+/// they may change there: `avc3` for H.264, `hev1` for HEVC. Matroska needs
+/// nothing.
+fn in_band_tag(
+    plan: &ExportPlan,
+    inputs: &BTreeMap<SourceId, ExportInput>,
+    container: Container,
+) -> Option<&'static str> {
+    if !matches!(container, Container::Mp4 | Container::Mov) {
+        return None;
+    }
+    let seam = plan
+        .segments
+        .iter()
+        .find(|s| s.media == Media::Video && matches!(s.tier, ExportTier::SmartCut { .. }))?;
+    match video_codec(inputs, seam)? {
+        VideoCodec::H264 => Some("avc3"),
+        VideoCodec::Hevc => Some("hev1"),
+        VideoCodec::Vp9 | VideoCodec::Av1 => None,
+    }
+}
+
+/// The codec of a video segment's source.
+fn video_codec(inputs: &BTreeMap<SourceId, ExportInput>, segment: &Segment) -> Option<VideoCodec> {
+    let source = segment.sources.first()?;
+    Some(match codec_of(inputs, source)?.as_str() {
+        "h264" => VideoCodec::H264,
+        "hevc" => VideoCodec::Hevc,
+        "vp9" => VideoCodec::Vp9,
+        "av1" => VideoCodec::Av1,
+        _ => return None,
+    })
+}
+
+/// The seam encoder for `from..to` of `source`: decoded from the keyframe
+/// before it, trimmed to exactly those pictures on their own timestamps,
+/// and encoded as `choice` says, without B-frames so its decode order is
+/// its presentation order.
+fn seam_command(
+    path: &Path,
+    source: &SegmentSource,
+    (from, to): (i64, i64),
+    choice: &EncoderChoice,
+) -> SidecarCommand {
+    let seek = seconds(from, source.time_base) - SEEK_MARGIN_SECONDS;
+    let mut command = SidecarCommand::ffmpeg()
+        .option("-v", "error")
+        .flag("-copyts");
+    if seek > 0.0 {
+        command = command.option("-ss", format!("{seek:.6}"));
+    }
+    command = command
+        .input(path)
+        .option("-map", format!("0:{}", source.stream))
+        .option("-vf", format!("trim=start_pts={from}:end_pts={to}"));
+    for (name, value) in choice.arguments(choice.codec) {
+        command = command.option(name, value);
+    }
+    if choice.source != crate::capability::EncoderSource::Software {
+        command = command.option("-bf", "0");
+    }
+    command
+        .option("-fps_mode", "passthrough")
+        .option("-enc_time_base", "demux")
+        .option("-output_ts_offset", READER_OFFSET_SECONDS.to_string())
+        .option("-f", "nut")
+        .output_stdout()
 }
 
 /// Write every routed packet into the muxer, the streams interleaved by

@@ -32,6 +32,7 @@ use serde::Serialize;
 use thiserror::Error;
 use ts_rs::TS;
 
+use super::profile::{EncoderChoice, Unmatched};
 use crate::probe::Rational;
 use crate::project::evaluate::{AudioOperation, Motion, Placement, Timeline, crop};
 use crate::project::settings::{Mismatch, SequenceSettings, StreamGeometry, copy_eligibility};
@@ -54,6 +55,12 @@ pub struct KeyframePoint {
     /// copy may not *end* here: the pictures just before the cut would need
     /// the packets after it.
     pub open: bool,
+    /// A decoder can start here and decode everything after it cleanly. Not
+    /// so for an H.264 recovery-point picture (a non-IDR keyframe): the
+    /// pictures after it carry reference commands for pictures before it,
+    /// and a stream that starts there decodes with errors. A copy starts only
+    /// on a random-access keyframe.
+    pub random_access: bool,
 }
 
 /// The parameters a decoder carries across a join. Two sources whose
@@ -151,6 +158,10 @@ pub struct VideoFacts {
     /// Decode order differs from presentation order (B-frames). Without
     /// reordering every frame boundary is a clean place to end a copy.
     pub reorders: bool,
+    /// The encoder on this machine that makes this stream's kind of
+    /// stream (#44), or why none does: what a seam or a re-encode that joins
+    /// its copied packets would be made with.
+    pub encoder: Result<EncoderChoice, Unmatched>,
 }
 
 /// What the planner knows about a source's audio stream: the one a video
@@ -404,13 +415,20 @@ pub struct SeamWindow {
 }
 
 /// Why a segment cannot be exported at all as the graph stands.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
-#[serde(tag = "decline", rename_all = "kebab-case")]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(
+    tag = "decline",
+    rename_all = "kebab-case",
+    rename_all_fields = "camelCase"
+)]
 #[ts(export)]
 pub enum Decline {
     /// Part of an HDR source would have to be rendered, and v1 renders only
     /// SDR. It is declined, never tone-mapped (ADR-0008).
     HdrWouldBeRendered,
+    /// No encoder on this machine makes the source's kind of stream, so a
+    /// seam or a re-encode that joins it cannot be made safely (ADR-0003).
+    NoEncoder { unmatched: Unmatched },
 }
 
 /// The lossless alternative to a declined smart-cut: move the cut points to
@@ -449,6 +467,11 @@ pub struct Segment {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub alternative: Option<KeyframeAlternative>,
+    /// For pictures that are encoded — a smart-cut's windows or a whole
+    /// segment — the encoder that makes them and how it is asked (#44).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub encoder: Option<EncoderChoice>,
 }
 
 impl Segment {
@@ -596,7 +619,27 @@ fn gap(media: Media, start: i64, end: i64) -> Segment {
         windows: Vec::new(),
         decline: None,
         alternative: None,
+        encoder: None,
     }
+}
+
+/// The first keyframe of `video` after `pts` that a copy may start on.
+fn next_random_access(video: &VideoFacts, pts: i64) -> Option<KeyframePoint> {
+    video
+        .keyframes
+        .iter()
+        .find(|k| k.pts > pts && k.random_access)
+        .copied()
+}
+
+/// The last keyframe of `video` at or before `pts` that a copy may start on.
+fn random_access_before(video: &VideoFacts, pts: i64) -> Option<KeyframePoint> {
+    video
+        .keyframes
+        .iter()
+        .rev()
+        .find(|k| k.pts <= pts && k.random_access)
+        .copied()
 }
 
 /// The keyframes of `video` at or before and at or after `pts`.
@@ -627,14 +670,15 @@ fn clean_end(video: &VideoFacts, pts: i64) -> bool {
 fn boundaries(video: &VideoFacts, in_: i64, out: i64) -> (Vec<Cause>, Vec<SeamWindow>) {
     let mut causes = Vec::new();
     let mut windows = Vec::new();
-    let (before_in, after_in) = around(video, in_);
-    let in_aligned = before_in.is_some_and(|k| k.pts == in_);
+    let (before_in, _) = around(video, in_);
+    let in_aligned = before_in.is_some_and(|k| k.pts == in_ && k.random_access);
     if !in_aligned {
-        if !video.keyframes_complete {
+        if !video.keyframes_complete && before_in.is_none_or(|k| k.pts != in_) {
             return (vec![Cause::KeyframesUnknown], Vec::new());
         }
+        let after_in = next_random_access(video, in_);
         causes.push(Cause::InPointNotKeyframe {
-            keyframe_before: before_in.map(|k| k.pts),
+            keyframe_before: random_access_before(video, in_).map(|k| k.pts),
             keyframe_after: after_in.map(|k| k.pts),
         });
         windows.push(SeamWindow {
@@ -684,7 +728,7 @@ fn keyframe_alternative(video: &VideoFacts, in_: i64, out: i64) -> Option<Keyfra
             .min_by_key(|k| (k.pts - pts).unsigned_abs())
             .map(|k| k.pts)
     };
-    let source_in = nearest(in_, &|_| true)?;
+    let source_in = nearest(in_, &|k| k.random_access)?;
     let source_out = if clean_end(video, out) {
         out
     } else {
@@ -753,6 +797,7 @@ fn plan_video(
             windows,
             decline: None,
             alternative: None,
+            encoder: None,
         });
         signatures.push(Some(&video.encoding));
         at = piece.end();
@@ -767,7 +812,7 @@ fn plan_video(
         if !matches!(segment.tier, ExportTier::SmartCut { .. }) {
             segment.windows.clear();
         }
-        decline_hdr(segment, sources);
+        decline_unencodable(segment, sources);
     }
     Ok(segments)
 }
@@ -839,10 +884,13 @@ fn share_encoding(segments: &mut [Segment], signatures: &[Option<&EncodingSignat
     }
 }
 
-/// ADR-0008: an HDR source is copied as recorded, and any part of it that
-/// would have to be rendered is declined, never tone-mapped. A declined
-/// smart-cut offers the keyframe-aligned cut instead.
-fn decline_hdr(segment: &mut Segment, sources: &BTreeMap<SourceId, SourceFacts>) {
+/// The pictures of a segment that are encoded — a smart-cut's windows or a
+/// whole re-encode — need an encoder that makes the source's kind of stream.
+/// Where there is one, the segment names it; where there is none, the
+/// segment is declined (ADR-0003), and a declined smart-cut offers the
+/// keyframe-aligned cut instead. An HDR source is declined whatever the
+/// encoders: v1 renders only SDR, and never tone-maps (ADR-0008).
+fn decline_unencodable(segment: &mut Segment, sources: &BTreeMap<SourceId, SourceFacts>) {
     if segment.tier.is_lossless() || segment.media != Media::Video {
         return;
     }
@@ -852,11 +900,21 @@ fn decline_hdr(segment: &mut Segment, sources: &BTreeMap<SourceId, SourceFacts>)
     let Some(video) = sources.get(&first.source).and_then(|f| f.video.as_ref()) else {
         return;
     };
-    if !video.geometry.hdr {
-        return;
+    if video.geometry.hdr {
+        segment.decline = Some(Decline::HdrWouldBeRendered);
+    } else {
+        match &video.encoder {
+            Ok(choice) => segment.encoder = Some(choice.clone()),
+            Err(unmatched) => {
+                segment.decline = Some(Decline::NoEncoder {
+                    unmatched: unmatched.clone(),
+                });
+            }
+        }
     }
-    segment.decline = Some(Decline::HdrWouldBeRendered);
-    if let ExportTier::SmartCut { .. } = segment.tier {
+    if segment.decline.is_some()
+        && let ExportTier::SmartCut { .. } = segment.tier
+    {
         let in_ = rescale(
             first.source_in,
             first.time_base,
@@ -968,6 +1026,7 @@ fn single_sound<'a>(
             windows: Vec::new(),
             decline: None,
             alternative: None,
+            encoder: None,
         },
         signature,
     ))
@@ -1049,6 +1108,7 @@ fn plan_audio(
                     windows: Vec::new(),
                     decline: None,
                     alternative: None,
+                    encoder: None,
                 },
                 None,
             ),

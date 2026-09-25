@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use blinkify_engine::capability::{self, EncoderCapabilities};
 use blinkify_engine::export::audio::AudioTarget;
 use blinkify_engine::export::execute::{
     ExportError, ExportInput, ExportOutcome, ExportRequest, export,
@@ -27,19 +28,26 @@ pub struct Source {
 }
 
 impl Source {
-    /// The corpus file `name`, probed and indexed end to end.
+    /// The corpus file `name`, probed and indexed end to end. The machine's
+    /// encoders are not probed: the plan declines anything it would encode.
     pub fn corpus(name: &str) -> Self {
-        Self::at(super::corpus(name))
+        Self::at(super::corpus(name), None)
     }
 
-    pub fn at(path: PathBuf) -> Self {
+    /// The corpus file `name`, planned with this machine's real encoders:
+    /// what a smart-cut or a re-encode is made with here.
+    pub fn with_encoders(name: &str) -> Self {
+        Self::at(super::corpus(name), Some(encoders()))
+    }
+
+    pub fn at(path: PathBuf, encoders: Option<&EncoderCapabilities>) -> Self {
         let orchestrator = super::orchestrator();
         let info = Prober::new(orchestrator.clone())
             .probe(&path)
             .expect("probe");
         let index = KeyframeIndex::open(&path, &info, orchestrator, None).expect("index");
         index.complete_in_background(|_| {}).expect("indexed");
-        let facts = source_facts(&info, Some(&index));
+        let facts = source_facts(&info, Some(&index), encoders);
         Self { path, info, facts }
     }
 
@@ -160,6 +168,12 @@ impl Source {
             .map(|p| p.md5.clone())
             .collect()
     }
+}
+
+/// This machine's encoder capability profile, probed once per test binary.
+pub fn encoders() -> &'static EncoderCapabilities {
+    static PROFILE: std::sync::OnceLock<EncoderCapabilities> = std::sync::OnceLock::new();
+    PROFILE.get_or_init(|| capability::probe(&super::orchestrator()))
 }
 
 /// A clip's speed as a ratio.

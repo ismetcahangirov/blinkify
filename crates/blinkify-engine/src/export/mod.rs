@@ -15,6 +15,7 @@ pub mod facts;
 pub mod nut;
 pub mod plan;
 pub mod profile;
+pub mod seam;
 pub mod sps;
 
 use std::collections::BTreeMap;

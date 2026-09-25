@@ -4,4 +4,4 @@ import type { VideoCodec } from "./VideoCodec";
 /**
  * Which parameter no encoder on this machine could match.
  */
-export type Unmatched = { "unmatched": "codec", codec: string, } | { "unmatched": "no-encoder", codec: VideoCodec, } | { "unmatched": "profile", codec: VideoCodec, profile: string, } | { "unmatched": "bit-depth", codec: VideoCodec, bitDepth: number, } | { "unmatched": "level", codec: VideoCodec, level: number, } | { "unmatched": "chroma" } | { "unmatched": "hdr" } | { "unmatched": "interlaced" };
+export type Unmatched = { "unmatched": "codec", codec: string, } | { "unmatched": "no-encoder", codec: VideoCodec, } | { "unmatched": "profile", codec: VideoCodec, profile: string, } | { "unmatched": "bit-depth", codec: VideoCodec, bitDepth: number, } | { "unmatched": "level", codec: VideoCodec, level: number, } | { "unmatched": "chroma" } | { "unmatched": "hdr" } | { "unmatched": "interlaced" } | { "unmatched": "encoders-unknown" };
