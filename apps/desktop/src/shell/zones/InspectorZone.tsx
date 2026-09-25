@@ -1,12 +1,16 @@
-import { memo } from "react";
-import { ClipTimingFields } from "../../inspector/ClipTimingFields.js";
+import { ScrollArea } from "@blinkify/ui";
+import { memo, useMemo } from "react";
+import { SequenceSummary } from "../../inspector/SequenceSummary.js";
+import { VideoInspector } from "../../inspector/VideoInspector.js";
 import { useProjectStore } from "../../project/project.store.js";
+import type { Placement } from "../../timeline/draw.js";
 
 /**
  * The inspector.
  *
- * #19 builds the shell; #49 and #56 fill this zone. A single selected clip
- * shows its timing (#34), which #56 builds the rest of the inspector around.
+ * Its content is driven entirely by the timeline selection (#18): nothing
+ * selected shows the sequence; video clips show the video section (#56).
+ * The audio section is #49's.
  *
  * `memo` is not an optimisation guess here — it is the boundary the issue asks
  * for: "each zone is an independent React subtree, so a re-render in one does
@@ -20,28 +24,36 @@ import { useProjectStore } from "../../project/project.store.js";
  * cannot satisfy them and this can.
  */
 export const InspectorZone = memo(function InspectorZone() {
-  // The one selected clip, as the evaluator placed it: the inspector is a
+  const view = useProjectStore((state) => state.view);
+  const selection = useProjectStore((state) => state.selection);
+  // The selected clips as the evaluator placed them: the inspector is a
   // view of the selection and of the graph, never a store of its own.
-  const placement = useProjectStore((state) => {
-    if (state.selection.length !== 1) return null;
-    const [clip] = state.selection;
-    for (const track of state.view?.timeline?.tracks ?? [])
-      for (const p of track.placements) if (p.clip === clip) return p;
-    return null;
-  });
-  const count = useProjectStore((state) => state.selection.length);
+  const selected = useMemo(() => {
+    const chosen = new Set(selection);
+    const placements: Placement[] = [];
+    for (const track of view?.timeline?.tracks ?? [])
+      for (const p of track.placements)
+        if (chosen.has(p.clip)) placements.push(p);
+    return placements;
+  }, [view, selection]);
+  const video = selected.filter((p) => p.kind === "video");
+
   return (
     <div className="zone">
       <h2 className="zone__title">Inspector</h2>
-      {placement ? (
-        <ClipTimingFields placement={placement} />
-      ) : (
-        <p className="zone__placeholder">
-          {count > 1
-            ? `${count} clips are selected.`
-            : "Contents follow the timeline selection. Nothing is selected."}
-        </p>
-      )}
+      <ScrollArea className="inspector">
+        {selection.length === 0 ? (
+          <SequenceSummary />
+        ) : video.length > 0 ? (
+          <VideoInspector clips={video} />
+        ) : (
+          <p className="zone__placeholder">
+            {selected.length === 0
+              ? "The selected clips are no longer on the timeline."
+              : "Audio clip settings are not available yet."}
+          </p>
+        )}
+      </ScrollArea>
     </div>
   );
 });

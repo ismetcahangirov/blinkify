@@ -7,4 +7,4 @@
  * user in the export report. A re-encode nobody can explain is a bug by
  * definition.
  */
-export type ReEncodeReason = "filter-changes-pixels" | "incompatible-source-parameters" | "output-codec-differs-from-source" | "no-encoder-matches-source-profile" | "freeze-frame" | "reverse";
+export type ReEncodeReason = "filter-changes-pixels" | "incompatible-source-parameters" | "output-codec-differs-from-source" | "no-encoder-matches-source-profile" | "freeze-frame" | "reverse" | "speed-frame-rate-outside-container";

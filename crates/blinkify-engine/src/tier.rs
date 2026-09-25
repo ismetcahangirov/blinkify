@@ -47,6 +47,9 @@ pub enum ReEncodeReason {
     /// A reversed clip (#35): its pictures are decoded and encoded again in
     /// the opposite order.
     Reverse,
+    /// A constant speed (#42, #56) whose rescaled frame rate no container
+    /// accepts: the pictures are re-timed to the sequence rate instead.
+    SpeedFrameRateOutsideContainer,
 }
 
 /// What happens to a segment's pixels on the way to the output file.

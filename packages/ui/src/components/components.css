@@ -679,6 +679,14 @@
   text-align: right;
 }
 
+.bk-number-input__field::placeholder {
+  /* "Mixed": several differing values, stated in the sans face so it cannot
+     be mistaken for a number. */
+  color: var(--text-secondary);
+  font-family: var(--type-family-sans);
+  font-style: italic;
+}
+
 .bk-number-input__field:disabled {
   color: var(--text-disabled);
   border-color: var(--border);

@@ -103,6 +103,7 @@ function view(): ProjectView {
     eligibility: {},
     extents: [],
     assets: {},
+    speeds: {},
   };
 }
 

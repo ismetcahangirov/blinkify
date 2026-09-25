@@ -287,12 +287,16 @@ a user ends up with a fully re-encoded export and no idea why.
 
 **A video clip selected.** In order:
 
-| Section   | Contents                                                | Tier                                                                                        |
-| --------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Clip      | Source file, in and out points, duration                | Tier 1 or 2 — a trim is a cut, not a filter.                                                |
-| Speed     | Constant speed change (#56, #42)                        | Tier 1. Implemented by rescaling timestamps, so the pixels are untouched.                   |
-| Transform | Crop, scale, rotation — reserved, not yet built         | **Tier 3.** Any of these changes pixels and forces a re-encode of the segment.              |
-| Audio     | The clip's own audio: gain, and detaching it (#36, #46) | Its own tier. Audio is a separate stream and a gain filter must not drag video into tier 3. |
+| Section   | Contents                                                | Tier                                                                                                       |
+| --------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Clip      | Source file, in and out points, duration                | Tier 1 or 2 — a trim is a cut, not a filter.                                                               |
+| Speed     | Constant speed change (#56, #42)                        | Tier 1 while the resulting rate is 1–240 fps: timestamps are rescaled and the pixels untouched (ADR-0009). |
+| Transform | Crop, scale, rotation — reserved, not yet built         | **Tier 3.** Any of these changes pixels and forces a re-encode of the segment.                             |
+| Audio     | The clip's own audio: gain, and detaching it (#36, #46) | Its own tier. Audio is a separate stream and a gain filter must not drag video into tier 3.                |
+
+Several clips selected show each property they share, and **mixed** for one
+they do not; setting a mixed property is explicit and applies to every selected
+clip (`inspector/mixedValue.ts`, the same rule for the audio section).
 
 Every section that would force a re-encode says so, in the section, before the
 user commits to it — not in the export dialog afterwards. `CLAUDE.md` section 20

@@ -5,15 +5,19 @@
     "tools"
   ],
   "totals": {
-    "files": 264,
-    "tests": 37,
+    "files": 276,
+    "tests": 40,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 93,
-      "tests": 31,
+      "files": 103,
+      "tests": 34,
       "untested": [
+        "apps/desktop/src/inspector/SequenceSummary.tsx",
+        "apps/desktop/src/inspector/SourceProperties.tsx",
+        "apps/desktop/src/inspector/SpeedControl.tsx",
+        "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/library/AssetCard.tsx",
         "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/main.tsx",
@@ -24,7 +28,6 @@
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/Splitter.tsx",
         "apps/desktop/src/shell/windowChrome.ts",
-        "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/shell/zones/LibraryZone.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
         "apps/desktop/src/styles.css",
@@ -38,7 +41,7 @@
       ]
     },
     "packages/types": {
-      "files": 102,
+      "files": 104,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
@@ -127,6 +130,8 @@
         "packages/types/src/generated/SheetReady.ts",
         "packages/types/src/generated/SourceRef.ts",
         "packages/types/src/generated/SourceStatus.ts",
+        "packages/types/src/generated/SpeedProblem.ts",
+        "packages/types/src/generated/SpeedVerdict.ts",
         "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
@@ -306,10 +311,159 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
-        "apps/desktop/src/shell/zones/InspectorZone.tsx"
+        "apps/desktop/src/inspector/VideoInspector.tsx"
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/inspector/SequenceSummary.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/inspector/speed.ts",
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
+        "apps/desktop/src/project/project.store.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shell/zones/InspectorZone.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/inspector/SourceProperties.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/inspector/speed.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/VideoInspector.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/inspector/SpeedControl.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/inspector/editGesture.ts",
+        "apps/desktop/src/inspector/mixedValue.ts",
+        "apps/desktop/src/inspector/speed.ts",
+        "apps/desktop/src/player/timecode.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/VideoInspector.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/inspector/VideoInspector.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/SourceProperties.tsx",
+        "apps/desktop/src/inspector/SpeedControl.tsx",
+        "apps/desktop/src/inspector/mixedValue.ts",
+        "apps/desktop/src/inspector/speed.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shell/zones/InspectorZone.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/inspector/editGesture.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/inspector/editGesture.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/inspector/editGesture.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/SpeedControl.tsx",
+        "apps/desktop/src/inspector/editGesture.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/editGesture.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/inspector/mixedValue.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/SpeedControl.tsx",
+        "apps/desktop/src/inspector/VideoInspector.tsx",
+        "apps/desktop/src/inspector/speed.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/speed.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/inspector/speed.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/inspector/mixedValue.ts",
+        "apps/desktop/src/inspector/speed.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/inspector/speed.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/SequenceSummary.tsx",
+        "apps/desktop/src/inspector/SourceProperties.tsx",
+        "apps/desktop/src/inspector/SpeedControl.tsx",
+        "apps/desktop/src/inspector/VideoInspector.tsx",
+        "apps/desktop/src/inspector/speed.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/speed.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -759,6 +913,7 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/player/timecode.test.ts"
@@ -905,6 +1060,7 @@
         "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
@@ -955,6 +1111,14 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/SequenceSummary.tsx",
+        "apps/desktop/src/inspector/SourceProperties.tsx",
+        "apps/desktop/src/inspector/SourceProperties.tsx",
+        "apps/desktop/src/inspector/SpeedControl.tsx",
+        "apps/desktop/src/inspector/VideoInspector.tsx",
+        "apps/desktop/src/inspector/editGesture.test.ts",
+        "apps/desktop/src/inspector/editGesture.ts",
+        "apps/desktop/src/inspector/speed.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/library/assets.ts",
@@ -968,6 +1132,7 @@
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
@@ -989,11 +1154,13 @@
         "apps/desktop/src/timeline/useTimelineKeys.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
+        "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
@@ -1134,18 +1301,38 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "apps/desktop/src/shell/zones/InspectorZone.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/shell/zones/InspectorZone.tsx",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
     "apps/desktop/src/shell/zones/InspectorZone.tsx": {
       "workspace": "apps/desktop",
       "layer": "renderer",
       "isTest": false,
       "dependsOn": [
-        "apps/desktop/src/inspector/ClipTimingFields.tsx",
-        "apps/desktop/src/project/project.store.ts"
+        "apps/desktop/src/inspector/SequenceSummary.tsx",
+        "apps/desktop/src/inspector/VideoInspector.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
-        "apps/desktop/src/App.tsx"
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/shell/zones/InspectorZone.test.tsx"
       ],
-      "coveredByTests": [],
+      "coveredByTests": [
+        "apps/desktop/src/shell/zones/InspectorZone.test.tsx"
+      ],
       "hasNoDependents": false
     },
     "apps/desktop/src/shell/zones/LibraryZone.tsx": {
@@ -1404,7 +1591,10 @@
       "dependedOnBy": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/SpeedControl.tsx",
+        "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/library/libraryMedia.ts",
+        "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/assetDrop.test.ts",
         "apps/desktop/src/timeline/assetDrop.ts",
@@ -2220,6 +2410,7 @@
         "packages/types/src/generated/SeamReason.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/SpeedVerdict.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2693,6 +2884,7 @@
         "packages/types/src/generated/HistoryView.ts",
         "packages/types/src/generated/Project.ts",
         "packages/types/src/generated/SourceStatus.ts",
+        "packages/types/src/generated/SpeedVerdict.ts",
         "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/Timeline.ts"
       ],
@@ -2754,6 +2946,8 @@
         "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/SequenceSettings.ts",
+        "packages/types/src/generated/SpeedProblem.ts",
+        "packages/types/src/generated/SpeedVerdict.ts",
         "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
@@ -2898,6 +3092,36 @@
       "isTest": false,
       "dependsOn": [
         "packages/types/src/generated/Fingerprint.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/ProjectView.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/SpeedProblem.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Rational.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/SpeedVerdict.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/SpeedVerdict.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/Rational.ts",
+        "packages/types/src/generated/SpeedProblem.ts"
       ],
       "dependedOnBy": [
         "packages/types/src/generated/ProjectView.ts",
@@ -3196,6 +3420,8 @@
         "packages/types/src/generated/SheetReady.ts",
         "packages/types/src/generated/SourceRef.ts",
         "packages/types/src/generated/SourceStatus.ts",
+        "packages/types/src/generated/SpeedProblem.ts",
+        "packages/types/src/generated/SpeedVerdict.ts",
         "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
@@ -3227,6 +3453,12 @@
       "dependedOnBy": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/SourceProperties.tsx",
+        "apps/desktop/src/inspector/SpeedControl.tsx",
+        "apps/desktop/src/inspector/editGesture.test.ts",
+        "apps/desktop/src/inspector/editGesture.ts",
+        "apps/desktop/src/inspector/speed.test.ts",
+        "apps/desktop/src/inspector/speed.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/library/assets.ts",
@@ -3249,6 +3481,7 @@
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/timeline/EditToolbar.tsx",
@@ -3274,6 +3507,8 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/inspector/editGesture.test.ts",
+        "apps/desktop/src/inspector/speed.test.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/OperationsPanel.test.tsx",
@@ -3284,6 +3519,7 @@
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
+        "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/assetDrop.test.ts",
@@ -3828,6 +4064,8 @@
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/SpeedControl.tsx",
+        "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
@@ -3843,6 +4081,8 @@
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
+        "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
+        "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
@@ -3858,6 +4098,7 @@
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
+        "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx"
       ],

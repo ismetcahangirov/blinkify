@@ -46,6 +46,7 @@ function view(dirty = false, path: string | null = null): ProjectView {
     eligibility: {},
     extents: [],
     assets: {},
+    speeds: {},
   };
 }
 

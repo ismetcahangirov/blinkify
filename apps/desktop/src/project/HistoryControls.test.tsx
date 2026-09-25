@@ -39,6 +39,7 @@ function view(entries: string[], applied: number): ProjectView {
     eligibility: {},
     extents: [],
     assets: {},
+    speeds: {},
   };
 }
 

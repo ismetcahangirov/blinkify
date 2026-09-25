@@ -44,6 +44,13 @@ export interface NumberInputProps {
   /** Shown after the field: `dB`, `%`, `fps`. Not part of the editable text. */
   readonly unit?: string;
   readonly disabled?: boolean;
+  /**
+   * The field stands for several values that differ — an inspector showing
+   * a multi-clip selection. It reads "Mixed" rather than any one of them,
+   * so no value is shown as if it were everyone's; typing, stepping or
+   * scrubbing still commits a single value, starting from `value`.
+   */
+  readonly mixed?: boolean;
   readonly className?: string;
 }
 
@@ -62,6 +69,7 @@ export function NumberInput({
   precision = 0,
   unit,
   disabled = false,
+  mixed = false,
   className,
 }: NumberInputProps) {
   const fieldId = useId();
@@ -132,11 +140,14 @@ export function NumberInput({
         aria-valuenow={value}
         {...(Number.isFinite(min) ? { "aria-valuemin": min } : {})}
         {...(Number.isFinite(max) ? { "aria-valuemax": max } : {})}
-        {...(unit === undefined
-          ? {}
-          : { "aria-valuetext": `${value.toFixed(precision)} ${unit}` })}
+        {...(mixed
+          ? { "aria-valuetext": "Mixed" }
+          : unit === undefined
+            ? {}
+            : { "aria-valuetext": `${value.toFixed(precision)} ${unit}` })}
         disabled={disabled}
-        value={draft ?? value.toFixed(precision)}
+        placeholder={mixed ? "Mixed" : undefined}
+        value={draft ?? (mixed ? "" : value.toFixed(precision))}
         onChange={(event) => {
           setDraft(event.target.value);
           const parsed = Number.parseFloat(event.target.value);

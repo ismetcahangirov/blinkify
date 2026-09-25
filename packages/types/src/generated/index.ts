@@ -91,6 +91,8 @@ export * from "./SettingsImpact";
 export * from "./SheetReady";
 export * from "./SourceRef";
 export * from "./SourceStatus";
+export * from "./SpeedProblem";
+export * from "./SpeedVerdict";
 export * from "./StreamExtent";
 export * from "./StreamGeometry";
 export * from "./StreamInfo";
