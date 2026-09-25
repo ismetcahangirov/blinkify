@@ -2403,7 +2403,9 @@
       "workspace": "packages/types",
       "layer": "ipc-contract",
       "isTest": false,
-      "dependsOn": [],
+      "dependsOn": [
+        "packages/types/src/generated/Unmatched.ts"
+      ],
       "dependedOnBy": [
         "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/index.ts"
@@ -2578,9 +2580,11 @@
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
-        "packages/types/src/generated/EncoderSource.ts"
+        "packages/types/src/generated/EncoderSource.ts",
+        "packages/types/src/generated/VideoCodec.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -3356,6 +3360,7 @@
       "dependsOn": [
         "packages/types/src/generated/Cause.ts",
         "packages/types/src/generated/Decline.ts",
+        "packages/types/src/generated/EncoderChoice.ts",
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/KeyframeAlternative.ts",
         "packages/types/src/generated/Media.ts",
@@ -3650,6 +3655,7 @@
         "packages/types/src/generated/VideoCodec.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/Decline.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -3673,6 +3679,7 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/CodecCapability.ts",
+        "packages/types/src/generated/EncoderChoice.ts",
         "packages/types/src/generated/SourceProfile.ts",
         "packages/types/src/generated/Unmatched.ts",
         "packages/types/src/generated/index.ts"

@@ -34,7 +34,7 @@ fn facts_of(path: &Path) -> SourceFacts {
         .expect("probe");
     let index = KeyframeIndex::open(path, &info, orchestrator, None).expect("index");
     index.complete_in_background(|_| {}).expect("indexed");
-    source_facts(&info, Some(&index))
+    source_facts(&info, Some(&index), None)
 }
 
 /// A project over `path` whose sequence is the file's own shape, with one

@@ -15,10 +15,12 @@ use std::collections::BTreeMap;
 use std::sync::OnceLock;
 use std::time::Instant;
 
+use blinkify_engine::capability::{EncoderSource, VideoCodec};
 use blinkify_engine::export::plan::{
     AudioFacts, Cause, Decline, EncodingField, EncodingSignature, ExportPlan, KeyframeAlternative,
     KeyframePoint, Media, PlanError, SeamWindow, Segment, SourceFacts, VideoFacts, plan,
 };
+use blinkify_engine::export::profile::{EncoderChoice, Unmatched};
 use blinkify_engine::probe::Rational;
 use blinkify_engine::project::evaluate::evaluate;
 use blinkify_engine::project::settings::{SequenceSettings, StreamGeometry, copy_eligibility};
@@ -95,6 +97,20 @@ fn audio_signature() -> EncodingSignature {
     }
 }
 
+/// The encoder a machine with an NVIDIA GPU would choose for the source.
+fn nvenc() -> EncoderChoice {
+    EncoderChoice {
+        codec: VideoCodec::H264,
+        encoder: "h264_nvenc".to_owned(),
+        source: EncoderSource::Nvidia,
+        profile: "high".to_owned(),
+        pixel_format: "yuv420p".to_owned(),
+        bit_depth: 8,
+        level: Some(40),
+        colour: [None, None, None, None],
+    }
+}
+
 /// A 20-second source with a keyframe every second and B-frames.
 fn source(configuration: &str) -> SourceFacts {
     SourceFacts {
@@ -107,11 +123,13 @@ fn source(configuration: &str) -> SourceFacts {
                 .map(|s| KeyframePoint {
                     pts: s * SECOND,
                     open: false,
+                    random_access: true,
                 })
                 .collect(),
             keyframes_complete: true,
             end: Some(20 * SECOND),
             reorders: true,
+            encoder: Ok(nvenc()),
         }),
         audio: BTreeMap::from([(
             1,
@@ -731,5 +749,85 @@ fn an_empty_timeline_or_an_unread_source_is_an_error() {
     assert_eq!(
         plan(&timeline, &unread.sequence.settings, &BTreeMap::new()),
         Err(PlanError::UnknownSource(1))
+    );
+}
+
+#[test]
+fn a_seam_no_encoder_here_can_make_is_declined_with_the_keyframe_cut_offered() {
+    let mut facts = one_source();
+    facts
+        .get_mut(&1)
+        .and_then(|f| f.video.as_mut())
+        .expect("v")
+        .encoder = Err(Unmatched::NoEncoder {
+        codec: VideoCodec::H264,
+    });
+    let clip = video_clip(1, 1, 0, 2 * SECOND + 3 * FRAME, 6 * SECOND);
+    let project = project(1, vec![video_track(vec![clip])]);
+    let plan = plan_of(&project, &facts);
+    let video = of(&plan, Media::Video);
+    assert_eq!(
+        video[0].decline,
+        Some(Decline::NoEncoder {
+            unmatched: Unmatched::NoEncoder {
+                codec: VideoCodec::H264
+            }
+        })
+    );
+    assert_eq!(
+        video[0].alternative,
+        Some(KeyframeAlternative {
+            source_in: 2 * SECOND,
+            source_out: 6 * SECOND
+        })
+    );
+    assert!(!plan.summary.exportable);
+
+    // With an encoder, the seam is planned and names it.
+    let plan = plan_of(&project, &one_source());
+    let video = of(&plan, Media::Video);
+    assert_eq!(video[0].decline, None);
+    assert_eq!(video[0].encoder, Some(nvenc()));
+    // A copy names no encoder.
+    let copy = project_with(video_clip(1, 1, 0, 2 * SECOND, 6 * SECOND));
+    assert_eq!(
+        of(&plan_of(&copy, &one_source()), Media::Video)[0].encoder,
+        None
+    );
+}
+
+fn project_with(clip: Clip) -> Project {
+    project(1, vec![video_track(vec![clip])])
+}
+
+#[test]
+fn a_copy_never_starts_on_a_recovery_point_picture() {
+    // An H.264 open GOP: only the first keyframe is an IDR; the rest are
+    // recovery points, which a decoder cannot start on cleanly.
+    let mut facts = one_source();
+    let video = facts.get_mut(&1).and_then(|f| f.video.as_mut()).expect("v");
+    for keyframe in video.keyframes.iter_mut().skip(1) {
+        keyframe.random_access = false;
+        keyframe.open = true;
+    }
+    video.keyframes[5].random_access = true;
+    // In on a recovery point at 2 s: a seam up to the next random-access
+    // keyframe at 5 s, not to the keyframe at 3 s.
+    let project = project_with(video_clip(1, 1, 0, 2 * SECOND, 8 * SECOND));
+    let plan = plan_of(&project, &facts);
+    let video = of(&plan, Media::Video);
+    assert_eq!(
+        video[0].causes[0],
+        Cause::InPointNotKeyframe {
+            keyframe_before: Some(0),
+            keyframe_after: Some(5 * SECOND),
+        }
+    );
+    assert_eq!(
+        video[0].windows[0],
+        SeamWindow {
+            from: 2 * SECOND,
+            to: 5 * SECOND
+        }
     );
 }

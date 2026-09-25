@@ -6,7 +6,9 @@
 use std::collections::BTreeMap;
 
 use super::plan::{AudioFacts, EncodingSignature, KeyframePoint, SourceFacts, VideoFacts};
-use crate::keyframes::KeyframeIndex;
+use super::profile::{Unmatched, select, source_profile};
+use crate::capability::EncoderCapabilities;
+use crate::keyframes::{KeyframeIndex, PictureKind};
 use crate::probe::{MediaInfo, Rational, StreamInfo, StreamKind};
 use crate::project::settings::StreamGeometry;
 
@@ -44,8 +46,14 @@ fn valid(time_base: Option<Rational>) -> Option<Rational> {
 /// The planner's facts about the file `info` describes. `index` is its
 /// keyframe index, as far as it has got; without one no cut can be proved
 /// to be on a keyframe, and the planner says so rather than guessing.
+/// `encoders` is this machine's capability profile (#21), `None` while it is
+/// still being probed.
 #[must_use]
-pub fn source_facts(info: &MediaInfo, index: Option<&KeyframeIndex>) -> SourceFacts {
+pub fn source_facts(
+    info: &MediaInfo,
+    index: Option<&KeyframeIndex>,
+    encoders: Option<&EncoderCapabilities>,
+) -> SourceFacts {
     let video =
         pick(info.video().filter(|(_, v)| !v.is_attached_picture)).and_then(|(stream, video)| {
             let time_base = valid(stream.time_base)?;
@@ -57,6 +65,7 @@ pub fn source_facts(info: &MediaInfo, index: Option<&KeyframeIndex>) -> SourceFa
                 .map(|keyframe| KeyframePoint {
                     pts: keyframe.pts,
                     open: keyframe.has_leading_pictures,
+                    random_access: keyframe.picture != Some(PictureKind::RecoveryPoint),
                 })
                 .collect();
             Some(VideoFacts {
@@ -84,6 +93,11 @@ pub fn source_facts(info: &MediaInfo, index: Option<&KeyframeIndex>) -> SourceFa
                 keyframes_complete: index.is_some_and(KeyframeIndex::is_complete),
                 end: end_of(stream, info, time_base),
                 reorders: video.has_b_frames,
+                encoder: source_profile(stream).and_then(|profile| {
+                    encoders
+                        .ok_or(Unmatched::EncodersUnknown)
+                        .and_then(|encoders| select(&profile, encoders))
+                }),
             })
         });
     let audio: BTreeMap<u32, AudioFacts> = info

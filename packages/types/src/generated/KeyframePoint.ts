@@ -15,4 +15,12 @@ pts: number,
  * copy may not *end* here: the pictures just before the cut would need
  * the packets after it.
  */
-open: boolean, };
+open: boolean, 
+/**
+ * A decoder can start here and decode everything after it cleanly. Not
+ * so for an H.264 recovery-point picture (a non-IDR keyframe): the
+ * pictures after it carry reference commands for pictures before it,
+ * and a stream that starts there decodes with errors. A copy starts only
+ * on a random-access keyframe.
+ */
+randomAccess: boolean, };

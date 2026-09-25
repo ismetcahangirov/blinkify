@@ -77,6 +77,8 @@ pub enum Unmatched {
     Hdr,
     #[error("interlaced pictures are not re-encoded to match")]
     Interlaced,
+    #[error("this computer's encoders are still being checked")]
+    EncodersUnknown,
 }
 
 /// The encoder chosen for a source, and how it was asked.
@@ -84,6 +86,7 @@ pub enum Unmatched {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct EncoderChoice {
+    pub codec: VideoCodec,
     pub encoder: String,
     pub source: EncoderSource,
     pub profile: String,
@@ -241,6 +244,7 @@ pub fn select(
             match fits(source, capability) {
                 Ok(()) => {
                     return Ok(EncoderChoice {
+                        codec: source.codec,
                         encoder: encoder.encoder.clone(),
                         source: encoder.source,
                         profile: source.profile.clone(),

@@ -189,6 +189,47 @@ it. It is allowed explicitly in `deny.toml`, with that reasoning next to it,
 because the licence gate rejected it until somebody made a decision — which is
 the gate working.
 
+## Code ported into Blinkify
+
+Source code from another project, rewritten in Rust and compiled into the
+engine. It is not a dependency — nothing is linked or downloaded — but it is
+that project's work, and its licence travels with it.
+
+| Component                                                                     | Version         | Licence | Obligation                               | Where                                                                                                      |
+| ----------------------------------------------------------------------------- | --------------- | ------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| [`smartcut`](https://github.com/skeskinen/smartcut) (the smart-cut algorithm) | `main`, 2026-09 | MIT     | Keep the copyright and permission notice | `crates/blinkify-engine/src/export/seam.rs` — [#41](https://github.com/ismetcahangirov/blinkify/issues/41) |
+
+Ported: the split of a clip into remuxed whole GOPs and recoded partial GOPs at
+cut points off a keyframe (`CutSegment` / `require_recode`), and the recoding
+of an open GOP's leading pictures after a discontinuity
+(`hybrid_recode_cra_segment`). Not ported: the in-process PyAV muxing and the
+`libx264`/`libx265` encoders it depends on — Blinkify routes packets between
+sidecar processes (ADR-0010) and encodes on hardware (ADR-0003). The notice:
+
+```
+MIT License
+
+Copyright (c) 2024 Santtu Keskinen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 ## Licence texts
 
 **Not yet shipped with the installer.** This is an open obligation, not a solved
