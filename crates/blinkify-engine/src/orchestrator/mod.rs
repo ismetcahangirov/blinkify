@@ -70,8 +70,13 @@ pub enum Priority {
     /// and audio. Long-lived, so it has its own slots — held in the
     /// interactive ones it would leave a probe queued behind a film.
     Playback,
-    /// The user asked for it and is watching it: an export.
+    /// The user asked for it and is watching it.
     Foreground,
+    /// A process of an export pipeline (ADR-0010). The readers, encoders and
+    /// the muxer of one export are coupled by pipes and must all run at once:
+    /// one left queued behind the others stalls the rest. They have slots of
+    /// their own, never shared with anything that could hold them.
+    Export,
     /// Nobody is waiting: keyframe indexing, waveforms, thumbnails, proxies.
     Background,
 }
@@ -89,6 +94,9 @@ pub struct Limits {
     /// The most of the shared slots background work may hold, so a queue of
     /// thumbnails can never occupy every slot an export needs.
     pub background: usize,
+    /// Slots for the processes of export pipelines: enough for the muxer,
+    /// a reader or encoder per stream, and a seam encoder, twice over.
+    pub export: usize,
 }
 
 impl Limits {
@@ -105,6 +113,7 @@ impl Limits {
             playback: 4,
             shared,
             background: shared - 1,
+            export: 8,
         }
     }
 }
@@ -354,11 +363,13 @@ impl State {
             Priority::Interactive => running(Priority::Interactive) < limits.interactive,
             Priority::Playback => running(Priority::Playback) < limits.playback,
             Priority::Foreground => shared_in_use < limits.shared,
+            Priority::Export => running(Priority::Export) < limits.export,
             Priority::Background => {
                 shared_in_use < limits.shared
                     && running(Priority::Background) < limits.background
                     // Yield: nothing more urgent may be waiting for a slot.
                     && Self::count(&self.waiting, Priority::Foreground) == 0
+                    && Self::count(&self.waiting, Priority::Export) == 0
                     && Self::count(&self.waiting, Priority::Interactive) == 0
                     && Self::count(&self.waiting, Priority::Playback) == 0
             }
@@ -847,7 +858,10 @@ fn set_creation_flags(command: &mut Command, priority: Priority) {
         const BELOW_NORMAL_PRIORITY_CLASS: u32 = 0x0000_4000;
         let class = match priority {
             Priority::Background => BELOW_NORMAL_PRIORITY_CLASS,
-            Priority::Interactive | Priority::Playback | Priority::Foreground => 0,
+            Priority::Interactive
+            | Priority::Playback
+            | Priority::Foreground
+            | Priority::Export => 0,
         };
         command.creation_flags(CREATE_NO_WINDOW | class);
     }
@@ -872,6 +886,7 @@ mod tests {
         playback: 2,
         shared: 2,
         background: 1,
+        export: 8,
     };
 
     #[test]
@@ -900,6 +915,14 @@ mod tests {
 
     #[test]
     fn the_interactive_limit_still_holds() {
+        // An export's processes never queue behind shared work (#110): with
+        // every shared slot taken, the next process of a pipeline still runs.
+        let shared_full = state(&[(Priority::Foreground, 2), (Priority::Export, 3)], &[]);
+        assert!(!shared_full.may_start(Priority::Foreground, &LIMITS));
+        assert!(shared_full.may_start(Priority::Export, &LIMITS));
+        let export_waiting = state(&[], &[(Priority::Export, 1)]);
+        assert!(!export_waiting.may_start(Priority::Background, &LIMITS));
+
         let full = state(&[(Priority::Interactive, 2)], &[]);
         assert!(!full.may_start(Priority::Interactive, &LIMITS));
     }
