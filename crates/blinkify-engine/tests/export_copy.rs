@@ -14,17 +14,16 @@ mod common;
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
+use blinkify_engine::export::audio::AudioTarget;
 use blinkify_engine::export::execute::{
     ExportError, ExportInput, ExportRequest, export, partial_path,
 };
 use blinkify_engine::export::facts::source_facts;
 use blinkify_engine::export::plan::{ExportPlan, SourceFacts, plan};
 use blinkify_engine::keyframes::KeyframeIndex;
-use blinkify_engine::orchestrator::{
-    CancelToken, Flow, JobOptions, Limits, Orchestrator, Priority, SidecarCommand,
-};
+use blinkify_engine::orchestrator::{CancelToken, Limits, Orchestrator};
 use blinkify_engine::probe::{MediaInfo, Prober, StreamKind};
 use blinkify_engine::project::evaluate::evaluate;
 use blinkify_engine::project::{
@@ -119,6 +118,7 @@ fn run(plan: &ExportPlan, source: &Source, target: &Path) -> Result<Vec<u64>, Ex
             inputs: &inputs,
             target,
             overwrite: false,
+            audio: AudioTarget::default(),
             cancel: CancelToken::default(),
             on_progress: None,
         },
@@ -126,54 +126,10 @@ fn run(plan: &ExportPlan, source: &Source, target: &Path) -> Result<Vec<u64>, Ex
     .map(|outcome| outcome.packets)
 }
 
-/// One packet as `framemd5` lists it under `-c copy`: its presentation time
-/// in its stream's ticks, and the MD5 of its payload — the hash boundary of
-/// #45: payload in, container timestamps out.
-#[derive(Debug, Clone, PartialEq)]
-struct Hashed {
-    pts: i64,
-    md5: String,
-}
-
-fn packet_hashes(path: &Path, selector: &str) -> Vec<Hashed> {
-    let collected = Arc::new(Mutex::new(Vec::new()));
-    let sink = Arc::clone(&collected);
-    orchestrator()
-        .run(
-            SidecarCommand::ffmpeg()
-                .option("-v", "error")
-                // The stream's own timestamps, not shifted to start at zero.
-                .flag("-copyts")
-                .input(path)
-                .option("-map", format!("0:{selector}"))
-                .option("-c", "copy")
-                .option("-f", "framemd5")
-                .output_stdout(),
-            Priority::Foreground,
-            JobOptions::default().on_chunk(move |chunk| {
-                sink.lock().expect("lock").extend_from_slice(chunk);
-                Flow::Continue
-            }),
-        )
-        .wait()
-        .expect("framemd5");
-    let text = String::from_utf8_lossy(&collected.lock().expect("lock")).into_owned();
-    text.lines()
-        .filter(|line| !line.starts_with('#'))
-        .filter_map(|line| {
-            let fields: Vec<&str> = line.split(',').map(str::trim).collect();
-            Some(Hashed {
-                pts: fields.get(2)?.parse().ok()?,
-                md5: (*fields.get(5)?).to_owned(),
-            })
-        })
-        .collect()
-}
-
 /// The source's video packets a copy of `from..to` must contain, in decode
 /// order: from the in-point's keyframe on, shown inside the range.
 fn expected(source: &Source, from: i64, to: i64) -> Vec<String> {
-    let all = packet_hashes(&source.path, "v:0");
+    let all = common::packet_hashes(&source.path, "v:0");
     let start = all
         .iter()
         .position(|p| p.pts == from)
@@ -183,27 +139,6 @@ fn expected(source: &Source, from: i64, to: i64) -> Vec<String> {
         .filter(|p| p.pts >= from && p.pts < to)
         .map(|p| p.md5.clone())
         .collect()
-}
-
-/// What FFmpeg writes to its error stream decoding every stream of `path`
-/// in full: empty for a file that decodes cleanly. The exit code alone is not
-/// enough — most decode errors are not fatal.
-fn decode_errors(path: &Path) -> Vec<String> {
-    let output = orchestrator()
-        .run_to_end(
-            SidecarCommand::ffmpeg()
-                .option("-v", "error")
-                .input(path)
-                .option("-map", "0")
-                .output_null(),
-            Priority::Foreground,
-        )
-        .expect("decodes");
-    output.stderr_tail
-}
-
-fn md5s(hashes: &[Hashed]) -> Vec<String> {
-    hashes.iter().map(|h| h.md5.clone()).collect()
 }
 
 #[test]
@@ -216,14 +151,14 @@ fn a_keyframe_aligned_cut_copies_every_packet_byte_for_byte() {
     let target = common::scratch("export-copy-single").join("cut.mp4");
     let packets = run(&plan, &source, &target).expect("exports");
 
-    let output = packet_hashes(&target, "v:0");
-    assert_eq!(md5s(&output), expected(&source, from, to));
+    let output = common::packet_hashes(&target, "v:0");
+    assert_eq!(common::md5s(&output), expected(&source, from, to));
     assert_eq!(packets[0], u64::try_from(output.len()).expect("fits"));
     // The output starts at zero, whatever the source's in-point was.
     assert_eq!(output.iter().map(|p| p.pts).min(), Some(0));
     // The sound is copied too: every output audio packet is a source packet.
-    let source_audio = md5s(&packet_hashes(&source.path, "a:0"));
-    let output_audio = md5s(&packet_hashes(&target, "a:0"));
+    let source_audio = common::md5s(&common::packet_hashes(&source.path, "a:0"));
+    let output_audio = common::md5s(&common::packet_hashes(&target, "a:0"));
     assert!(!output_audio.is_empty());
     let first = source_audio
         .iter()
@@ -233,7 +168,7 @@ fn a_keyframe_aligned_cut_copies_every_packet_byte_for_byte() {
         output_audio,
         source_audio[first..first + output_audio.len()].to_vec()
     );
-    assert_eq!(decode_errors(&target), Vec::<String>::new());
+    assert_eq!(common::decode_errors(&target), Vec::<String>::new());
     // The source is read, never written.
     assert_eq!(std::fs::read(&source.path).expect("read"), before);
     assert!(!partial_path(&target).exists());
@@ -251,10 +186,10 @@ fn segments_join_without_a_gap_or_an_overlap() {
     let target = common::scratch("export-copy-joined").join("joined.mp4");
     run(&plan, &source, &target).expect("exports");
 
-    let output = packet_hashes(&target, "v:0");
+    let output = common::packet_hashes(&target, "v:0");
     let mut wanted = expected(&source, ranges[0].0, ranges[0].1);
     wanted.extend(expected(&source, ranges[1].0, ranges[1].1));
-    assert_eq!(md5s(&output), wanted);
+    assert_eq!(common::md5s(&output), wanted);
 
     // Presentation times are the source's frame times, continuous across
     // the join: sorted, they step by exactly one frame everywhere.
@@ -265,7 +200,7 @@ fn segments_join_without_a_gap_or_an_overlap() {
     assert!(frame > 0);
     assert!(steps.iter().all(|step| *step == frame), "{steps:?}");
     assert_eq!(times[0], 0);
-    assert_eq!(decode_errors(&target), Vec::<String>::new());
+    assert_eq!(common::decode_errors(&target), Vec::<String>::new());
 }
 
 fn video_of(path: &Path) -> blinkify_engine::probe::VideoInfo {
@@ -303,8 +238,8 @@ fn rotation_and_colour_survive_the_copy() {
     assert_eq!(is.color.primaries.as_deref(), Some("bt2020"));
     assert_eq!(is.hdr.is_some(), was.hdr.is_some());
     assert_eq!(
-        md5s(&packet_hashes(&target, "v:0")),
-        md5s(&packet_hashes(&hdr.path, "v:0"))
+        common::md5s(&common::packet_hashes(&target, "v:0")),
+        common::md5s(&common::packet_hashes(&hdr.path, "v:0"))
     );
 }
 
@@ -316,8 +251,8 @@ fn a_matroska_source_copies_with_its_chapters_and_language() {
     let target = common::scratch("export-copy-mkv").join("copy.mkv");
     run(&plan, &source, &target).expect("exports");
     assert_eq!(
-        md5s(&packet_hashes(&target, "v:0")),
-        md5s(&packet_hashes(&source.path, "v:0"))
+        common::md5s(&common::packet_hashes(&target, "v:0")),
+        common::md5s(&common::packet_hashes(&source.path, "v:0"))
     );
     let info = Prober::new(orchestrator()).probe(&target).expect("probe");
     let titles: Vec<Option<String>> = info
@@ -378,6 +313,7 @@ fn the_target_is_never_overwritten_unasked_and_a_failure_leaves_nothing() {
             inputs: &inputs,
             target: &cancelled,
             overwrite: false,
+            audio: AudioTarget::default(),
             cancel,
             on_progress: None,
         },
@@ -428,6 +364,7 @@ fn an_export_runs_however_few_shared_slots_the_machine_has() {
                 inputs: &inputs,
                 target: &worker_target,
                 overwrite: false,
+                audio: AudioTarget::default(),
                 cancel: CancelToken::default(),
                 on_progress: None,
             },

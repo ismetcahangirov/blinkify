@@ -82,6 +82,52 @@ and no overlap, and the output starts at zero.
   its reader, which stops that process. Each reader has its own cancel
   switch, because a reader stopped on purpose once its segment is complete
   must not cancel the export.
-- A segment the executor cannot run yet is an `Unsupported` error before any
-  output is written. It is never substituted by a copy or by an encode the
+- A segment the executor cannot run yet — a smart-cut, a video re-encode, a
+  copied clip at another speed — is an `Unsupported` error before any output
+  is written. It is never substituted by a copy or by an encode the
   plan did not choose.
+
+## Encoded sound (#43)
+
+Code: `crates/blinkify-engine/src/export/audio.rs`.
+
+An audio segment the plan re-encodes — adjusted, mixed, sped up or slowed
+down, or silence in a gap — is made by an **encoder** process in place of a
+reader. It writes NUT to the router like a reader does, so the pictures beside
+it are still copied, and no process on this path decodes video: the one that
+reads the video stream copies it (`-c copy`), and the encoder maps only sound.
+`ExportOutcome.commands` lists every command, and the tests assert this on it.
+
+### The codec
+
+| The output's sound                    | Encoded to                                              |
+| ------------------------------------- | ------------------------------------------------------- |
+| some of it is copied                  | the copied sound's codec, sample rate and channels      |
+| none of it is copied                  | `ExportRequest.audio`: AAC 256 kb/s by default          |
+| none copied, lossless asked for       | FLAC (24-bit), or 24-bit PCM where the container allows |
+| a codec no shipped encoder reproduces | refused before anything runs                            |
+| a codec the container cannot hold     | refused before anything runs (`CodecNotInContainer`)    |
+
+The encoding is reported in `ExportOutcome.audio` for the export report.
+
+### The filter graph
+
+Each source is trimmed to its range in the stream's own time
+(`-copyts`, `atrim`), given its gain (`volume`) and speed (`atempo`, in the
+same stages the preview uses), resampled to the encoding's rate and layout,
+and — where several sounds play at once — mixed with `amix` at unity gain.
+The result is padded and trimmed to exactly the segment's length in samples,
+so sound and pictures end together.
+
+Denoise and normalise are refused until Epic #7 gives the preview and the
+export the same filter for them; the export never applies processing the
+preview does not play.
+
+### Joins
+
+A lossy encoder primes: its first frame depends on sound before it, and its
+last on sound after. The encoder is given two whole codec frames of the
+source's real sound on either side of the segment (silence only where the
+stream has none), and only the packets whose samples are the segment's own
+are kept. A lossless codec has no priming and gets none, so a FLAC segment
+decodes to exactly the processed samples.

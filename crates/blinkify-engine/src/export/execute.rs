@@ -23,14 +23,15 @@
 use std::collections::BTreeMap;
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, SyncSender};
+use std::sync::{Arc, Mutex, PoisonError};
 use std::thread;
 use std::time::Duration;
 
 use thiserror::Error;
 
+use super::audio::{self, AudioEncoding, AudioTarget};
 use super::nut::{self, Header, NutError, Packet, StreamHeader};
 use super::plan::{ExportPlan, Media, Segment, SegmentSource};
 use crate::orchestrator::{
@@ -169,6 +170,12 @@ pub struct ExportOutcome {
     pub path: PathBuf,
     /// Packets written, per output stream: video first where there is one.
     pub packets: Vec<u64>,
+    /// How the re-encoded sound was made, where any was: for the report.
+    pub audio: Option<AudioEncoding>,
+    /// Every sidecar command the export ran, as a person reads it: what
+    /// the report can show, and what a test inspects to prove the pictures
+    /// were never decoded.
+    pub commands: Vec<String>,
 }
 
 /// Everything an export needs.
@@ -178,6 +185,9 @@ pub struct ExportRequest<'a> {
     pub target: &'a Path,
     /// The user confirmed replacing an existing target.
     pub overwrite: bool,
+    /// What re-encoded sound becomes where none of the output's sound is
+    /// copied (#43).
+    pub audio: AudioTarget,
     pub cancel: CancelToken,
     pub on_progress: Option<Box<dyn FnMut(JobProgress) + Send>>,
 }
@@ -312,6 +322,19 @@ impl Opened {
     }
 }
 
+/// Which of a producer's packets are its segment's.
+enum Window<'s> {
+    /// A copy: the source's packets in the source's range.
+    Copy(&'s SegmentSource),
+    /// An encode: after `preroll` samples of priming, `samples` of them;
+    /// every timestamp offset by `offset` samples.
+    Encoded {
+        preroll: i64,
+        samples: i64,
+        offset: i64,
+    },
+}
+
 /// Metadata as NUT carries it: key and value.
 type Metadata = Vec<(String, String)>;
 
@@ -333,6 +356,8 @@ struct Context<'a> {
     inputs: &'a BTreeMap<SourceId, ExportInput>,
     plan: &'a ExportPlan,
     cancel: &'a CancelToken,
+    encoding: Option<&'a AudioEncoding>,
+    commands: &'a Mutex<Vec<String>>,
 }
 
 fn seconds(ticks: i64, time_base: Rational) -> f64 {
@@ -383,22 +408,23 @@ impl Context<'_> {
         let mut output_time_base = None;
         let mut sent = 0;
         for segment in &route.segments {
-            runnable(segment)?;
-            let [source] = segment.sources.as_slice() else {
-                continue;
-            };
-            let path = self.path_of(source.source)?;
+            runnable(segment, self.encoding.is_some())?;
             if self.cancel.is_cancelled() {
                 return Err(ExportError::Cancelled);
             }
-            let mut opened = Opened::start(self.orchestrator, reader_command(path, source))?;
+            let (command, window) = self.producer(segment)?;
+            self.commands
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .push(command.to_string());
+            let mut opened = Opened::start(self.orchestrator, command)?;
             let stream = opened
                 .reader
                 .header()
                 .streams
                 .first()
                 .cloned()
-                .ok_or_else(|| ExportError::Mismatch("a reader wrote no stream".to_owned()))?;
+                .ok_or_else(|| ExportError::Mismatch("a producer wrote no stream".to_owned()))?;
             let out_base = if let Some(time_base) = output_time_base {
                 time_base
             } else {
@@ -415,16 +441,95 @@ impl Context<'_> {
                 output_time_base = Some(stream.time_base);
                 stream.time_base
             };
-            sent += self.copy_segment(
-                route.media,
-                segment,
-                source,
-                &mut opened,
-                &stream,
-                out_base,
-                packets,
-            )?;
+            sent += match window {
+                Window::Copy(source) => self.copy_segment(
+                    route.media,
+                    segment,
+                    source,
+                    &mut opened,
+                    &stream,
+                    out_base,
+                    packets,
+                )?,
+                Window::Encoded {
+                    preroll,
+                    samples,
+                    offset,
+                } => self.encoded_segment(
+                    segment,
+                    &mut opened,
+                    &stream,
+                    out_base,
+                    (preroll, samples, offset),
+                    packets,
+                )?,
+            };
             opened.finish()?;
+        }
+        Ok(sent)
+    }
+
+    /// The process that makes `segment`'s packets, and which of them are
+    /// the segment's.
+    fn producer<'s>(
+        &self,
+        segment: &'s Segment,
+    ) -> Result<(SidecarCommand, Window<'s>), ExportError> {
+        if let (ExportTier::StreamCopy, [source]) = (segment.tier, segment.sources.as_slice()) {
+            let path = self.path_of(source.source)?;
+            return Ok((reader_command(path, source), Window::Copy(source)));
+        }
+        let encoding = self
+            .encoding
+            .ok_or_else(|| ExportError::Unsupported("a re-encoded segment".to_owned()))?;
+        let job = audio::encoder_job(segment, self.inputs, encoding, self.plan.time_base)?;
+        Ok((
+            job.command,
+            Window::Encoded {
+                preroll: job.preroll,
+                samples: job.samples,
+                offset: job.offset,
+            },
+        ))
+    }
+
+    /// Send the packets of an encoded `segment`: those whose samples are the
+    /// segment's own, not the priming on either side.
+    fn encoded_segment(
+        &self,
+        segment: &Segment,
+        opened: &mut Opened,
+        stream: &StreamHeader,
+        out_base: Rational,
+        (preroll, samples, offset): (i64, i64, i64),
+        packets: &SyncSender<Routed>,
+    ) -> Result<u64, ExportError> {
+        let rate = self.encoding.map_or(48_000, |e| i64::from(e.sample_rate));
+        let per_sample = Rational { num: 1, den: rate };
+        let nut_base = stream.time_base;
+        let first = convert(offset + preroll, per_sample, nut_base)?;
+        let length = convert(samples, per_sample, nut_base)?;
+        let start = convert(segment.start, self.plan.time_base, out_base)?;
+        let mut sent = 0;
+        while let Some(packet) = opened.reader.next_packet()? {
+            if self.cancel.is_cancelled() {
+                return Err(ExportError::Cancelled);
+            }
+            let at = packet.pts - first;
+            if at < 0 {
+                continue;
+            }
+            if at >= length {
+                break;
+            }
+            packets
+                .send(Routed {
+                    pts: start + convert(at, nut_base, out_base)?,
+                    key: packet.key,
+                    data: packet.data,
+                })
+                .map_err(|_| ExportError::Cancelled)?;
+            sent += 1;
         }
         Ok(sent)
     }
@@ -581,12 +686,16 @@ fn chapters(
 }
 
 /// Whether this executor can carry out `segment`: a copy of one source at
-/// normal speed. Anything else is refused before any output is written —
-/// never copied or encoded differently from what the plan chose.
-fn runnable(segment: &Segment) -> Result<(), ExportError> {
+/// normal speed, or — for sound — an encode the audio path can make.
+/// Anything else is refused before any output is written, never copied or
+/// encoded differently from what the plan chose.
+fn runnable(segment: &Segment, encodes_audio: bool) -> Result<(), ExportError> {
     match (segment.tier, segment.sources.as_slice()) {
         (ExportTier::StreamCopy, [source]) if source.speed == (Rational { num: 1, den: 1 }) => {
             Ok(())
+        }
+        (ExportTier::FullReEncode { .. }, _) if segment.media == Media::Audio && encodes_audio => {
+            audio::check(segment)
         }
         (tier, _) => Err(ExportError::Unsupported(format!(
             "the {:?} segment at frame {} ({tier:?})",
@@ -596,8 +705,11 @@ fn runnable(segment: &Segment) -> Result<(), ExportError> {
 }
 
 /// Check everything that can be checked before a process starts.
-fn preflight(request: &ExportRequest<'_>) -> Result<Container, ExportError> {
+fn preflight(
+    request: &ExportRequest<'_>,
+) -> Result<(Container, Option<AudioEncoding>), ExportError> {
     let container = Container::of(request.target)?;
+    let encoding = audio::encoding_for(request.plan, request.inputs, request.audio, container)?;
     if let Some(segment) = request.plan.segments.iter().find(|s| s.decline.is_some()) {
         return Err(ExportError::Declined(format!(
             "the {:?} segment at frame {}",
@@ -605,7 +717,7 @@ fn preflight(request: &ExportRequest<'_>) -> Result<Container, ExportError> {
         )));
     }
     for segment in &request.plan.segments {
-        runnable(segment)?;
+        runnable(segment, encoding.is_some())?;
         for source in &segment.sources {
             if !request.inputs.contains_key(&source.source) {
                 return Err(ExportError::MissingSource(source.source));
@@ -624,7 +736,7 @@ fn preflight(request: &ExportRequest<'_>) -> Result<Container, ExportError> {
     if request.target.exists() && !request.overwrite {
         return Err(ExportError::TargetExists(request.target.to_path_buf()));
     }
-    Ok(container)
+    Ok((container, encoding))
 }
 
 /// Each output stream's segments, video first.
@@ -649,13 +761,19 @@ pub fn export(
     orchestrator: &Orchestrator,
     request: ExportRequest<'_>,
 ) -> Result<ExportOutcome, ExportError> {
-    let container = preflight(&request)?;
+    let (container, encoding) = preflight(&request)?;
     let partial = partial_path(request.target);
     if partial.exists() {
         // Only an earlier export of this same target makes this name.
         std::fs::remove_file(&partial)?;
     }
-    let result = run(orchestrator, request, container, &partial);
+    let result = run(
+        orchestrator,
+        request,
+        container,
+        encoding.as_ref(),
+        &partial,
+    );
     if result.is_err() {
         let _ = std::fs::remove_file(&partial);
     }
@@ -666,6 +784,7 @@ fn run(
     orchestrator: &Orchestrator,
     request: ExportRequest<'_>,
     container: Container,
+    encoding: Option<&AudioEncoding>,
     partial: &Path,
 ) -> Result<ExportOutcome, ExportError> {
     let ExportRequest {
@@ -673,9 +792,11 @@ fn run(
         inputs,
         target,
         overwrite,
+        audio: _,
         cancel,
         on_progress,
     } = request;
+    let commands = Mutex::new(Vec::new());
     let routes = routes_of(plan);
     if routes.is_empty() {
         return Err(ExportError::Unsupported(
@@ -687,6 +808,8 @@ fn run(
         inputs,
         plan,
         cancel: &cancel,
+        encoding,
+        commands: &commands,
     };
     let primary = routes.first().map_or(Media::Video, |route| route.media);
 
@@ -708,21 +831,12 @@ fn run(
             headers.push(header);
             queues.push(packets);
         }
-        let mut streams = Vec::new();
-        let mut metadata = Vec::new();
-        for header in &headers {
-            if let Ok(Ok((stream, global))) = header.recv() {
-                if metadata.is_empty() {
-                    metadata = global;
-                }
-                streams.push(stream);
-            } else {
-                // Unblock and stop every router before collecting its error.
-                cancel.cancel();
-                drop(queues);
-                return Err(first_error(workers, "a stream produced no header"));
-            }
-        }
+        let Some((streams, metadata)) = collect_headers(&headers) else {
+            // Unblock and stop every router before collecting its error.
+            cancel.cancel();
+            drop(queues);
+            return Err(first_error(workers, "a stream produced no header"));
+        };
         let header = Header {
             metadata,
             chapters: chapters(plan, inputs, primary),
@@ -731,14 +845,15 @@ fn run(
 
         let (chunk_sender, chunks) = mpsc::sync_channel(MUXER_QUEUE);
         let command = muxer_command(plan, inputs, &streams, container, partial);
-        let mut options = JobOptions::default()
-            .cancel_token(cancel.clone())
-            .stdin(chunks)
-            .remove_on_failure(partial.to_path_buf());
-        if let Some(callback) = on_progress {
-            options = options.on_progress(callback);
-        }
-        let mux_job = orchestrator.run(command, Priority::Export, options);
+        let mux_job = start_muxer(
+            orchestrator,
+            command,
+            &cancel,
+            chunks,
+            partial,
+            on_progress,
+            &commands,
+        );
 
         let written = interleave(
             &header,
@@ -750,23 +865,26 @@ fn run(
             },
             &cancel,
         );
-        let router_results: Vec<Result<u64, ExportError>> = workers
-            .into_iter()
-            .map(|worker| {
-                worker
-                    .join()
-                    .unwrap_or_else(|_| Err(ExportError::Mismatch("a router panicked".to_owned())))
-            })
-            .collect();
+        let router_results = join_all(workers);
+        let muxed = mux_job.wait();
         conclude(
             &cancel,
             router_results,
             written,
-            mux_job.wait(),
+            muxed,
             partial,
             target,
             overwrite,
         )
+        .map(|(path, packets)| ExportOutcome {
+            path,
+            packets,
+            audio: encoding.cloned(),
+            commands: commands
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .clone(),
+        })
     })
 }
 
@@ -780,7 +898,7 @@ fn conclude(
     partial: &Path,
     target: &Path,
     overwrite: bool,
-) -> Result<ExportOutcome, ExportError> {
+) -> Result<(PathBuf, Vec<u64>), ExportError> {
     if cancel.is_cancelled() {
         return Err(ExportError::Cancelled);
     }
@@ -797,10 +915,62 @@ fn conclude(
         std::fs::remove_file(target)?;
     }
     std::fs::rename(partial, target)?;
-    Ok(ExportOutcome {
-        path: target.to_path_buf(),
-        packets,
-    })
+    Ok((target.to_path_buf(), packets))
+}
+
+/// Wait for every router, a panic counting as a failure.
+fn join_all(
+    workers: Vec<thread::ScopedJoinHandle<'_, Result<u64, ExportError>>>,
+) -> Vec<Result<u64, ExportError>> {
+    workers
+        .into_iter()
+        .map(|worker| {
+            worker
+                .join()
+                .unwrap_or_else(|_| Err(ExportError::Mismatch("a router panicked".to_owned())))
+        })
+        .collect()
+}
+
+/// Start the muxer, fed from `chunks`, and record its command.
+fn start_muxer(
+    orchestrator: &Orchestrator,
+    command: SidecarCommand,
+    cancel: &CancelToken,
+    chunks: Receiver<Vec<u8>>,
+    partial: &Path,
+    on_progress: Option<Box<dyn FnMut(JobProgress) + Send>>,
+    commands: &Mutex<Vec<String>>,
+) -> crate::orchestrator::Job {
+    commands
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .push(command.to_string());
+    let mut options = JobOptions::default()
+        .cancel_token(cancel.clone())
+        .stdin(chunks)
+        .remove_on_failure(partial.to_path_buf());
+    if let Some(callback) = on_progress {
+        options = options.on_progress(callback);
+    }
+    orchestrator.run(command, Priority::Export, options)
+}
+
+/// Every route's stream header, in route order, and the file metadata of
+/// the first that has any; `None` if a route failed before its header.
+fn collect_headers(
+    headers: &[Receiver<Result<(StreamHeader, Metadata), String>>],
+) -> Option<(Vec<StreamHeader>, Metadata)> {
+    let mut streams = Vec::new();
+    let mut metadata = Vec::new();
+    for header in headers {
+        let (stream, global) = header.recv().ok()?.ok()?;
+        if metadata.is_empty() {
+            metadata = global;
+        }
+        streams.push(stream);
+    }
+    Some((streams, metadata))
 }
 
 /// The first error among `workers`, or `fallback`.
