@@ -38,7 +38,7 @@ use crate::audio::decoder::tempo_stages;
 use crate::orchestrator::SidecarCommand;
 use crate::probe::{Rational, StreamInfo, StreamKind};
 use crate::project::SourceId;
-use crate::project::evaluate::AudioOperation;
+use crate::project::evaluate::{AudioOperation, Motion};
 use crate::tier::ExportTier;
 
 /// Seconds added to every timestamp the encoder writes, as for readers.
@@ -47,6 +47,10 @@ const ENCODER_OFFSET_SECONDS: i64 = 100;
 /// How far before a stretch the source is decoded from, so the demuxer's
 /// seek lands before it.
 const SEEK_MARGIN_SECONDS: f64 = 3.0;
+
+/// The longest clip whose sound is reversed: `areverse` holds the whole
+/// stretch, and ten minutes of stereo float is about 230 MB.
+const REVERSE_LIMIT_SECONDS: f64 = 600.0;
 
 /// Codec frames of real sound given to a lossy encoder on each side.
 const PRIMING_FRAMES: i64 = 2;
@@ -249,10 +253,11 @@ pub fn check(segment: &Segment) -> Result<(), ExportError> {
         return Err(ExportError::Unsupported("a smart-cut of sound".to_owned()));
     }
     for source in &segment.sources {
-        if source.motion.is_some() {
-            return Err(ExportError::Unsupported(
-                "the sound of a held or reversed clip".to_owned(),
-            ));
+        let seconds = crate::time::seconds(source.source_out - source.source_in, source.time_base);
+        if source.motion == Some(Motion::Reverse) && seconds > REVERSE_LIMIT_SECONDS {
+            return Err(ExportError::Unsupported(format!(
+                "the sound of a reversed clip longer than {REVERSE_LIMIT_SECONDS} seconds"
+            )));
         }
     }
     for operation in segment.sources.iter().flat_map(|source| &source.audio) {
@@ -311,6 +316,11 @@ fn source_chain(
         if let AudioOperation::Gain { db } = operation {
             let _ = write!(chain, ",volume={db}dB");
         }
+    }
+    if source.motion == Some(Motion::Reverse) {
+        // The priming either side is the same length, so reversed it is
+        // still priming either side.
+        chain.push_str(",areverse");
     }
     for factor in tempo_stages(speed) {
         let _ = write!(chain, ",atempo={factor}");
@@ -384,6 +394,13 @@ pub fn encoder_job(
                 source.source, source.stream
             ))
         })?;
+        if source.motion == Some(Motion::Hold) {
+            // A held picture's moment does not move: its sound is silence.
+            command = command.lavfi_input(&format!("anullsrc=r={rate}:cl={layout}"));
+            let _ = write!(graph, "[{i}:a]anull[p{i}];");
+            labels.push(format!("[p{i}]"));
+            continue;
+        }
         let (seek, chain) = source_chain(i, source, stream, encoding, preroll);
         if seek > 0.0 {
             command = command.option("-ss", format!("{seek:.6}"));

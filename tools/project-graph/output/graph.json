@@ -8192,6 +8192,24 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SequenceSettings",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/SequenceSettings.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -9834,6 +9852,7 @@
       "dependents": [
         "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/ExportPlan.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -14819,7 +14838,7 @@
     "ignore": 0,
     "advisedExitCode": 0,
     "totalCruised": 301,
-    "totalDependenciesCruised": 671,
+    "totalDependenciesCruised": 672,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

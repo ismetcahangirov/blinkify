@@ -144,13 +144,10 @@ fn a_rate_no_container_carries_falls_back_with_its_reason() {
     );
     let target = common::scratch("export-speed-fallback").join("too-fast.mp4");
     match source.export(&plan, &target, AudioTarget::default()) {
-        // The full re-encode executor (#55) carries it out where it exists.
+        // The full re-encode executor (#55) carries it out.
         Ok(_) => assert!(common::decode_errors(&target).is_empty()),
-        // Where no encoder here can make it, the plan declines it; until the
-        // executor exists it is refused. Never copied either way.
-        Err(ExportError::Declined(_) | ExportError::Unsupported(_)) => {
-            assert!(!target.exists());
-        }
+        // Where no encoder here can make it, it is refused, never copied.
+        Err(ExportError::Declined(_)) => assert!(!target.exists()),
         Err(other) => panic!("{other}"),
     }
 }

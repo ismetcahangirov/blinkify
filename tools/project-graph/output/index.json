@@ -2648,7 +2648,8 @@
       "dependsOn": [
         "packages/types/src/generated/PlanSummary.ts",
         "packages/types/src/generated/Rational.ts",
-        "packages/types/src/generated/Segment.ts"
+        "packages/types/src/generated/Segment.ts",
+        "packages/types/src/generated/SequenceSettings.ts"
       ],
       "dependedOnBy": [
         "packages/types/src/generated/index.ts"
@@ -3416,6 +3417,7 @@
       "dependedOnBy": [
         "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/ExportPlan.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/index.ts"
       ],
