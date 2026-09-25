@@ -180,6 +180,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./shortcuts/useShortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/useShortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -2139,23 +2156,6 @@
         },
         {
           "dynamic": false,
-          "module": "./useTransportShortcuts.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/desktop/src/player/useTransportShortcuts.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "@blinkify/types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2250,14 +2250,14 @@
         },
         {
           "dynamic": false,
-          "module": "./useTransportShortcuts.js",
+          "module": "../shortcuts/shortcuts.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "apps/desktop/src/player/useTransportShortcuts.ts",
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2544,6 +2544,8 @@
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
         "apps/desktop/src/timeline/mountTimeline.ts"
@@ -2625,36 +2627,6 @@
         "apps/desktop/src/project/SourcesBanner.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/desktop/src/player/useTransportShortcuts.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "@blinkify/types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "undetermined",
-            "type-only",
-            "import"
-          ],
-          "resolved": "packages/types/src/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/desktop/src/player/TransportBar.test.tsx",
-        "apps/desktop/src/player/TransportBar.tsx",
-        "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -2758,6 +2730,23 @@
         },
         {
           "dynamic": false,
+          "module": "../shortcuts/shortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "@blinkify/ui",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2776,9 +2765,7 @@
       ],
       "dependents": [
         "apps/desktop/src/project/HistoryControls.test.tsx",
-        "apps/desktop/src/project/ProjectLifecycle.tsx",
-        "apps/desktop/src/shell/AppBar.tsx",
-        "apps/desktop/src/timeline/useTimelineKeys.ts"
+        "apps/desktop/src/shell/AppBar.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -2865,23 +2852,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./HistoryControls.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/desktop/src/project/HistoryControls.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./SequenceSettingsDialog.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2953,7 +2923,8 @@
       "dependents": [
         "apps/desktop/src/App.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
-        "apps/desktop/src/shell/AppBar.tsx"
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3272,6 +3243,8 @@
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
@@ -3285,8 +3258,8 @@
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/rows.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.test.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.ts"
+        "apps/desktop/src/timeline/timelineCommands.test.ts",
+        "apps/desktop/src/timeline/timelineCommands.ts"
       ],
       "orphan": false,
       "valid": true
@@ -3381,6 +3354,74 @@
             "import"
           ],
           "resolved": "apps/desktop/src/shell/windowChrome.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../shortcuts/ShortcutReference.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/ShortcutReference.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../shortcuts/shortcuts.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../shortcuts/shortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/timeline.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/timeline.store.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4123,23 +4164,6 @@
         },
         {
           "dynamic": false,
-          "module": "../../player/useTransportShortcuts.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/desktop/src/player/useTransportShortcuts.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../../project/project.store.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4237,6 +4261,23 @@
         },
         {
           "dynamic": false,
+          "module": "../../shortcuts/shortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../timeline/EditToolbar.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4322,14 +4363,134 @@
         },
         {
           "dynamic": false,
-          "module": "../../timeline/useTimelineKeys.js",
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/App.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/shortcuts/ShortcutReference.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ShortcutReference.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "apps/desktop/src/timeline/useTimelineKeys.ts",
+          "resolved": "apps/desktop/src/shortcuts/ShortcutReference.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./shortcuts.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./shortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/shortcuts/ShortcutReference.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./shortcuts.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./shortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4356,7 +4517,376 @@
         }
       ],
       "dependents": [
-        "apps/desktop/src/App.tsx"
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.test.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/shortcuts/handlers.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../player/preview.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/preview.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/ProjectLifecycle.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/ProjectLifecycle.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./shortcuts.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./shortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/EditToolbar.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/EditToolbar.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/editActions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/editActions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/timeline.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/timeline.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/timelineCommands.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/timelineCommands.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
+        "apps/desktop/src/shortcuts/useShortcuts.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/shortcuts/shortcuts.store.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.test.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/shortcuts/shortcuts.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../player/preview.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/preview.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./handlers.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/handlers.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./shortcuts.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./shortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./useShortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/useShortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/timeline.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/timeline.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/shortcuts/shortcuts.ts",
+      "dependencies": [],
+      "dependents": [
+        "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/project/HistoryControls.tsx",
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.test.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
+        "apps/desktop/src/shortcuts/useShortcuts.ts",
+        "apps/desktop/src/timeline/EditToolbar.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/shortcuts/useShortcuts.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./handlers.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/handlers.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./shortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4400,6 +4930,23 @@
         },
         {
           "dynamic": false,
+          "module": "../shortcuts/shortcuts.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shortcuts/shortcuts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./editActions.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4434,14 +4981,14 @@
         },
         {
           "dynamic": false,
-          "module": "./useTimelineKeys.js",
+          "module": "./timelineCommands.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "apps/desktop/src/timeline/useTimelineKeys.ts",
+          "resolved": "apps/desktop/src/timeline/timelineCommands.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -4486,7 +5033,8 @@
         }
       ],
       "dependents": [
-        "apps/desktop/src/shell/zones/TimelineZone.tsx"
+        "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5492,6 +6040,7 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/shortcuts/handlers.ts",
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/editActions.test.ts"
@@ -5641,7 +6190,7 @@
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/assetDrop.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.ts"
+        "apps/desktop/src/timeline/timelineCommands.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6015,7 +6564,7 @@
         "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.ts"
+        "apps/desktop/src/timeline/timelineCommands.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6193,7 +6742,10 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
@@ -6201,6 +6753,129 @@
         "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
         "apps/desktop/src/timeline/mountTimeline.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/timeline/timelineCommands.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./timelineCommands.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/timelineCommands.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/timeline/timelineCommands.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./interaction.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/interaction.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./rows.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/rows.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/timeline/EditToolbar.tsx",
+        "apps/desktop/src/timeline/timelineCommands.test.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6292,146 +6967,6 @@
         "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/timelineMedia.test.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/desktop/src/timeline/useTimelineKeys.test.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../project/project.store.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/desktop/src/project/project.store.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./useTimelineKeys.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/desktop/src/timeline/useTimelineKeys.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@blinkify/types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "undetermined",
-            "type-only",
-            "import"
-          ],
-          "resolved": "packages/types/src/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "apps/desktop/src/timeline/useTimelineKeys.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../project/HistoryControls.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/desktop/src/project/HistoryControls.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../project/project.store.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/desktop/src/project/project.store.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./interaction.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/desktop/src/timeline/interaction.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./rows.js",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "apps/desktop/src/timeline/rows.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "apps/desktop/src/shell/zones/TimelineZone.tsx",
-        "apps/desktop/src/timeline/EditToolbar.tsx",
-        "apps/desktop/src/timeline/useTimelineKeys.test.ts"
       ],
       "orphan": false,
       "valid": true
@@ -11207,7 +11742,6 @@
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/player/timecode.ts",
-        "apps/desktop/src/player/useTransportShortcuts.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
@@ -11234,9 +11768,9 @@
         "apps/desktop/src/timeline/rows.ts",
         "apps/desktop/src/timeline/timeline.perf.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/timelineCommands.test.ts",
         "apps/desktop/src/timeline/timelineMedia.test.ts",
         "apps/desktop/src/timeline/timelineMedia.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.test.ts",
         "apps/desktop/src/update.store.ts"
       ],
       "orphan": false,
@@ -12891,6 +13425,8 @@
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.test.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.tsx",
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx"
@@ -13304,8 +13840,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 276,
-    "totalDependenciesCruised": 600,
+    "totalCruised": 282,
+    "totalDependenciesCruised": 627,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,
