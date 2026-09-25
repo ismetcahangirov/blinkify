@@ -7994,10 +7994,39 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/EncoderChoice.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./EncoderSource",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/EncoderSource.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/EncoderSource.ts",
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/EncoderCapability.ts",
+        "packages/types/src/generated/EncoderChoice.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -8476,6 +8505,15 @@
           "valid": true
         }
       ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/JoinMismatch.ts",
+      "dependencies": [],
       "dependents": [
         "packages/types/src/generated/index.ts"
       ],
@@ -9374,6 +9412,7 @@
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/SequenceSettings.ts",
+        "packages/types/src/generated/SourceProfile.ts",
         "packages/types/src/generated/SpeedProblem.ts",
         "packages/types/src/generated/SpeedVerdict.ts",
         "packages/types/src/generated/StreamExtent.ts",
@@ -9757,6 +9796,52 @@
     {
       "source": "packages/types/src/generated/SheetReady.ts",
       "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/SourceProfile.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VideoCodec",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/VideoCodec.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "packages/types/src/generated/index.ts"
       ],
@@ -10250,6 +10335,34 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Unmatched.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./VideoCodec",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/VideoCodec.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/UpdateOffer.ts",
       "dependencies": [],
       "dependents": [
@@ -10263,6 +10376,8 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/CodecCapability.ts",
+        "packages/types/src/generated/SourceProfile.ts",
+        "packages/types/src/generated/Unmatched.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -11053,6 +11168,23 @@
         },
         {
           "dynamic": false,
+          "module": "./EncoderChoice",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/EncoderChoice.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./EncoderSource",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -11384,6 +11516,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/JobProgress.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./JoinMismatch",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/JoinMismatch.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -12107,6 +12256,23 @@
         },
         {
           "dynamic": false,
+          "module": "./SourceProfile",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/SourceProfile.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./SourceRef",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -12319,6 +12485,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/TransportCommand.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Unmatched",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Unmatched.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -14577,8 +14760,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 297,
-    "totalDependenciesCruised": 660,
+    "totalCruised": 301,
+    "totalDependenciesCruised": 668,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

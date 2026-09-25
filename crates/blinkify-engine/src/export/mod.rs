@@ -14,6 +14,8 @@ pub mod execute;
 pub mod facts;
 pub mod nut;
 pub mod plan;
+pub mod profile;
+pub mod sps;
 
 use std::collections::BTreeMap;
 

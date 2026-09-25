@@ -5,7 +5,7 @@
     "tools"
   ],
   "totals": {
-    "files": 297,
+    "files": 301,
     "tests": 42,
     "violations": 0
   },
@@ -41,7 +41,7 @@
       ]
     },
     "packages/types": {
-      "files": 119,
+      "files": 123,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
@@ -80,6 +80,7 @@
         "packages/types/src/generated/EditOutcome.ts",
         "packages/types/src/generated/EncoderCapabilities.ts",
         "packages/types/src/generated/EncoderCapability.ts",
+        "packages/types/src/generated/EncoderChoice.ts",
         "packages/types/src/generated/EncoderSource.ts",
         "packages/types/src/generated/EncodingField.ts",
         "packages/types/src/generated/EncodingSignature.ts",
@@ -100,6 +101,7 @@
         "packages/types/src/generated/IndexProgress.ts",
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/JobProgress.ts",
+        "packages/types/src/generated/JoinMismatch.ts",
         "packages/types/src/generated/Keyframe.ts",
         "packages/types/src/generated/KeyframeAlternative.ts",
         "packages/types/src/generated/KeyframePoint.ts",
@@ -142,6 +144,7 @@
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/SettingsImpact.ts",
         "packages/types/src/generated/SheetReady.ts",
+        "packages/types/src/generated/SourceProfile.ts",
         "packages/types/src/generated/SourceRef.ts",
         "packages/types/src/generated/SourceStatus.ts",
         "packages/types/src/generated/SpeedProblem.ts",
@@ -155,6 +158,7 @@
         "packages/types/src/generated/Track.ts",
         "packages/types/src/generated/TrackKind.ts",
         "packages/types/src/generated/TransportCommand.ts",
+        "packages/types/src/generated/Unmatched.ts",
         "packages/types/src/generated/UpdateOffer.ts",
         "packages/types/src/generated/VideoCodec.ts",
         "packages/types/src/generated/VideoInfo.ts",
@@ -2569,6 +2573,19 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/EncoderChoice.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/EncoderSource.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/EncoderSource.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2576,6 +2593,7 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/EncoderCapability.ts",
+        "packages/types/src/generated/EncoderChoice.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2820,6 +2838,17 @@
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/Progress.ts"
       ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/JoinMismatch.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/index.ts"
       ],
@@ -3234,6 +3263,7 @@
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/SequenceSettings.ts",
+        "packages/types/src/generated/SourceProfile.ts",
         "packages/types/src/generated/SpeedProblem.ts",
         "packages/types/src/generated/SpeedVerdict.ts",
         "packages/types/src/generated/StreamExtent.ts",
@@ -3403,6 +3433,20 @@
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/SourceProfile.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Rational.ts",
+        "packages/types/src/generated/VideoCodec.ts"
+      ],
       "dependedOnBy": [
         "packages/types/src/generated/index.ts"
       ],
@@ -3598,6 +3642,19 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Unmatched.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/VideoCodec.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/UpdateOffer.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -3616,6 +3673,8 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/CodecCapability.ts",
+        "packages/types/src/generated/SourceProfile.ts",
+        "packages/types/src/generated/Unmatched.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -3719,6 +3778,7 @@
         "packages/types/src/generated/EditOutcome.ts",
         "packages/types/src/generated/EncoderCapabilities.ts",
         "packages/types/src/generated/EncoderCapability.ts",
+        "packages/types/src/generated/EncoderChoice.ts",
         "packages/types/src/generated/EncoderSource.ts",
         "packages/types/src/generated/EncodingField.ts",
         "packages/types/src/generated/EncodingSignature.ts",
@@ -3739,6 +3799,7 @@
         "packages/types/src/generated/IndexProgress.ts",
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/JobProgress.ts",
+        "packages/types/src/generated/JoinMismatch.ts",
         "packages/types/src/generated/Keyframe.ts",
         "packages/types/src/generated/KeyframeAlternative.ts",
         "packages/types/src/generated/KeyframePoint.ts",
@@ -3781,6 +3842,7 @@
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/SettingsImpact.ts",
         "packages/types/src/generated/SheetReady.ts",
+        "packages/types/src/generated/SourceProfile.ts",
         "packages/types/src/generated/SourceRef.ts",
         "packages/types/src/generated/SourceStatus.ts",
         "packages/types/src/generated/SpeedProblem.ts",
@@ -3794,6 +3856,7 @@
         "packages/types/src/generated/Track.ts",
         "packages/types/src/generated/TrackKind.ts",
         "packages/types/src/generated/TransportCommand.ts",
+        "packages/types/src/generated/Unmatched.ts",
         "packages/types/src/generated/UpdateOffer.ts",
         "packages/types/src/generated/VideoCodec.ts",
         "packages/types/src/generated/VideoInfo.ts",
