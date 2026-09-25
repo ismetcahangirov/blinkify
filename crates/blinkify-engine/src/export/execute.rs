@@ -274,7 +274,7 @@ impl Opened {
         let stopped = Arc::clone(&stop);
         let job = orchestrator.run(
             command,
-            Priority::Foreground,
+            Priority::Export,
             JobOptions::default().on_chunk(move |chunk| {
                 if stopped.load(Ordering::SeqCst) || sender.send(chunk.to_vec()).is_err() {
                     Flow::Stop
@@ -738,7 +738,7 @@ fn run(
         if let Some(callback) = on_progress {
             options = options.on_progress(callback);
         }
-        let mux_job = orchestrator.run(command, Priority::Foreground, options);
+        let mux_job = orchestrator.run(command, Priority::Export, options);
 
         let written = interleave(
             &header,

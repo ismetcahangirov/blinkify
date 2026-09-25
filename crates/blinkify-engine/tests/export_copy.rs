@@ -398,3 +398,45 @@ fn a_codec_the_container_cannot_hold_is_refused_before_anything_runs() {
     ));
     assert!(!target.exists());
 }
+
+#[test]
+fn an_export_runs_however_few_shared_slots_the_machine_has() {
+    // #110: a reader per stream and the muxer are coupled by pipes and must
+    // all run at once. With one shared slot they used to wait on each other
+    // for ever; an export's processes now have slots of their own.
+    let source = source("h264-high-closed-gop.mp4");
+    let plan = source.plan(&[(source.keyframe(0).max(0), source.keyframe(3))]);
+    let target = common::scratch("export-copy-one-slot").join("cut.mp4");
+    let starved = Orchestrator::new(
+        common::sidecar(),
+        Limits {
+            interactive: 1,
+            playback: 1,
+            shared: 1,
+            background: 0,
+            export: 8,
+        },
+    );
+    let (done, finished) = std::sync::mpsc::channel();
+    let inputs = source.inputs();
+    let worker_target = target.clone();
+    std::thread::spawn(move || {
+        let result = export(
+            &starved,
+            ExportRequest {
+                plan: &plan,
+                inputs: &inputs,
+                target: &worker_target,
+                overwrite: false,
+                cancel: CancelToken::default(),
+                on_progress: None,
+            },
+        );
+        let _ = done.send(result.map(|outcome| outcome.packets));
+    });
+    let result = finished
+        .recv_timeout(std::time::Duration::from_secs(60))
+        .expect("the export finished rather than waiting on itself");
+    assert!(result.is_ok(), "{result:?}");
+    assert!(target.exists());
+}

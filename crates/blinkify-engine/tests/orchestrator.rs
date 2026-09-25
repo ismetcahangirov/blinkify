@@ -24,6 +24,7 @@ const ROOMY: Limits = Limits {
     playback: 4,
     shared: 4,
     background: 3,
+    export: 8,
 };
 
 fn scratch(name: &str) -> PathBuf {
@@ -283,6 +284,7 @@ fn the_concurrency_limits_hold_under_load() {
         playback: 1,
         shared: 2,
         background: 1,
+        export: 8,
     };
     let orchestrator = orchestrator(limits);
     let job = |priority| {

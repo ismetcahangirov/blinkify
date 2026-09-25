@@ -30,7 +30,10 @@ The executor carries out an `ExportPlan` (see
 - The **interleaver** writes the routers' packets into the muxer in
   presentation order across streams, through bounded queues, so memory is
   bounded however long the export is.
-- Every process runs through the orchestrator at foreground priority.
+- Every process runs through the orchestrator at `Priority::Export`, which has
+  slots of its own (#110). The processes of one export are coupled by pipes
+  and must all run at once; admitted through the shared slots, one left
+  queued stalls the rest for ever.
 
 ## Selecting a copied segment's packets
 
