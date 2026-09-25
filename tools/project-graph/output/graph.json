@@ -7189,6 +7189,15 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/AudioEncoding.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/AudioInfo.ts",
       "dependencies": [],
       "dependents": [
@@ -7203,6 +7212,7 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -7223,6 +7233,15 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/AssetInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/AudioTarget.ts",
+      "dependencies": [],
+      "dependents": [
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -9570,6 +9589,24 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./AudioOperation",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/AudioOperation.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Motion",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -10455,6 +10492,23 @@
         },
         {
           "dynamic": false,
+          "module": "./AudioEncoding",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/AudioEncoding.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./AudioInfo",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -10514,6 +10568,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/AudioSummary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./AudioTarget",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/AudioTarget.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -14506,8 +14577,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 295,
-    "totalDependenciesCruised": 657,
+    "totalCruised": 297,
+    "totalDependenciesCruised": 660,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

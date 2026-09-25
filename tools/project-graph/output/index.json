@@ -5,7 +5,7 @@
     "tools"
   ],
   "totals": {
-    "files": 295,
+    "files": 297,
     "tests": 42,
     "violations": 0
   },
@@ -41,16 +41,18 @@
       ]
     },
     "packages/types": {
-      "files": 117,
+      "files": 119,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
         "packages/types/src/generated/AppliedClip.ts",
         "packages/types/src/generated/AssetInfo.ts",
+        "packages/types/src/generated/AudioEncoding.ts",
         "packages/types/src/generated/AudioInfo.ts",
         "packages/types/src/generated/AudioOperation.ts",
         "packages/types/src/generated/AudioOutputState.ts",
         "packages/types/src/generated/AudioSummary.ts",
+        "packages/types/src/generated/AudioTarget.ts",
         "packages/types/src/generated/Cause.ts",
         "packages/types/src/generated/Chapter.ts",
         "packages/types/src/generated/Chroma.ts",
@@ -2138,6 +2140,17 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/AudioEncoding.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/AudioInfo.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2157,6 +2170,7 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2181,6 +2195,17 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/AssetInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/AudioTarget.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -3319,6 +3344,7 @@
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
+        "packages/types/src/generated/AudioOperation.ts",
         "packages/types/src/generated/Motion.ts",
         "packages/types/src/generated/Rational.ts"
       ],
@@ -3660,10 +3686,12 @@
         "packages/types/src/generated/Applied.ts",
         "packages/types/src/generated/AppliedClip.ts",
         "packages/types/src/generated/AssetInfo.ts",
+        "packages/types/src/generated/AudioEncoding.ts",
         "packages/types/src/generated/AudioInfo.ts",
         "packages/types/src/generated/AudioOperation.ts",
         "packages/types/src/generated/AudioOutputState.ts",
         "packages/types/src/generated/AudioSummary.ts",
+        "packages/types/src/generated/AudioTarget.ts",
         "packages/types/src/generated/Cause.ts",
         "packages/types/src/generated/Chapter.ts",
         "packages/types/src/generated/Chroma.ts",

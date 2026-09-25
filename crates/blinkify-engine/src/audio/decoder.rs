@@ -197,7 +197,7 @@ impl AudioRequest {
 }
 
 /// `atempo` takes 0.5 to 100 in one stage; slower speeds chain stages.
-fn tempo_stages(tempo: f64) -> Vec<f64> {
+pub(crate) fn tempo_stages(tempo: f64) -> Vec<f64> {
     let mut stages = Vec::new();
     let mut left = tempo;
     if (left - 1.0).abs() < 1e-9 {

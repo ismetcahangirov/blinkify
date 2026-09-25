@@ -33,7 +33,7 @@ use thiserror::Error;
 use ts_rs::TS;
 
 use crate::probe::Rational;
-use crate::project::evaluate::{Motion, Placement, Timeline, crop};
+use crate::project::evaluate::{AudioOperation, Motion, Placement, Timeline, crop};
 use crate::project::settings::{Mismatch, SequenceSettings, StreamGeometry, copy_eligibility};
 use crate::project::speed;
 use crate::project::{ClipId, SourceId, TrackId, TrackKind};
@@ -386,6 +386,9 @@ pub struct SegmentSource {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub motion: Option<Motion>,
+    /// The clip's audio chain, as the evaluator resolved it: what the audio
+    /// path (#43) applies to this source's sound. Empty for pictures.
+    pub audio: Vec<AudioOperation>,
 }
 
 /// A range of source ticks a smart-cut re-encodes; everything else in the
@@ -576,6 +579,7 @@ fn source_of(placement: &Placement, stream: u32, time_base: Rational) -> Segment
         source_out: placement.source_out,
         speed: placement.speed,
         motion: placement.motion,
+        audio: Vec::new(),
     }
 }
 
@@ -1025,6 +1029,7 @@ fn plan_audio(
             pieces.push(SegmentSource {
                 source_in,
                 source_out,
+                audio: piece.audio.clone(),
                 ..source_of(&piece, sound.stream, sound.time_base)
             });
         }

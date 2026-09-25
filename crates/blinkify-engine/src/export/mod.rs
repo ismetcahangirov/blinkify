@@ -9,6 +9,7 @@
 //! [`plan`] decides, segment by segment, what the export copies and what it
 //! re-encodes (#39).
 
+pub mod audio;
 pub mod execute;
 pub mod facts;
 pub mod nut;
