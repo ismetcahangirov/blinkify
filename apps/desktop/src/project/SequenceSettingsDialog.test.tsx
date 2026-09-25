@@ -52,6 +52,7 @@ function view(matchFirstClip = false): ProjectView {
     eligibility: {},
     extents: [],
     assets: {},
+    speeds: {},
   };
 }
 

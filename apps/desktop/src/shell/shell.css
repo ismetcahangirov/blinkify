@@ -404,6 +404,107 @@
   gap: var(--space-2);
 }
 
+/* The inspector's sections (#56). The panel scrolls; the zone title does
+   not. */
+.inspector {
+  flex: 1;
+  min-height: 0;
+}
+
+.video-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.inspector-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.inspector-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.inspector-section__title {
+  margin: 0;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.speed-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.speed-control__factor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* Label and value pairs. Values are the probe's verbatim, so they wrap
+   rather than being cut. */
+.inspector-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+}
+
+.inspector-facts dt {
+  color: var(--text-secondary);
+}
+
+.inspector-facts dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--type-family-mono);
+  overflow-wrap: anywhere;
+}
+
+.inspector-statement,
+.inspector-warning,
+.inspector-note {
+  margin: 0;
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+}
+
+.inspector-statement {
+  padding-left: var(--space-2);
+  border-left: var(--border-width) solid var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* The lossless colour is one of the few saturated things on screen, and only
+   where it means lossless. */
+.inspector-statement[data-tone="lossless"] {
+  border-left-color: var(--lossless);
+}
+
+.inspector-statement[data-tone="re-encode"] {
+  border-left-color: var(--warning);
+}
+
+.inspector-warning {
+  color: var(--warning);
+}
+
+.inspector-note {
+  color: var(--text-secondary);
+}
+
 /* The new-project dialog's fields (#54). */
 .lifecycle__field {
   display: flex;

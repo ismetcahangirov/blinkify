@@ -34,6 +34,7 @@ pub mod recent;
 pub mod session;
 pub mod settings;
 pub mod source;
+pub mod speed;
 pub mod split;
 pub mod trim;
 
