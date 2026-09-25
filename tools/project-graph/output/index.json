@@ -5,7 +5,7 @@
     "tools"
   ],
   "totals": {
-    "files": 282,
+    "files": 295,
     "tests": 42,
     "violations": 0
   },
@@ -41,7 +41,7 @@
       ]
     },
     "packages/types": {
-      "files": 104,
+      "files": 117,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
@@ -51,6 +51,7 @@
         "packages/types/src/generated/AudioOperation.ts",
         "packages/types/src/generated/AudioOutputState.ts",
         "packages/types/src/generated/AudioSummary.ts",
+        "packages/types/src/generated/Cause.ts",
         "packages/types/src/generated/Chapter.ts",
         "packages/types/src/generated/Chroma.ts",
         "packages/types/src/generated/ChromaSubsampling.ts",
@@ -64,6 +65,7 @@
         "packages/types/src/generated/CopyEligibility.ts",
         "packages/types/src/generated/CopyNote.ts",
         "packages/types/src/generated/CutPoint.ts",
+        "packages/types/src/generated/Decline.ts",
         "packages/types/src/generated/DecodeStats.ts",
         "packages/types/src/generated/DiagnosticClip.ts",
         "packages/types/src/generated/DiagnosticOperation.ts",
@@ -77,7 +79,10 @@
         "packages/types/src/generated/EncoderCapabilities.ts",
         "packages/types/src/generated/EncoderCapability.ts",
         "packages/types/src/generated/EncoderSource.ts",
+        "packages/types/src/generated/EncodingField.ts",
+        "packages/types/src/generated/EncodingSignature.ts",
         "packages/types/src/generated/EvaluatedTrack.ts",
+        "packages/types/src/generated/ExportPlan.ts",
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/Filmstrip.ts",
         "packages/types/src/generated/Fingerprint.ts",
@@ -94,8 +99,11 @@
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/JobProgress.ts",
         "packages/types/src/generated/Keyframe.ts",
+        "packages/types/src/generated/KeyframeAlternative.ts",
+        "packages/types/src/generated/KeyframePoint.ts",
         "packages/types/src/generated/LoopRange.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
+        "packages/types/src/generated/Media.ts",
         "packages/types/src/generated/MediaInfo.ts",
         "packages/types/src/generated/Mismatch.ts",
         "packages/types/src/generated/MonitorCommand.ts",
@@ -106,6 +114,7 @@
         "packages/types/src/generated/OperationsAt.ts",
         "packages/types/src/generated/PictureKind.ts",
         "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/PlanSummary.ts",
         "packages/types/src/generated/PlaybackState.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/PlaybackUpdate.ts",
@@ -124,6 +133,9 @@
         "packages/types/src/generated/RecoveryOffer.ts",
         "packages/types/src/generated/Refusal.ts",
         "packages/types/src/generated/SeamReason.ts",
+        "packages/types/src/generated/SeamWindow.ts",
+        "packages/types/src/generated/Segment.ts",
+        "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/SettingsImpact.ts",
@@ -137,6 +149,7 @@
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/StreamKind.ts",
         "packages/types/src/generated/Timeline.ts",
+        "packages/types/src/generated/Totals.ts",
         "packages/types/src/generated/Track.ts",
         "packages/types/src/generated/TrackKind.ts",
         "packages/types/src/generated/TransportCommand.ts",
@@ -2173,6 +2186,23 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Cause.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/EncodingField.ts",
+        "packages/types/src/generated/Mismatch.ts",
+        "packages/types/src/generated/Rational.ts",
+        "packages/types/src/generated/ReEncodeReason.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/Segment.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/Chapter.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2335,6 +2365,18 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/Decline.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2514,6 +2556,29 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/EncodingField.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Cause.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/EncodingSignature.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/EvaluatedTrack.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2529,6 +2594,21 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/ExportPlan.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/PlanSummary.ts",
+        "packages/types/src/generated/Rational.ts",
+        "packages/types/src/generated/Segment.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/ExportTier.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2538,6 +2618,7 @@
         "packages/types/src/generated/SeamReason.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/SpeedVerdict.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -2734,6 +2815,29 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/KeyframeAlternative.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Segment.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/KeyframePoint.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/LoopRange.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2754,6 +2858,18 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/Media.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2781,6 +2897,7 @@
         "packages/types/src/generated/Rational.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/Cause.ts",
         "packages/types/src/generated/CopyEligibility.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -2827,6 +2944,7 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2886,6 +3004,20 @@
       ],
       "dependedOnBy": [
         "packages/types/src/generated/EvaluatedTrack.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/PlanSummary.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Totals.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/ExportPlan.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -3066,13 +3198,16 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "packages/types/src/generated/Cause.ts",
         "packages/types/src/generated/Clip.ts",
         "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/ExportPlan.ts",
         "packages/types/src/generated/FrameRate.ts",
         "packages/types/src/generated/Mismatch.ts",
         "packages/types/src/generated/Operation.ts",
         "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
+        "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/SpeedProblem.ts",
         "packages/types/src/generated/SpeedVerdict.ts",
@@ -3093,6 +3228,7 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "packages/types/src/generated/Cause.ts",
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/index.ts"
@@ -3141,6 +3277,53 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/SeamWindow.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Segment.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/Segment.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Cause.ts",
+        "packages/types/src/generated/Decline.ts",
+        "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/KeyframeAlternative.ts",
+        "packages/types/src/generated/Media.ts",
+        "packages/types/src/generated/SeamWindow.ts",
+        "packages/types/src/generated/SegmentSource.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/ExportPlan.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/SegmentSource.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Motion.ts",
+        "packages/types/src/generated/Rational.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -3331,6 +3514,18 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Totals.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/PlanSummary.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/Track.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -3469,6 +3664,7 @@
         "packages/types/src/generated/AudioOperation.ts",
         "packages/types/src/generated/AudioOutputState.ts",
         "packages/types/src/generated/AudioSummary.ts",
+        "packages/types/src/generated/Cause.ts",
         "packages/types/src/generated/Chapter.ts",
         "packages/types/src/generated/Chroma.ts",
         "packages/types/src/generated/ChromaSubsampling.ts",
@@ -3482,6 +3678,7 @@
         "packages/types/src/generated/CopyEligibility.ts",
         "packages/types/src/generated/CopyNote.ts",
         "packages/types/src/generated/CutPoint.ts",
+        "packages/types/src/generated/Decline.ts",
         "packages/types/src/generated/DecodeStats.ts",
         "packages/types/src/generated/DiagnosticClip.ts",
         "packages/types/src/generated/DiagnosticOperation.ts",
@@ -3495,7 +3692,10 @@
         "packages/types/src/generated/EncoderCapabilities.ts",
         "packages/types/src/generated/EncoderCapability.ts",
         "packages/types/src/generated/EncoderSource.ts",
+        "packages/types/src/generated/EncodingField.ts",
+        "packages/types/src/generated/EncodingSignature.ts",
         "packages/types/src/generated/EvaluatedTrack.ts",
+        "packages/types/src/generated/ExportPlan.ts",
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/Filmstrip.ts",
         "packages/types/src/generated/Fingerprint.ts",
@@ -3512,8 +3712,11 @@
         "packages/types/src/generated/JobId.ts",
         "packages/types/src/generated/JobProgress.ts",
         "packages/types/src/generated/Keyframe.ts",
+        "packages/types/src/generated/KeyframeAlternative.ts",
+        "packages/types/src/generated/KeyframePoint.ts",
         "packages/types/src/generated/LoopRange.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
+        "packages/types/src/generated/Media.ts",
         "packages/types/src/generated/MediaInfo.ts",
         "packages/types/src/generated/Mismatch.ts",
         "packages/types/src/generated/MonitorCommand.ts",
@@ -3524,6 +3727,7 @@
         "packages/types/src/generated/OperationsAt.ts",
         "packages/types/src/generated/PictureKind.ts",
         "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/PlanSummary.ts",
         "packages/types/src/generated/PlaybackState.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/PlaybackUpdate.ts",
@@ -3542,6 +3746,9 @@
         "packages/types/src/generated/RecoveryOffer.ts",
         "packages/types/src/generated/Refusal.ts",
         "packages/types/src/generated/SeamReason.ts",
+        "packages/types/src/generated/SeamWindow.ts",
+        "packages/types/src/generated/Segment.ts",
+        "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/SettingsImpact.ts",
@@ -3555,6 +3762,7 @@
         "packages/types/src/generated/StreamInfo.ts",
         "packages/types/src/generated/StreamKind.ts",
         "packages/types/src/generated/Timeline.ts",
+        "packages/types/src/generated/Totals.ts",
         "packages/types/src/generated/Track.ts",
         "packages/types/src/generated/TrackKind.ts",
         "packages/types/src/generated/TransportCommand.ts",

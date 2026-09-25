@@ -5,6 +5,12 @@
 //! graph. What differs is deliberate and in the types: the preview's sources
 //! are [`SourceMedia`](crate::playback::SourceMedia), which may carry a
 //! proxy, and the export's are [`ExportSource`]s, which cannot.
+//!
+//! [`plan`] decides, segment by segment, what the export copies and what it
+//! re-encodes (#39).
+
+pub mod facts;
+pub mod plan;
 
 use std::collections::BTreeMap;
 

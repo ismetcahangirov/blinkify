@@ -14,4 +14,10 @@ codec: string | null, profile: string | null,
  * The codec's level as FFmpeg reports it (`41` for H.264 4.1, `153` for
  * HEVC 5.1), or `None` where the codec has none.
  */
-level: number | null, bitRate: number | null, durationSeconds: number | null, startSeconds: number | null, timeBase: Rational | null, isDefault: boolean, kind: StreamKind, };
+level: number | null, bitRate: number | null, durationSeconds: number | null, startSeconds: number | null, timeBase: Rational | null, isDefault: boolean, 
+/**
+ * `SHA256:…` of the stream's codec configuration record — for H.264
+ * the `avcC` with its SPS and PPS. Absent when the codec keeps its
+ * configuration in-band (VP9) or the file has none.
+ */
+extradataHash: string | null, kind: StreamKind, };

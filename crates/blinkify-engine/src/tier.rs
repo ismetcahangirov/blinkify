@@ -50,6 +50,21 @@ pub enum ReEncodeReason {
     /// A constant speed (#42, #56) whose rescaled frame rate no container
     /// accepts: the pictures are re-timed to the sequence rate instead.
     SpeedFrameRateOutsideContainer,
+    /// The sequence's resolution, frame rate or pixel aspect is not the
+    /// source's (ADR-0008), so its pictures are made to fit.
+    SequenceSettingsDiffer,
+    /// A stretch of the timeline with no picture, or no sound: black or
+    /// silence is encoded, since there are no source packets to copy.
+    Gap,
+    /// The planner could not prove a copy safe — the keyframes around a cut
+    /// are not known yet — so it re-encodes rather than risk a broken file.
+    CopyNotProvable,
+    /// An audio operation (gain, denoise, normalise) changes the samples.
+    AudioFilter,
+    /// Two or more sounds play at once and are mixed into one.
+    AudioMix,
+    /// The sound is played faster or slower, so it is resampled.
+    AudioSpeed,
 }
 
 /// What happens to a segment's pixels on the way to the output file.

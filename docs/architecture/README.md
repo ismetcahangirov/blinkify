@@ -59,6 +59,9 @@ How Blinkify is put together and why the structure holds under change.
   thumbnails from the filmstrip (#53)
 - [`sequence-settings.md`](./sequence-settings.md) — the settings, matching
   the first clip, the one copy-eligibility predicate and who reads it (#57)
+- [`export-planner.md`](./export-planner.md) — how the edit graph compiles
+  into copied, smart-cut and re-encoded segments, every cause as data, one
+  set of encoding parameters per stream (#39)
 
 ## What does not belong here
 
