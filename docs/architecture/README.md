@@ -62,6 +62,9 @@ How Blinkify is put together and why the structure holds under change.
 - [`export-planner.md`](./export-planner.md) — how the edit graph compiles
   into copied, smart-cut and re-encoded segments, every cause as data, one
   set of encoding parameters per stream (#39)
+- [`export-executor.md`](./export-executor.md) — the plan carried out in one
+  pass: readers, routers and one muxer over NUT pipes, exact packet selection
+  and rebasing, what is preserved, failure and cancellation (#40)
 
 ## What does not belong here
 

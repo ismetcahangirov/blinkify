@@ -188,6 +188,7 @@ pub struct JobOptions {
     on_stderr_line: Option<LineConsumer>,
     remove_on_failure: Vec<PathBuf>,
     cancel: Option<CancelToken>,
+    stdin: Option<mpsc::Receiver<Vec<u8>>>,
 }
 
 impl std::fmt::Debug for JobOptions {
@@ -198,6 +199,7 @@ impl std::fmt::Debug for JobOptions {
             .field("on_stderr_line", &self.on_stderr_line.is_some())
             .field("remove_on_failure", &self.remove_on_failure)
             .field("cancel", &self.cancel)
+            .field("stdin", &self.stdin.is_some())
             .finish()
     }
 }
@@ -234,6 +236,17 @@ impl JobOptions {
     #[must_use]
     pub fn cancel_token(mut self, token: CancelToken) -> Self {
         self.cancel = Some(token);
+        self
+    }
+
+    /// Feed the process's standard input from `chunks`, in order, closing it
+    /// when the sender is dropped — for the export muxer, which reads the
+    /// packets the engine routes to it (`-i pipe:0`). If the process exits
+    /// first, the receiver is dropped and the sender's next send fails,
+    /// which is how the producer learns to stop.
+    #[must_use]
+    pub fn stdin(mut self, chunks: mpsc::Receiver<Vec<u8>>) -> Self {
+        self.stdin = Some(chunks);
         self
     }
 
@@ -562,10 +575,15 @@ fn execute(
         Tool::Ffmpeg => inner.sidecar.ffmpeg(),
         Tool::Ffprobe => inner.sidecar.ffprobe(),
     };
+    let stdin_chunks = options.stdin.take();
     let mut process = Command::new(program);
     process
         .args(command.args())
-        .stdin(Stdio::null())
+        .stdin(
+            stdin_chunks
+                .as_ref()
+                .map_or_else(Stdio::null, |_| Stdio::piped()),
+        )
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     set_creation_flags(&mut process, priority);
@@ -576,6 +594,11 @@ fn execute(
     })?;
     let _ = pid.set(child.id());
     let _ = registry::adopt(&child);
+    let stdin_writer = child
+        .stdin
+        .take()
+        .zip(stdin_chunks)
+        .map(|(stdin, chunks)| feed_stdin(stdin, chunks));
 
     let stderr_tail = Arc::new(Mutex::new(VecDeque::with_capacity(STDERR_TAIL)));
     let stderr_reader = child.stderr.take().map(|stderr| {
@@ -599,7 +622,9 @@ fn execute(
 
     let status = wait_or_kill(&mut child, cancel);
 
-    // The process is gone, so both pipes are closed and both readers finish.
+    // The process is gone, so both pipes are closed and both readers finish;
+    // the stdin feeder's next write fails and it ends too.
+    let _ = stdin_writer.map(JoinHandle::join);
     let collected = stdout_reader.and_then(|reader| reader.join().ok());
     if let Some(reader) = stderr_reader {
         let _ = reader.join();
@@ -681,6 +706,21 @@ fn wait_or_kill(child: &mut Child, cancel: &CancelToken) -> Option<ExitStatus> {
             _ => return None,
         }
     }
+}
+
+/// Write every chunk to the child's standard input, then close it. Stops at
+/// the first failed write — the process has exited — dropping `chunks` so the
+/// producer's sends fail.
+fn feed_stdin(stdin: std::process::ChildStdin, chunks: mpsc::Receiver<Vec<u8>>) -> JoinHandle<()> {
+    thread::spawn(move || {
+        let mut stdin = stdin;
+        for chunk in chunks {
+            if std::io::Write::write_all(&mut stdin, &chunk).is_err() {
+                return;
+            }
+        }
+        let _ = std::io::Write::flush(&mut stdin);
+    })
 }
 
 fn drain_stderr(
