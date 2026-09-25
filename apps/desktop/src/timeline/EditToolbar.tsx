@@ -12,8 +12,9 @@ import {
   splitAction,
   type Action,
 } from "./editActions.js";
+import { keyFor } from "../shortcuts/shortcuts.js";
 import { useTimelineStore } from "./timeline.store.js";
-import { runTimelineAction, setSplitter } from "./useTimelineKeys.js";
+import { runTimelineAction, setSplitter } from "./timelineCommands.js";
 
 /** How long the playhead must rest before the keyframe index is asked. */
 const CUT_DEBOUNCE_MS = 120;
@@ -99,6 +100,8 @@ export function EditToolbar() {
   const selected = useProjectStore((state) => state.selection.length > 0);
   const snap = useTimelineStore((state) => state.snapToKeyframe);
   const setSnap = useTimelineStore((state) => state.setSnapToKeyframe);
+  const snapping = useTimelineStore((state) => state.snapping);
+  const setSnapping = useTimelineStore((state) => state.setSnapping);
   const cut = useCutPoint();
   const statement = cutStatement(cut);
   const project = () => useProjectStore.getState();
@@ -107,20 +110,21 @@ export function EditToolbar() {
     <div className="timeline__edit" role="toolbar" aria-label="Edit">
       <IconButton
         label="Split at the playhead"
-        shortcut="Ctrl+B"
+        shortcut={keyFor("split")}
         icon={<Glyph d="M8 2v12M4 5l-2 3 2 3M12 5l2 3-2 3" />}
         disabled={!hasTimeline}
         onClick={() => void split()}
       />
       <IconButton
         label="Delete"
-        shortcut="Delete"
+        shortcut={keyFor("delete")}
         icon={<Glyph d="M3 4.5h10M6 4.5V3h4v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5" />}
         disabled={!selected}
         onClick={() => runTimelineAction("delete")}
       />
       <IconButton
         label="Duplicate"
+        shortcut={keyFor("duplicate")}
         icon={<Glyph d="M5 5h8v8H5zM3 11V3h8" />}
         disabled={!selected}
         onClick={() => void perform(duplicateAction(project().selection))}
@@ -171,6 +175,12 @@ export function EditToolbar() {
             notice: null,
           })
         }
+      />
+      <Switch
+        label="Snapping"
+        checked={snapping}
+        onCheckedChange={setSnapping}
+        disabled={!hasTimeline}
       />
       <Switch
         label="Snap cuts to keyframes"

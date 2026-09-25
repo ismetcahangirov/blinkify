@@ -8,14 +8,13 @@ import {
 } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
 import { create } from "zustand";
-import { isTyping } from "./HistoryControls.js";
 import { projectName, useProjectStore } from "./project.store.js";
 import { FRAME_RATES, RESOLUTIONS } from "./SequenceSettingsDialog.js";
 
 /**
  * The project lifecycle in the interface (#54): the dialogs for a new
  * project, for unsaved work found at launch, and for closing on unsaved
- * work; the file dialogs; the File keys; and the autosave tick.
+ * work; the file dialogs; and the autosave tick. Its keys are #38's registry.
  *
  * The rules are the engine's (`project::session`): autosave never touches
  * the project file, dirty is exact, a recovery is offered with both times.
@@ -83,27 +82,6 @@ export function requestClose(): void {
 }
 
 export type FileAction = "new" | "open" | "save" | "save-as";
-
-/** The File keys: CapCut's Ctrl+N, Ctrl+O, Ctrl+S; Ctrl+Shift+S saves as. */
-export function fileActionForKey(event: {
-  key: string;
-  ctrlKey: boolean;
-  metaKey: boolean;
-  altKey: boolean;
-  shiftKey: boolean;
-}): FileAction | null {
-  if (!(event.ctrlKey || event.metaKey) || event.altKey) return null;
-  switch (event.key.toLowerCase()) {
-    case "n":
-      return event.shiftKey ? null : "new";
-    case "o":
-      return event.shiftKey ? null : "open";
-    case "s":
-      return event.shiftKey ? "save-as" : "save";
-    default:
-      return null;
-  }
-}
 
 export function runFileAction(action: FileAction): void {
   switch (action) {
@@ -301,7 +279,7 @@ function CloseDialog() {
 }
 
 /** Everything the lifecycle needs mounted once: the launch, the dialogs, the
- * keys, the autosave tick, and the answer to a window closed on unsaved work. */
+ * autosave tick, and the answer to a window closed on unsaved work. */
 export function ProjectLifecycle() {
   const start = useProjectStore((state) => state.start);
   const autosave = useProjectStore((state) => state.autosave);
@@ -316,18 +294,6 @@ export function ProjectLifecycle() {
     const timer = setInterval(() => void autosave(), AUTOSAVE_SECONDS * 1000);
     return () => clearInterval(timer);
   }, [autosave]);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (isTyping(event.target)) return;
-      const action = fileActionForKey(event);
-      if (!action) return;
-      event.preventDefault();
-      runFileAction(action);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
 
   useEffect(() => {
     let stop: (() => void) | null = null;

@@ -530,3 +530,39 @@
   gap: var(--space-2);
   font-size: var(--type-label-size);
 }
+
+/* The keyboard shortcut reference (#38): generated from the registry. */
+.shortcut-reference__group {
+  margin: var(--space-3) 0 var(--space-1);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  color: var(--text-primary);
+}
+
+.shortcut-reference__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+}
+
+.shortcut-reference__table th {
+  padding: var(--space-1) 0;
+  font-weight: normal;
+  text-align: left;
+  color: var(--text-secondary);
+}
+
+.shortcut-reference__table td {
+  text-align: right;
+}
+
+.shortcut-reference__table kbd {
+  display: inline-block;
+  margin-left: var(--space-1);
+  padding: 0 var(--space-1);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--type-family-mono);
+  color: var(--text-primary);
+}

@@ -33,7 +33,7 @@ Clicking selects one clip, **Ctrl**-click adds or removes one, **Shift**-click
 selects the run of clips on that track from the last one selected, and a
 click on empty track clears the selection. **Delete** removes the selection,
 **Shift+Delete** removes it and closes the gaps, **Ctrl+A** selects every
-clip (see [`../design/keyboard-shortcuts.md`](../design/keyboard-shortcuts.md)).
+clip (see [`../design/shortcuts.md`](../design/shortcuts.md)).
 
 A drop onto a track of the other kind, or onto another clip, is refused in
 the preview (red ghost) and by the engine.

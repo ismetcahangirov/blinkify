@@ -1,16 +1,12 @@
 import type { PlaybackStatus } from "@blinkify/types";
 import { TooltipProvider } from "@blinkify/ui";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { usePreviewStore } from "./preview.store.js";
 import { TransportBar } from "./TransportBar.js";
-import {
-  commandForKey,
-  useTransportShortcuts,
-} from "./useTransportShortcuts.js";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -120,74 +116,5 @@ describe("the audio output", () => {
   it("says nothing while a device is playing", () => {
     renderBar();
     expect(screen.queryByTestId("audio-silent")).toBeNull();
-  });
-});
-
-describe("the transport keys", () => {
-  const key = (k: string, modifiers: Partial<KeyboardEvent> = {}) => ({
-    key: k,
-    ctrlKey: false,
-    altKey: false,
-    metaKey: false,
-    shiftKey: false,
-    ...modifiers,
-  });
-
-  it("map Space, the arrows, Home and End to the transport", () => {
-    expect(commandForKey(key(" "))).toEqual({ type: "toggle" });
-    expect(commandForKey(key("ArrowLeft"))).toEqual({
-      type: "step",
-      frames: -1,
-    });
-    expect(commandForKey(key("ArrowRight"))).toEqual({
-      type: "step",
-      frames: 1,
-    });
-    expect(commandForKey(key("Home"))).toEqual({ type: "jump-to-start" });
-    expect(commandForKey(key("End"))).toEqual({ type: "jump-to-end" });
-    expect(commandForKey(key("ArrowRight", { ctrlKey: true }))).toBeNull();
-    expect(commandForKey(key("a"))).toBeNull();
-  });
-
-  it("shuttle with J, K and L — back a second, pause, play and then faster", () => {
-    const paused = { playing: false, secondInFrames: 30 };
-    const playing = { playing: true, secondInFrames: 25 };
-    expect(commandForKey(key("k"), playing)).toEqual({ type: "pause" });
-    expect(commandForKey(key("l"), paused)).toEqual({ type: "play" });
-    expect(commandForKey(key("L"), playing)).toEqual({
-      type: "set-speed",
-      speed: "double",
-    });
-    expect(commandForKey(key("j"), playing)).toEqual({
-      type: "step",
-      frames: -25,
-    });
-  });
-
-  function Harness({ send }: { send: (command: object) => void }) {
-    useTransportShortcuts(true, send);
-    return (
-      <>
-        <button type="button">Somewhere</button>
-        <input aria-label="A name" />
-      </>
-    );
-  }
-
-  it("drive the transport from anywhere but a text field", () => {
-    const send = vi.fn();
-    render(<Harness send={send} />);
-    fireEvent.keyDown(window, { key: " " });
-    expect(send).toHaveBeenLastCalledWith({ type: "toggle" });
-    // Space on a focused button plays, rather than clicking the button.
-    const button = screen.getByRole("button", { name: "Somewhere" });
-    const event = fireEvent.keyDown(button, { key: " " });
-    expect(event).toBe(false);
-    expect(send).toHaveBeenCalledTimes(2);
-    // Typing a space in a text field is typing.
-    fireEvent.keyDown(screen.getByRole("textbox", { name: "A name" }), {
-      key: " ",
-    });
-    expect(send).toHaveBeenCalledTimes(2);
   });
 });

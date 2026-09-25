@@ -11,10 +11,6 @@ import { usePreviewStore } from "../../player/preview.store.js";
 import { ScrubBar } from "../../player/ScrubBar.js";
 import { TransportBar } from "../../player/TransportBar.js";
 import { useFileDrop } from "../../player/useFileDrop.js";
-import {
-  framesPerSecond,
-  useTransportShortcuts,
-} from "../../player/useTransportShortcuts.js";
 import { projectName, useProjectStore } from "../../project/project.store.js";
 import { useShellStore } from "../../shell.store.js";
 
@@ -26,7 +22,7 @@ const PLAYBACK_EVENT = "media://playback";
  *
  * #27 filled it with the video surface: drop a file on it and the engine
  * decodes it into raw frames this zone draws. #28 added the transport — play,
- * pause, stop, frame steps, jumps, speed, loop, and the keys that drive them.
+ * pause, stop, frame steps, jumps, speed and loop; their keys are #38's registry.
  * #29 added the playhead to drag, the indication that a seek is still on its
  * way, and the badge that says the picture comes from a proxy. #31 added
  * monitoring: mute, the monitor volume and the level meter. #30 plays the
@@ -51,7 +47,6 @@ export const PlayerZone = memo(function PlayerZone() {
   const path = usePreviewStore((state) => state.path);
   const error = usePreviewStore((state) => state.error);
   const open = usePreviewStore((state) => state.open);
-  const transport = usePreviewStore((state) => state.transport);
   const resolving = usePreviewStore(
     (state) => state.playback?.resolving ?? false,
   );
@@ -91,21 +86,6 @@ export const PlayerZone = memo(function PlayerZone() {
       (element?.clientHeight ?? 0) * ratio,
     );
   }, [projectPath, openProject]);
-
-  const sendTransport = useCallback(
-    (command: Parameters<typeof transport>[0]) => {
-      void transport(command);
-    },
-    [transport],
-  );
-  const keyContext = useCallback(() => {
-    const playback = usePreviewStore.getState().playback;
-    return {
-      playing: playback?.state === "playing",
-      secondInFrames: playback ? framesPerSecond(playback.frameRate) : 30,
-    };
-  }, []);
-  useTransportShortcuts(session !== null, sendTransport, keyContext);
 
   // What the engine changes on its own — reaching the end, a new audio
   // device — arrives as an event rather than as an answer.

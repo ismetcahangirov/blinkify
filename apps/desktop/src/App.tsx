@@ -6,6 +6,7 @@ import { TimelineZone } from "./shell/zones/TimelineZone.js";
 import { ProjectLifecycle } from "./project/ProjectLifecycle.js";
 import { SourcesBanner } from "./project/SourcesBanner.js";
 import { UpdateBanner } from "./UpdateBanner.js";
+import { useShortcuts } from "./shortcuts/useShortcuts.js";
 
 /**
  * The application.
@@ -21,6 +22,8 @@ import { UpdateBanner } from "./UpdateBanner.js";
  * `AppShell`, which never subscribes to the value a drag changes.
  */
 export function App() {
+  // Every keyboard shortcut, from one registry and one listener (#38).
+  useShortcuts();
   return (
     <>
       <UpdateBanner />

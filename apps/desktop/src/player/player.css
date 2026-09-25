@@ -127,6 +127,15 @@
   white-space: nowrap;
 }
 
+/* The loop range's in and out points (#38). */
+.player__marks {
+  font-family: var(--type-family-mono);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
 /* #29: the player's own playhead, the length of the timeline. */
 .player__scrub {
   width: 100%;

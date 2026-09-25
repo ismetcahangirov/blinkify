@@ -30,6 +30,9 @@ interface Press {
   result: DragResult | null;
 }
 
+/** The modifiers of a pointer event. `alt` means "do not snap": Alt with
+ * snapping on, no Alt with it off (#38) — so Alt always does the opposite
+ * of the setting, for one drag. */
 const modifiersOf = (event: {
   ctrlKey: boolean;
   metaKey: boolean;
@@ -38,7 +41,7 @@ const modifiersOf = (event: {
 }): Modifiers => ({
   ctrl: event.ctrlKey || event.metaKey,
   shift: event.shiftKey,
-  alt: event.altKey,
+  alt: event.altKey === useTimelineStore.getState().snapping,
 });
 
 /** What the pointer would do here, as a cursor. */

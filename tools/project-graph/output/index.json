@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 276,
-    "tests": 40,
+    "files": 282,
+    "tests": 42,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 103,
-      "tests": 34,
+      "files": 109,
+      "tests": 36,
       "untested": [
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
@@ -236,7 +236,8 @@
         "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/shell/zones/LibraryZone.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
-        "apps/desktop/src/shell/zones/TimelineZone.tsx"
+        "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/shortcuts/useShortcuts.ts"
       ],
       "dependedOnBy": [
         "apps/desktop/src/App.test.tsx",
@@ -738,7 +739,6 @@
       "dependsOn": [
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/player/preview.store.ts",
-        "apps/desktop/src/player/useTransportShortcuts.ts",
         "packages/types/src/index.ts",
         "packages/ui/src/index.ts"
       ],
@@ -754,7 +754,7 @@
         "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/player/timecode.ts",
         "apps/desktop/src/player/transportGlyphs.tsx",
-        "apps/desktop/src/player/useTransportShortcuts.ts",
+        "apps/desktop/src/shortcuts/shortcuts.ts",
         "packages/types/src/index.ts",
         "packages/ui/src/index.ts"
       ],
@@ -880,6 +880,8 @@
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
         "apps/desktop/src/timeline/mountTimeline.ts"
@@ -890,6 +892,7 @@
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts"
       ],
       "hasNoDependents": false
@@ -951,23 +954,6 @@
       ],
       "hasNoDependents": false
     },
-    "apps/desktop/src/player/useTransportShortcuts.ts": {
-      "workspace": "apps/desktop",
-      "layer": "renderer",
-      "isTest": false,
-      "dependsOn": [
-        "packages/types/src/index.ts"
-      ],
-      "dependedOnBy": [
-        "apps/desktop/src/player/TransportBar.test.tsx",
-        "apps/desktop/src/player/TransportBar.tsx",
-        "apps/desktop/src/shell/zones/PlayerZone.tsx"
-      ],
-      "coveredByTests": [
-        "apps/desktop/src/player/TransportBar.test.tsx"
-      ],
-      "hasNoDependents": false
-    },
     "apps/desktop/src/project/HistoryControls.test.tsx": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -988,13 +974,12 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/shortcuts/shortcuts.ts",
         "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
         "apps/desktop/src/project/HistoryControls.test.tsx",
-        "apps/desktop/src/project/ProjectLifecycle.tsx",
-        "apps/desktop/src/shell/AppBar.tsx",
-        "apps/desktop/src/timeline/useTimelineKeys.ts"
+        "apps/desktop/src/shell/AppBar.tsx"
       ],
       "coveredByTests": [
         "apps/desktop/src/project/HistoryControls.test.tsx"
@@ -1020,7 +1005,6 @@
       "layer": "renderer",
       "isTest": false,
       "dependsOn": [
-        "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/project.store.ts",
         "packages/types/src/index.ts",
@@ -1029,7 +1013,8 @@
       "dependedOnBy": [
         "apps/desktop/src/App.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
-        "apps/desktop/src/shell/AppBar.tsx"
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/project/ProjectLifecycle.test.tsx"
@@ -1137,6 +1122,8 @@
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
@@ -1150,8 +1137,8 @@
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/rows.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.test.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.ts"
+        "apps/desktop/src/timeline/timelineCommands.test.ts",
+        "apps/desktop/src/timeline/timelineCommands.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/editGesture.test.ts",
@@ -1162,9 +1149,10 @@
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.test.ts"
+        "apps/desktop/src/timeline/timelineCommands.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -1189,6 +1177,10 @@
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/windowChrome.ts",
+        "apps/desktop/src/shortcuts/ShortcutReference.tsx",
+        "apps/desktop/src/shortcuts/shortcuts.store.ts",
+        "apps/desktop/src/shortcuts/shortcuts.ts",
+        "apps/desktop/src/timeline/timeline.store.ts",
         "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
@@ -1376,7 +1368,6 @@
         "apps/desktop/src/player/TransportBar.tsx",
         "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/player/useFileDrop.ts",
-        "apps/desktop/src/player/useTransportShortcuts.ts",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell.store.ts",
         "packages/types/src/index.ts",
@@ -1397,18 +1388,149 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/shortcuts/shortcuts.ts",
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx",
         "apps/desktop/src/timeline/timeline.store.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.ts",
         "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
         "apps/desktop/src/App.tsx"
       ],
       "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/shortcuts/ShortcutReference.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/shortcuts/ShortcutReference.tsx",
+        "apps/desktop/src/shortcuts/shortcuts.store.ts",
+        "apps/desktop/src/shortcuts/shortcuts.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/shortcuts/ShortcutReference.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/shortcuts/shortcuts.store.ts",
+        "apps/desktop/src/shortcuts/shortcuts.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.test.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/shortcuts/ShortcutReference.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/shortcuts/handlers.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/project/ProjectLifecycle.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/shortcuts/shortcuts.store.ts",
+        "apps/desktop/src/shortcuts/shortcuts.ts",
+        "apps/desktop/src/timeline/EditToolbar.tsx",
+        "apps/desktop/src/timeline/editActions.ts",
+        "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/timelineCommands.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
+        "apps/desktop/src/shortcuts/useShortcuts.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/shortcuts/shortcuts.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/shortcuts/shortcuts.store.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.test.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/shortcuts/ShortcutReference.test.tsx",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/shortcuts/shortcuts.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/shortcuts/shortcuts.store.ts",
+        "apps/desktop/src/shortcuts/shortcuts.ts",
+        "apps/desktop/src/shortcuts/useShortcuts.ts",
+        "apps/desktop/src/timeline/timeline.store.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/shortcuts/shortcuts.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/project/HistoryControls.tsx",
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.test.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
+        "apps/desktop/src/shortcuts/useShortcuts.ts",
+        "apps/desktop/src/timeline/EditToolbar.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/shortcuts/ShortcutReference.test.tsx",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/shortcuts/useShortcuts.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/shortcuts/shortcuts.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/shortcuts/shortcuts.test.ts"
+      ],
       "hasNoDependents": false
     },
     "apps/desktop/src/styles.css": {
@@ -1428,14 +1550,16 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/shortcuts/shortcuts.ts",
         "apps/desktop/src/timeline/editActions.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.ts",
+        "apps/desktop/src/timeline/timelineCommands.ts",
         "packages/types/src/index.ts",
         "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
-        "apps/desktop/src/shell/zones/TimelineZone.tsx"
+        "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts"
       ],
       "coveredByTests": [],
       "hasNoDependents": false
@@ -1640,6 +1764,7 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/shortcuts/handlers.ts",
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/editActions.test.ts"
@@ -1680,7 +1805,7 @@
         "apps/desktop/src/timeline/assetDrop.ts",
         "apps/desktop/src/timeline/assetDrop.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.ts"
+        "apps/desktop/src/timeline/timelineCommands.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
@@ -1760,7 +1885,7 @@
         "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.ts"
+        "apps/desktop/src/timeline/timelineCommands.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/timeline/TrackHeaders.test.tsx"
@@ -1818,7 +1943,10 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/TimelineScrollbar.tsx",
@@ -1828,7 +1956,40 @@
         "apps/desktop/src/timeline/mountTimeline.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/shortcuts/shortcuts.test.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/timeline/timelineCommands.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/timelineCommands.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/timeline/timelineCommands.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/interaction.ts",
+        "apps/desktop/src/timeline/rows.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shortcuts/handlers.ts",
+        "apps/desktop/src/timeline/EditToolbar.tsx",
+        "apps/desktop/src/timeline/timelineCommands.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/timeline/timelineCommands.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -1859,39 +2020,6 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/timeline/timelineMedia.test.ts"
-      ],
-      "hasNoDependents": false
-    },
-    "apps/desktop/src/timeline/useTimelineKeys.test.ts": {
-      "workspace": "apps/desktop",
-      "layer": "renderer",
-      "isTest": true,
-      "dependsOn": [
-        "apps/desktop/src/project/project.store.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.ts",
-        "packages/types/src/index.ts"
-      ],
-      "dependedOnBy": [],
-      "coveredByTests": [],
-      "hasNoDependents": true
-    },
-    "apps/desktop/src/timeline/useTimelineKeys.ts": {
-      "workspace": "apps/desktop",
-      "layer": "renderer",
-      "isTest": false,
-      "dependsOn": [
-        "apps/desktop/src/project/HistoryControls.tsx",
-        "apps/desktop/src/project/project.store.ts",
-        "apps/desktop/src/timeline/interaction.ts",
-        "apps/desktop/src/timeline/rows.ts"
-      ],
-      "dependedOnBy": [
-        "apps/desktop/src/shell/zones/TimelineZone.tsx",
-        "apps/desktop/src/timeline/EditToolbar.tsx",
-        "apps/desktop/src/timeline/useTimelineKeys.test.ts"
-      ],
-      "coveredByTests": [
-        "apps/desktop/src/timeline/useTimelineKeys.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -3473,7 +3601,6 @@
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/player/timecode.ts",
-        "apps/desktop/src/player/useTransportShortcuts.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
@@ -3500,9 +3627,9 @@
         "apps/desktop/src/timeline/rows.ts",
         "apps/desktop/src/timeline/timeline.perf.ts",
         "apps/desktop/src/timeline/timeline.store.ts",
+        "apps/desktop/src/timeline/timelineCommands.test.ts",
         "apps/desktop/src/timeline/timelineMedia.test.ts",
         "apps/desktop/src/timeline/timelineMedia.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.test.ts",
         "apps/desktop/src/update.store.ts"
       ],
       "coveredByTests": [
@@ -3527,8 +3654,8 @@
         "apps/desktop/src/timeline/editActions.test.ts",
         "apps/desktop/src/timeline/interaction.test.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
-        "apps/desktop/src/timeline/timelineMedia.test.ts",
-        "apps/desktop/src/timeline/useTimelineKeys.test.ts"
+        "apps/desktop/src/timeline/timelineCommands.test.ts",
+        "apps/desktop/src/timeline/timelineMedia.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -4086,6 +4213,8 @@
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
         "apps/desktop/src/shell/zones/TimelineZone.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.test.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.tsx",
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.tsx"
@@ -4100,6 +4229,7 @@
         "apps/desktop/src/shell/AppShell.test.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
+        "apps/desktop/src/shortcuts/ShortcutReference.test.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx"
       ],
       "hasNoDependents": false

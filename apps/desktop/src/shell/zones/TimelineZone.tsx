@@ -1,10 +1,10 @@
 import { IconButton } from "@blinkify/ui";
 import { memo, useEffect } from "react";
-import { useTimelineKeys } from "../../timeline/useTimelineKeys.js";
 import { EditToolbar } from "../../timeline/EditToolbar.js";
 import { TimelineCanvas } from "../../timeline/TimelineCanvas.js";
 import { TimelineScrollbar } from "../../timeline/TimelineScrollbar.js";
 import { TrackHeaders } from "../../timeline/TrackHeaders.js";
+import { keyFor } from "../../shortcuts/shortcuts.js";
 import { useTimelineStore } from "../../timeline/timeline.store.js";
 import { useProjectStore } from "../../project/project.store.js";
 
@@ -32,7 +32,6 @@ export const TimelineZone = memo(function TimelineZone() {
   const fitAll = useTimelineStore((state) => state.fitAll);
   const notice = useTimelineStore((state) => state.notice);
   const setNotice = useTimelineStore((state) => state.setNotice);
-  useTimelineKeys();
 
   // A notice is information for a moment, not a state to dismiss.
   useEffect(() => {
@@ -56,18 +55,21 @@ export const TimelineZone = memo(function TimelineZone() {
         <div className="timeline__zoom" role="group" aria-label="Zoom">
           <IconButton
             label="Zoom out"
+            shortcut={keyFor("zoom-out")}
             icon={<ZoomGlyph minus />}
             disabled={!hasTimeline}
             onClick={zoomOut}
           />
           <IconButton
             label="Fit timeline to window"
+            shortcut={keyFor("zoom-to-fit")}
             icon={<FitGlyph />}
             disabled={!hasTimeline}
             onClick={fitAll}
           />
           <IconButton
             label="Zoom in"
+            shortcut={keyFor("zoom-in")}
             icon={<ZoomGlyph />}
             disabled={!hasTimeline}
             onClick={zoomIn}

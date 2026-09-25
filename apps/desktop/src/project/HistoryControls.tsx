@@ -1,5 +1,5 @@
 import { IconButton, Popover } from "@blinkify/ui";
-import { useEffect } from "react";
+import { keyFor } from "../shortcuts/shortcuts.js";
 import { useProjectStore } from "./project.store.js";
 
 /**
@@ -11,55 +11,6 @@ import { useProjectStore } from "./project.store.js";
  * the history to just after it — the same undo and redo the buttons send, so
  * there is no second way to move through it.
  */
-
-export const HISTORY_SHORTCUTS = {
-  undo: "Ctrl+Z",
-  redo: "Ctrl+Y",
-  redoAlternative: "Ctrl+Shift+Z",
-} as const;
-
-/** Whether a key press is undo, redo, or neither. */
-export function historyActionForKey(event: {
-  key: string;
-  ctrlKey: boolean;
-  metaKey: boolean;
-  altKey: boolean;
-  shiftKey: boolean;
-}): "undo" | "redo" | null {
-  if (!(event.ctrlKey || event.metaKey) || event.altKey) return null;
-  const key = event.key.toLowerCase();
-  if (key === "z") return event.shiftKey ? "redo" : "undo";
-  if (key === "y" && !event.shiftKey) return "redo";
-  return null;
-}
-
-/** Whether the key press belongs to a text field rather than the editor. */
-export function isTyping(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  if (target.isContentEditable) return true;
-  const tag = target.tagName;
-  if (tag === "TEXTAREA") return true;
-  if (tag !== "INPUT") return false;
-  const type = (target as HTMLInputElement).type;
-  return !["checkbox", "radio", "range", "button", "submit"].includes(type);
-}
-
-function useHistoryShortcuts(): void {
-  const undo = useProjectStore((state) => state.undo);
-  const redo = useProjectStore((state) => state.redo);
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent): void => {
-      // A text field has its own undo, and it is the one the user means.
-      if (isTyping(event.target)) return;
-      const action = historyActionForKey(event);
-      if (!action) return;
-      event.preventDefault();
-      void (action === "undo" ? undo() : redo());
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [undo, redo]);
-}
 
 function UndoGlyph() {
   return (
@@ -109,7 +60,6 @@ export function HistoryControls() {
   const history = useProjectStore((state) => state.view?.history ?? null);
   const undo = useProjectStore((state) => state.undo);
   const redo = useProjectStore((state) => state.redo);
-  useHistoryShortcuts();
 
   const applied = history?.applied ?? 0;
   const entries = history?.entries ?? [];
@@ -131,7 +81,7 @@ export function HistoryControls() {
     <div className="shell__history">
       <IconButton
         label={applied > 0 ? `Undo ${entries[applied - 1] ?? ""}` : "Undo"}
-        shortcut={HISTORY_SHORTCUTS.undo}
+        shortcut={keyFor("undo")}
         icon={<UndoGlyph />}
         disabled={applied === 0}
         onClick={() => void undo()}
@@ -140,7 +90,7 @@ export function HistoryControls() {
         label={
           applied < entries.length ? `Redo ${entries[applied] ?? ""}` : "Redo"
         }
-        shortcut={HISTORY_SHORTCUTS.redo}
+        shortcut={keyFor("redo")}
         icon={<RedoGlyph />}
         disabled={applied >= entries.length}
         onClick={() => void redo()}

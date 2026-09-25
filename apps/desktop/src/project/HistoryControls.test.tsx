@@ -1,21 +1,11 @@
 import type { ProjectView } from "@blinkify/types";
 import { TooltipProvider } from "@blinkify/ui";
 import { invoke } from "@tauri-apps/api/core";
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  HistoryControls,
-  historyActionForKey,
-  isTyping,
-} from "./HistoryControls.js";
+import { HistoryControls } from "./HistoryControls.js";
 import { useProjectStore } from "./project.store.js";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
@@ -53,15 +43,6 @@ function view(entries: string[], applied: number): ProjectView {
   };
 }
 
-const key = (key: string, modifiers: Partial<KeyboardEvent> = {}) => ({
-  key,
-  ctrlKey: false,
-  metaKey: false,
-  altKey: false,
-  shiftKey: false,
-  ...modifiers,
-});
-
 function show() {
   render(
     <TooltipProvider>
@@ -74,36 +55,6 @@ describe("history controls", () => {
   beforeEach(() => {
     invoked.mockReset();
     useProjectStore.setState({ view: null, selection: [] });
-  });
-
-  it("maps the standard keys to undo and redo", () => {
-    expect(historyActionForKey(key("z", { ctrlKey: true }))).toBe("undo");
-    expect(historyActionForKey(key("y", { ctrlKey: true }))).toBe("redo");
-    expect(
-      historyActionForKey(key("Z", { ctrlKey: true, shiftKey: true })),
-    ).toBe("redo");
-    expect(historyActionForKey(key("z"))).toBeNull();
-    expect(
-      historyActionForKey(key("z", { ctrlKey: true, altKey: true })),
-    ).toBeNull();
-  });
-
-  it("leaves a text field its own undo", () => {
-    const input = document.createElement("input");
-    expect(isTyping(input)).toBe(true);
-    const range = document.createElement("input");
-    range.type = "range";
-    expect(isTyping(range)).toBe(false);
-    expect(isTyping(document.createElement("textarea"))).toBe(true);
-    expect(isTyping(document.createElement("button"))).toBe(false);
-
-    useProjectStore.setState({ view: view(["Move clip"], 1) });
-    show();
-    const field = document.body.appendChild(document.createElement("input"));
-    fireEvent.keyDown(field, { key: "z", ctrlKey: true });
-    expect(invoked).not.toHaveBeenCalled();
-    fireEvent.keyDown(document.body, { key: "z", ctrlKey: true });
-    expect(invoked).toHaveBeenCalledWith("undo_edit");
   });
 
   it("disables what cannot be done and names what can", () => {

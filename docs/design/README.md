@@ -15,7 +15,7 @@ The visual language of Blinkify and the structure of its interface.
 - [`capcut-layout-reference.md`](./capcut-layout-reference.md) — the four-zone
   structure the shell is built to, zone by zone, with the default and minimum
   size of every one and an explicit list of what Blinkify does not copy
-- [`keyboard-shortcuts.md`](./keyboard-shortcuts.md) — the keys Blinkify
+- [`shortcuts.md`](./shortcuts.md) — the keys Blinkify
   answers to, CapCut's where CapCut has one, and the rules for which control a
   key belongs to
 
