@@ -28,6 +28,7 @@ use blinkify_engine::project::evaluate::{
     OperationsAt, Timeline, audio_operation, evaluate, forces_re_encode,
 };
 use blinkify_engine::project::session::Session;
+use blinkify_engine::project::speed::SpeedVerdict;
 use blinkify_engine::project::split::{CutPoint, cut_point};
 use blinkify_engine::project::trim::StreamExtent;
 use blinkify_engine::project::{
@@ -119,6 +120,9 @@ pub struct ProjectView {
     pub extents: Vec<StreamExtent>,
     /// What the library shows of each source, from its probe (#53).
     pub assets: BTreeMap<SourceId, AssetInfo>,
+    /// What each video clip's speed does to its pictures at export (#56):
+    /// the model's answer, which the inspector states and never works out.
+    pub speeds: BTreeMap<ClipId, SpeedVerdict>,
 }
 
 /// What an edit, an undo or a redo returns: the project now, and the
@@ -158,6 +162,9 @@ impl ProjectView {
             eligibility: document.eligibility(),
             extents: document.extents(),
             assets: document.assets(),
+            speeds: timeline
+                .map(|timeline| document.speed_verdicts(timeline))
+                .unwrap_or_default(),
         }
     }
 }

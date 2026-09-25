@@ -52,6 +52,16 @@ export const WithBounds: Story = {
   ),
 };
 
+/**
+ * Several clips selected, with different values. The field says so instead of
+ * showing the first clip's value as if it were everyone's.
+ */
+export const Mixed: Story = {
+  render: () => (
+    <Controlled initial={1} label="Speed" unit="×" precision={2} mixed />
+  ),
+};
+
 export const Disabled: Story = {
   render: () => <Controlled initial={25} label="Speed" unit="x" disabled />,
 };

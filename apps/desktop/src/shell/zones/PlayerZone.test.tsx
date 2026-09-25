@@ -178,6 +178,7 @@ describe("PlayerZone", () => {
         eligibility: {},
         extents: [],
         assets: {},
+        speeds: {},
         timeline: null,
         history: { entries: [], applied: 0 },
       },

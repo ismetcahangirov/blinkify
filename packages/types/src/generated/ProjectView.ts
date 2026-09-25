@@ -4,6 +4,7 @@ import type { CopyEligibility } from "./CopyEligibility";
 import type { HistoryView } from "./HistoryView";
 import type { Project } from "./Project";
 import type { SourceStatus } from "./SourceStatus";
+import type { SpeedVerdict } from "./SpeedVerdict";
 import type { StreamExtent } from "./StreamExtent";
 import type { Timeline } from "./Timeline";
 
@@ -49,4 +50,9 @@ extents: Array<StreamExtent>,
 /**
  * What the library shows of each source, from its probe (#53).
  */
-assets: { [key in number]: AssetInfo }, };
+assets: { [key in number]: AssetInfo }, 
+/**
+ * What each video clip's speed does to its pictures at export (#56):
+ * the model's answer, which the inspector states and never works out.
+ */
+speeds: { [key in number]: SpeedVerdict }, };

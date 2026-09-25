@@ -238,6 +238,29 @@ describe("NumberInput", () => {
     expect(onValueChange).toHaveBeenLastCalledWith(10);
   });
 
+  it("reads as mixed rather than as any one value", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    renderWithProvider(
+      <NumberInput
+        label="Speed"
+        value={1}
+        onValueChange={onValueChange}
+        step={0.01}
+        precision={2}
+        mixed
+      />,
+    );
+    const field = screen.getByRole("spinbutton", { name: "Speed" });
+    expect(field).toHaveValue("");
+    expect(field).toHaveAttribute("placeholder", "Mixed");
+    expect(field).toHaveAttribute("aria-valuetext", "Mixed");
+
+    // Typing still commits one value.
+    await user.type(field, "2");
+    expect(onValueChange).toHaveBeenLastCalledWith(2);
+  });
+
   it("clamps to its bounds", async () => {
     const user = userEvent.setup();
     const onValueChange = vi.fn();

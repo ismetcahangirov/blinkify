@@ -67,6 +67,7 @@ function view(tracks: Track[]): ProjectView {
     eligibility: {},
     extents: [],
     assets: {},
+    speeds: {},
   };
 }
 

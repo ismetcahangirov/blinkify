@@ -1698,6 +1698,12 @@ fn set_speed(
             ratio.num, ratio.den
         )));
     }
+    if !super::speed::in_range(ratio) {
+        return Err(EditError::Refused(format!(
+            "a speed of {}/{} is outside the supported range of 0.1× to 100×",
+            ratio.num, ratio.den
+        )));
+    }
     let mut changes = Vec::new();
     for &id in &clips.iter().copied().collect::<BTreeSet<_>>() {
         let (_, current) = find(project, id)?;
@@ -2053,6 +2059,28 @@ impl Document {
         self.eligibility_at(&self.project.sequence.settings)
     }
 
+    /// What each video clip's speed does to its pictures at export (#56):
+    /// the model's one answer, which the inspector states while the user is
+    /// choosing and the planner (#39) reads for the same graph. A clip whose
+    /// source's pictures are unknown — offline, unreadable — is not listed.
+    #[must_use]
+    pub fn speed_verdicts(
+        &self,
+        timeline: &super::evaluate::Timeline,
+    ) -> BTreeMap<ClipId, super::speed::SpeedVerdict> {
+        timeline
+            .tracks
+            .iter()
+            .filter(|track| track.kind == TrackKind::Video)
+            .flat_map(|track| &track.placements)
+            .filter(|placement| self.project.sources.contains_key(&placement.source))
+            .filter_map(|placement| {
+                let shape = self.facts.geometry.get(&placement.source)?;
+                Some((placement.clip, super::speed::verdict(placement, shape)))
+            })
+            .collect()
+    }
+
     fn eligibility_at(&self, settings: &SequenceSettings) -> BTreeMap<SourceId, CopyEligibility> {
         self.facts
             .geometry
@@ -2369,6 +2397,68 @@ mod tests {
         assert_eq!(document.history().entries.len(), 2);
         assert_eq!(document.redo(), None);
         assert_eq!(document.project().name, "C");
+    }
+
+    #[test]
+    fn a_speed_outside_the_supported_range_is_refused() {
+        let mut document = document();
+        for ratio in [Rational { num: 1, den: 11 }, Rational { num: 101, den: 1 }] {
+            let refused = document.apply(
+                &Edit::SetSpeed {
+                    clips: vec![2],
+                    ratio,
+                },
+                &at(&[2], 0),
+            );
+            assert!(matches!(refused, Err(EditError::Refused(_))), "{ratio:?}");
+        }
+        assert!(document.history().entries.is_empty());
+    }
+
+    #[test]
+    fn each_video_clip_gets_the_speed_rule_s_verdict_for_the_same_graph() {
+        let mut document = document();
+        document.describe_source(
+            1,
+            Some(StreamGeometry {
+                width: 1920,
+                height: 1080,
+                frame_rate: Rational { num: 25, den: 1 },
+                pixel_aspect: Rational { num: 1, den: 1 },
+                variable_frame_rate: false,
+                hdr: false,
+            }),
+        );
+        for (num, lossless) in [(4, true), (10, false)] {
+            document
+                .apply(
+                    &Edit::SetSpeed {
+                        clips: vec![2],
+                        ratio: Rational { num, den: 1 },
+                    },
+                    &at(&[2], 0),
+                )
+                .expect("speed");
+            let timeline = evaluate(document.project()).expect("evaluates");
+            let verdicts = document.speed_verdicts(&timeline);
+            assert_eq!(verdicts.keys().copied().collect::<Vec<_>>(), vec![1, 2, 3]);
+            let placement = timeline.tracks[0]
+                .placements
+                .iter()
+                .find(|placement| placement.clip == 2)
+                .expect("placed");
+            let shape = document.facts.geometry[&1];
+            // What the inspector states is what the rule decides for the
+            // placement the planner reads.
+            assert_eq!(
+                verdicts[&2],
+                super::super::speed::verdict(placement, &shape)
+            );
+            assert_eq!(verdicts[&2].tier.is_lossless(), lossless, "{num}×");
+        }
+        document.describe_source(1, None);
+        let timeline = evaluate(document.project()).expect("evaluates");
+        assert!(document.speed_verdicts(&timeline).is_empty());
     }
 
     #[test]
