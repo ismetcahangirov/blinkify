@@ -108,6 +108,7 @@ pub fn run() {
             lifecycle::quit_app,
             library::import_media,
             project::operations_at,
+            project::plan_export,
             updater::pending_update,
             updater::install_update
         ])

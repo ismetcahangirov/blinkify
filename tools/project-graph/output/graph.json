@@ -7229,6 +7229,89 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Cause.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./EncodingField",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/EncodingField.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Mismatch",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Mismatch.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ReEncodeReason",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ReEncodeReason.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/Segment.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/Chapter.ts",
       "dependencies": [],
       "dependents": [
@@ -7500,6 +7583,16 @@
       "source": "packages/types/src/generated/CutPoint.ts",
       "dependencies": [],
       "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Decline.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -7892,6 +7985,25 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/EncodingField.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Cause.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/EncodingSignature.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/EvaluatedTrack.ts",
       "dependencies": [
         {
@@ -7939,6 +8051,70 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/ExportPlan.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./PlanSummary",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/PlanSummary.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Segment",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Segment.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/ExportTier.ts",
       "dependencies": [
         {
@@ -7979,6 +8155,7 @@
         }
       ],
       "dependents": [
+        "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/SpeedVerdict.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -8333,6 +8510,25 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/KeyframeAlternative.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Segment.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/KeyframePoint.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/LoopRange.ts",
       "dependencies": [],
       "dependents": [
@@ -8348,6 +8544,16 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/Hdr.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Media.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -8422,6 +8628,7 @@
         }
       ],
       "dependents": [
+        "packages/types/src/generated/Cause.ts",
         "packages/types/src/generated/CopyEligibility.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -8460,6 +8667,7 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -8630,6 +8838,35 @@
       ],
       "dependents": [
         "packages/types/src/generated/EvaluatedTrack.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/PlanSummary.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Totals",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Totals.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/ExportPlan.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -9107,13 +9344,16 @@
       "source": "packages/types/src/generated/Rational.ts",
       "dependencies": [],
       "dependents": [
+        "packages/types/src/generated/Cause.ts",
         "packages/types/src/generated/Clip.ts",
         "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/ExportPlan.ts",
         "packages/types/src/generated/FrameRate.ts",
         "packages/types/src/generated/Mismatch.ts",
         "packages/types/src/generated/Operation.ts",
         "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
+        "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/SpeedProblem.ts",
         "packages/types/src/generated/SpeedVerdict.ts",
@@ -9132,6 +9372,7 @@
       "source": "packages/types/src/generated/ReEncodeReason.ts",
       "dependencies": [],
       "dependents": [
+        "packages/types/src/generated/Cause.ts",
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/Placement.ts",
         "packages/types/src/generated/index.ts"
@@ -9172,6 +9413,200 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/SeamWindow.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Segment.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Segment.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Cause",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Cause.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Decline",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Decline.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ExportTier",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ExportTier.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./KeyframeAlternative",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/KeyframeAlternative.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Media",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Media.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SeamWindow",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/SeamWindow.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SegmentSource",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/SegmentSource.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/ExportPlan.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/SegmentSource.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Motion",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Motion.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Rational",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Rational.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -9660,6 +10095,16 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Totals.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/PlanSummary.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/Track.ts",
       "dependencies": [
         {
@@ -10078,6 +10523,23 @@
         },
         {
           "dynamic": false,
+          "module": "./Cause",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Cause.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Chapter",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -10290,6 +10752,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/CutPoint.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Decline",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Decline.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -10520,6 +10999,40 @@
         },
         {
           "dynamic": false,
+          "module": "./EncodingField",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/EncodingField.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./EncodingSignature",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/EncodingSignature.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./EvaluatedTrack",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -10528,6 +11041,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/EvaluatedTrack.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ExportPlan",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ExportPlan.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -10809,6 +11339,40 @@
         },
         {
           "dynamic": false,
+          "module": "./KeyframeAlternative",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/KeyframeAlternative.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./KeyframePoint",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/KeyframePoint.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./LoopRange",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -10834,6 +11398,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/MasteringDisplay.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Media",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Media.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -11004,6 +11585,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/Placement.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./PlanSummary",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/PlanSummary.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -11319,6 +11917,57 @@
         },
         {
           "dynamic": false,
+          "module": "./SeamWindow",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/SeamWindow.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Segment",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Segment.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SegmentSource",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/SegmentSource.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Sequence",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -11531,6 +12180,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/Timeline.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Totals",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Totals.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -13840,8 +14506,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 282,
-    "totalDependenciesCruised": 627,
+    "totalCruised": 295,
+    "totalDependenciesCruised": 657,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

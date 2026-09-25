@@ -21,6 +21,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 
+use blinkify_engine::export::plan::{ExportPlan, plan};
 use blinkify_engine::playback::{PlaybackPlan, SourceMedia, chain_rendered};
 use blinkify_engine::project::asset::AssetInfo;
 use blinkify_engine::project::edit::{Document, Edit, EditContext, HistoryView, SettingsImpact};
@@ -683,6 +684,42 @@ impl Diagnostics {
 fn previewed(operation: &Operation) -> bool {
     forces_re_encode(operation).is_none()
         && audio_operation(operation).is_none_or(|step| chain_rendered(&step))
+}
+
+/// What exporting the open project would do (#39): every segment of the
+/// output, copied or re-encoded, with every reason. Pure and cheap once the
+/// sources are indexed, so the export dialog (#50) asks again after every
+/// edit. A source that is offline is left out, and the plan fails naming
+/// it: nothing can be exported from a file that is not there.
+///
+/// # Errors
+///
+/// No project is open, or its timeline cannot be planned.
+#[tauri::command(async)]
+// Tauri injects managed state by value; see `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn plan_export(
+    engine: State<'_, MediaEngine>,
+    state: State<'_, OpenProject>,
+) -> Result<ExportPlan, String> {
+    // Copied out, so no probe or index read happens under the lock.
+    let (project, timeline) = {
+        let guard = state.lock()?;
+        let opened = guard.as_ref().ok_or("no project is open")?;
+        let project = opened.session.document().project().clone();
+        let timeline = match &opened.timeline {
+            Some(timeline) => timeline.clone(),
+            None => evaluate(&project).map_err(|error| error.to_string())?,
+        };
+        (project, timeline)
+    };
+    let mut facts = BTreeMap::new();
+    for (&id, source) in &project.sources {
+        if source.check().is_present() {
+            facts.insert(id, engine.export_facts(source.path())?);
+        }
+    }
+    plan(&timeline, &project.sequence.settings, &facts).map_err(|error| error.to_string())
 }
 
 /// What applies under the playhead of the project's preview `session`.

@@ -71,6 +71,7 @@ pub(super) struct Stream {
     pub channel_layout: Option<String>,
     pub sample_fmt: Option<String>,
     pub bits_per_sample: Option<u32>,
+    pub extradata_hash: Option<String>,
     #[serde(default)]
     pub disposition: std::collections::BTreeMap<String, i64>,
     #[serde(default)]
@@ -193,6 +194,7 @@ pub(super) fn stream_info(stream: &Stream) -> StreamInfo {
         start_seconds: number(stream.start_time.as_ref()),
         time_base: rational(stream.time_base.as_deref()),
         is_default: stream.disposition.get("default").is_some_and(|&d| d != 0),
+        extradata_hash: non_empty(stream.extradata_hash.as_ref()),
         kind,
     }
 }

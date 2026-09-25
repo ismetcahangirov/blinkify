@@ -324,7 +324,8 @@ impl Timeline {
 /// `placement` cut down to sequence frames `from..to`, which must lie
 /// inside it: the source range where those frames are, found as a split
 /// finds it.
-fn crop(placement: &Placement, from: i64, to: i64) -> Option<Placement> {
+#[must_use]
+pub fn crop(placement: &Placement, from: i64, to: i64) -> Option<Placement> {
     let mut piece = placement.clone();
     if from > piece.start {
         let (_, right) = super::split::halves(&piece, from)?;

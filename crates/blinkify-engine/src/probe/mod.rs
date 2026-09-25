@@ -129,6 +129,11 @@ pub struct StreamInfo {
     pub start_seconds: Option<f64>,
     pub time_base: Option<Rational>,
     pub is_default: bool,
+    /// `SHA256:…` of the stream's codec configuration record — for H.264
+    /// the `avcC` with its SPS and PPS. Absent when the codec keeps its
+    /// configuration in-band (VP9) or the file has none.
+    #[serde(default)]
+    pub extradata_hash: Option<String>,
     pub kind: StreamKind,
 }
 
@@ -419,6 +424,10 @@ fn probe_uncached(
     let output = run(SidecarCommand::ffprobe()
         .option("-v", "error")
         .option("-print_format", "json")
+        // The hash of each stream's codec configuration (SPS/PPS, avcC,
+        // hvcC …): two sources whose packets are concatenated by a copy
+        // must agree on it byte for byte (#39).
+        .option("-show_data_hash", "sha256")
         .flags(&["-show_format", "-show_streams", "-show_chapters"])
         .input(path))?;
     let parsed: ffprobe::Output =

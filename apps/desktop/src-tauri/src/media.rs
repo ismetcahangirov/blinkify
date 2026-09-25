@@ -663,6 +663,20 @@ impl MediaEngine {
         self.index(path, &info)
     }
 
+    /// What the export planner (#39) knows about the file at `path`: its
+    /// probe and its keyframe index, as far as the index has got.
+    pub(crate) fn export_facts(
+        &self,
+        path: &Path,
+    ) -> Result<blinkify_engine::export::plan::SourceFacts, String> {
+        let info = self.prober()?.probe(path).map_err(|e| e.to_string())?;
+        let index = self.index(path, &info)?;
+        Ok(blinkify_engine::export::facts::source_facts(
+            &info,
+            Some(&index),
+        ))
+    }
+
     /// What the file at `path` is, for the document: its pictures — the
     /// first video stream that is not a cover image — for the sequence
     /// settings (#57), which ticks of each stream exist, for trim bounds
