@@ -67,6 +67,9 @@ How Blinkify is put together and why the structure holds under change.
   and rebasing, what is preserved, failure and cancellation (#40); encoded
   sound beside copied pictures, the codec choice and clean joins (#43);
   constant speed by retiming copied packets (#42)
+- [`re-encode-profiles.md`](./re-encode-profiles.md) — matching a re-encode
+  to the source it joins: the source's profile, the encoder that makes it or
+  a named refusal, and the join checked on the SPS before writing (#44)
 
 ## What does not belong here
 
