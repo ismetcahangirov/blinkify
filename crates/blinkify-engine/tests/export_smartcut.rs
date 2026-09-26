@@ -17,19 +17,14 @@
 
 mod common;
 
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 
 use blinkify_engine::capability::{CodecCapability, EncoderCapabilities, VideoCodec};
 use blinkify_engine::export::audio::AudioTarget;
 use blinkify_engine::export::execute::ExportError;
-use blinkify_engine::export::nut;
 use blinkify_engine::export::plan::{Cause, Decline, ExportPlan, Media, Segment};
 use blinkify_engine::export::profile::Unmatched;
-use blinkify_engine::export::seam::is_parameter_set;
-use blinkify_engine::orchestrator::{Flow, JobOptions, Priority, SidecarCommand};
+
 use blinkify_engine::tier::ExportTier;
 use common::fixture::{Source, encoders};
 
@@ -40,110 +35,10 @@ fn video(plan: &ExportPlan) -> &Segment {
         .expect("video")
 }
 
-/// Every video packet of `path` as a stream copy reads it: its presentation
-/// timestamp in the NUT time base, keyframe flag, and a hash of its payload
-/// **without in-band parameter sets** — the hash boundary a smart-cut is held
-/// to: a seam re-sends the source's SPS and PPS before the next copied
-/// keyframe, and those are the stream's configuration, not its pictures.
-fn packets(path: &Path, codec: VideoCodec) -> Vec<(f64, bool, u64)> {
-    let collected = Arc::new(Mutex::new(Vec::new()));
-    let sink = Arc::clone(&collected);
-    common::orchestrator()
-        .run(
-            SidecarCommand::ffmpeg()
-                .option("-v", "error")
-                .flag("-copyts")
-                .input(path)
-                .option("-map", "0:v:0")
-                .option("-c", "copy")
-                .option("-output_ts_offset", "100")
-                .option("-f", "nut")
-                .output_stdout(),
-            Priority::Foreground,
-            JobOptions::default().on_chunk(move |chunk| {
-                sink.lock().expect("lock").extend_from_slice(chunk);
-                Flow::Continue
-            }),
-        )
-        .wait()
-        .expect("reads");
-    let bytes = collected.lock().expect("lock").clone();
-    let mut reader = nut::Reader::open(bytes.as_slice()).expect("nut");
-    let length_size = match codec {
-        VideoCodec::H264 => Some(usize::from(reader.header().streams[0].extradata[4] & 3) + 1),
-        VideoCodec::Hevc => Some(usize::from(reader.header().streams[0].extradata[21] & 3) + 1),
-        _ => None,
-    };
-    let base = reader.header().streams[0].time_base;
-    // Seconds of the source's own timeline: the reader's offset taken off.
-    let seconds = |pts: i64| pts as f64 * base.num as f64 / base.den as f64 - 100.0;
-    let mut found = Vec::new();
-    while let Some(packet) = reader.next_packet().expect("packet") {
-        let mut hasher = DefaultHasher::new();
-        match length_size {
-            Some(size) => {
-                let mut at = 0;
-                while at + size <= packet.data.len() {
-                    let length = packet.data[at..at + size]
-                        .iter()
-                        .fold(0_usize, |n, b| (n << 8) | usize::from(*b));
-                    let unit = &packet.data[at + size..(at + size + length).min(packet.data.len())];
-                    if !is_parameter_set(codec, unit) {
-                        unit.hash(&mut hasher);
-                    }
-                    at += size + length;
-                }
-            }
-            None => packet.data.hash(&mut hasher),
-        }
-        found.push((seconds(packet.pts), packet.key, hasher.finish()));
-    }
-    found
-}
-
 /// The frames of `path` shown, decoded: how many, and the PSNR summary of
 /// the output's frames against the source's frames of `from..to`.
 fn frame_count(path: &Path) -> usize {
     common::packet_times(path, "v:0").len()
-}
-
-fn min_psnr(output: &Path, source: &Path, from: i64, to: i64) -> f64 {
-    let result = common::orchestrator()
-        .run_to_end(
-            SidecarCommand::ffmpeg()
-                .option("-v", "info")
-                .input(output)
-                .flag("-copyts")
-                .input(source)
-                .option(
-                    "-filter_complex",
-                    format!(
-                        "[1:v]trim=start_pts={from}:end_pts={to},setpts=PTS-STARTPTS[r];[0:v]setpts=PTS-STARTPTS[o];[o][r]psnr=stats_file=-"
-                    ),
-                )
-                .output_null(),
-            Priority::Foreground,
-        )
-        .expect("compares");
-    // Per-frame lines on stdout are not collected; the summary on stderr has
-    // the minimum: `PSNR y:… average:… min:… max:…`.
-    let summary = result
-        .stderr_tail
-        .iter()
-        .find(|line| line.contains("PSNR") && line.contains("min:"))
-        .cloned()
-        .unwrap_or_default();
-    summary
-        .split("min:")
-        .nth(1)
-        .and_then(|rest| rest.split_whitespace().next())
-        .map_or(0.0, |value| {
-            if value == "inf" {
-                f64::INFINITY
-            } else {
-                value.parse().unwrap_or(0.0)
-            }
-        })
 }
 
 /// The frames the source shows in `from..to`.
@@ -206,7 +101,7 @@ fn smart_cut_of(source: &Source, name: &str, codec: VideoCodec, frame: i64) {
         "{name}"
     );
     // The seams look like the source.
-    let psnr = min_psnr(&target, &source.path, from, to);
+    let psnr = common::fixture::min_psnr(&target, &source.path, from, to);
     assert!(psnr > 30.0, "{name}: minimum PSNR {psnr}");
     // Every packet outside the windows is the source's own.
     // The copied pieces: from the head window's end (or the in-point) to the
@@ -232,7 +127,7 @@ fn smart_cut_of(source: &Source, name: &str, codec: VideoCodec, frame: i64) {
         return;
     }
     let (low, high) = (source.seconds(copy_from), source.seconds(copy_to));
-    let source_packets = packets(&source.path, codec);
+    let source_packets = common::fixture::packets(&source.path, codec);
     let start = source_packets
         .iter()
         .position(|p| p.1 && (p.0 - low).abs() < 1e-6)
@@ -249,7 +144,10 @@ fn smart_cut_of(source: &Source, name: &str, codec: VideoCodec, frame: i64) {
     let copied: Vec<u64> = std::iter::once(source_packets[start].2)
         .chain(copied.into_iter().filter(|h| *h != source_packets[start].2))
         .collect();
-    let output: Vec<u64> = packets(&target, codec).iter().map(|p| p.2).collect();
+    let output: Vec<u64> = common::fixture::packets(&target, codec)
+        .iter()
+        .map(|p| p.2)
+        .collect();
     let at = output
         .iter()
         .position(|h| *h == copied[0])
@@ -279,29 +177,9 @@ fn hevc_is_cut_where_a_hardware_encoder_exists_and_declined_where_not() {
     smart_cut("hevc-closed-gop-radl.mp4", VideoCodec::Hevc, 512);
 }
 
-/// A four-second file with a keyframe every second, made here with the
-/// sidecar's own software encoder: the corpus's VP9 and AV1 files have one
-/// keyframe each, and a smart-cut needs a GOP to copy between two seams.
-fn keyframed(name: &str, arguments: &[(&'static str, &str)]) -> Source {
-    let path = common::scratch(&format!("smartcut-source-{name}")).join("source.mkv");
-    let mut command = SidecarCommand::ffmpeg()
-        .option("-v", "error")
-        .lavfi_input("testsrc2=size=640x360:rate=30:duration=4")
-        .option("-pix_fmt", "yuv420p")
-        .option("-g", "30")
-        .option("-keyint_min", "30");
-    for (name, value) in arguments {
-        command = command.option(name, (*value).to_owned());
-    }
-    common::orchestrator()
-        .run_to_end(command.output_file(&path), Priority::Foreground)
-        .expect("encodes");
-    Source::at(path, Some(encoders()))
-}
-
 #[test]
 fn vp9_is_cut_with_the_software_encoder_on_every_machine() {
-    let source = keyframed(
+    let source = common::fixture::keyframed(
         "vp9",
         &[
             ("-c:v", "libvpx-vp9"),
@@ -316,7 +194,7 @@ fn vp9_is_cut_with_the_software_encoder_on_every_machine() {
 
 #[test]
 fn av1_is_cut_with_the_software_encoder_on_every_machine() {
-    let source = keyframed("av1", &[("-c:v", "libsvtav1"), ("-preset", "12")]);
+    let source = common::fixture::keyframed("av1", &[("-c:v", "libsvtav1"), ("-preset", "12")]);
     smart_cut_of(&source, "av1", VideoCodec::Av1, 33);
 }
 
@@ -393,7 +271,7 @@ fn a_cut_ending_on_an_open_keyframe_recodes_only_its_leading_pictures() {
         .expect("exports");
     assert_eq!(frame_count(&target), shown(&source, from, to));
     assert_eq!(common::decode_errors(&target), Vec::<String>::new());
-    assert!(min_psnr(&target, &source.path, from, to) > 30.0);
+    assert!(common::fixture::min_psnr(&target, &source.path, from, to) > 30.0);
     // The recode starts at the first leading picture, not at the GOP before:
     // it covers fewer frames than a GOP.
     let seam = outcome

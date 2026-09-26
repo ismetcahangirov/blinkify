@@ -515,6 +515,14 @@ pub struct PlanSummary {
 pub struct ExportPlan {
     /// The unit of every segment's `start` and `length`.
     pub time_base: Rational,
+    /// The sequence's shape: what a re-encoded segment is rendered at.
+    pub sequence: SequenceSettings,
+    /// The source whose encoding parameters the output's pictures take:
+    /// the copied material's, or the first source's where nothing is copied.
+    /// A re-encoded segment is encoded to match it (#55).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub reference: Option<SourceId>,
     #[ts(type = "number")]
     pub length: i64,
     /// In output order: every video segment, then every audio segment. Each
@@ -553,11 +561,13 @@ pub fn plan(
     if length <= 0 {
         return Err(PlanError::Empty);
     }
-    let mut segments = plan_video(timeline, settings, sources, length)?;
+    let (mut segments, reference) = plan_video(timeline, settings, sources, length)?;
     segments.extend(plan_audio(timeline, sources, length)?);
     let summary = summarise(&segments, timeline.time_base);
     Ok(ExportPlan {
         time_base: timeline.time_base,
+        sequence: *settings,
+        reference,
         length,
         segments,
         summary,
@@ -747,10 +757,10 @@ fn plan_video(
     settings: &SequenceSettings,
     sources: &BTreeMap<SourceId, SourceFacts>,
     length: i64,
-) -> Result<Vec<Segment>, PlanError> {
+) -> Result<(Vec<Segment>, Option<SourceId>), PlanError> {
     let picture = timeline.picture();
     if picture.is_empty() {
-        return Ok(Vec::new());
+        return Ok((Vec::new(), None));
     }
     let mut segments = Vec::with_capacity(picture.len() * 2 + 1);
     let mut signatures: Vec<Option<&EncodingSignature>> = Vec::with_capacity(picture.len() * 2);
@@ -806,15 +816,19 @@ fn plan_video(
         segments.push(gap(Media::Video, at, length));
         signatures.push(None);
     }
-    share_encoding(&mut segments, &signatures);
+    let reference = share_encoding(&mut segments, &signatures).or_else(|| {
+        segments
+            .iter()
+            .find_map(|segment| segment.sources.first().map(|s| s.source))
+    });
     for segment in &mut segments {
         segment.tier = tier_of(&segment.causes);
         if !matches!(segment.tier, ExportTier::SmartCut { .. }) {
             segment.windows.clear();
         }
-        decline_unencodable(segment, sources);
+        decline_unencodable(segment, sources, reference);
     }
-    Ok(segments)
+    Ok((segments, reference))
 }
 
 /// A piece's in- and out-point in its stream's own ticks.
@@ -840,7 +854,10 @@ fn in_stream_ticks(piece: &Placement, video: &VideoFacts) -> Result<(i64, i64), 
 /// The output takes the encoding parameters of the copied material that
 /// covers most of it; every other copy candidate is re-encoded to match,
 /// with the fields that differ named. Ties go to the earlier material.
-fn share_encoding(segments: &mut [Segment], signatures: &[Option<&EncodingSignature>]) {
+fn share_encoding(
+    segments: &mut [Segment],
+    signatures: &[Option<&EncodingSignature>],
+) -> Option<SourceId> {
     let candidates: Vec<usize> = (0..segments.len())
         .filter(|&i| {
             signatures.get(i).copied().flatten().is_some()
@@ -863,12 +880,9 @@ fn share_encoding(segments: &mut [Segment], signatures: &[Option<&EncodingSignat
             None => weight.push((signature, segment.length, i, source)),
         }
     }
-    let Some(&(reference, _, _, reference_source)) = weight
+    let &(reference, _, _, reference_source) = weight
         .iter()
-        .max_by_key(|(_, total, first, _)| (*total, std::cmp::Reverse(*first)))
-    else {
-        return;
-    };
+        .max_by_key(|(_, total, first, _)| (*total, std::cmp::Reverse(*first)))?;
     for i in candidates {
         let (Some(Some(signature)), Some(segment)) = (signatures.get(i), segments.get_mut(i))
         else {
@@ -882,28 +896,42 @@ fn share_encoding(segments: &mut [Segment], signatures: &[Option<&EncodingSignat
             });
         }
     }
+    Some(reference_source)
 }
 
-/// The pictures of a segment that are encoded — a smart-cut's windows or a
-/// whole re-encode — need an encoder that makes the source's kind of stream.
-/// Where there is one, the segment names it; where there is none, the
-/// segment is declined (ADR-0003), and a declined smart-cut offers the
-/// keyframe-aligned cut instead. An HDR source is declined whatever the
-/// encoders: v1 renders only SDR, and never tone-maps (ADR-0008).
-fn decline_unencodable(segment: &mut Segment, sources: &BTreeMap<SourceId, SourceFacts>) {
+/// The pictures of a segment that are encoded need an encoder that makes the
+/// output's kind of stream. A smart-cut's windows join its own source's copied
+/// packets, so they match that source; a whole re-encode — a hold, a reverse,
+/// a clip in another shape, black in a gap — joins the rest of the output, so
+/// it matches the output's reference source (#55). Where there is such an
+/// encoder the segment names it; where there is none, the segment is declined
+/// (ADR-0003), and a declined smart-cut offers the keyframe-aligned cut. HDR
+/// is declined whatever the encoders: v1 renders only SDR, and never
+/// tone-maps (ADR-0008).
+fn decline_unencodable(
+    segment: &mut Segment,
+    sources: &BTreeMap<SourceId, SourceFacts>,
+    reference: Option<SourceId>,
+) {
     if segment.tier.is_lossless() || segment.media != Media::Video {
         return;
     }
-    let Some(first) = segment.sources.first() else {
+    let own = segment.sources.first().map(|s| s.source);
+    let matched = match segment.tier {
+        ExportTier::SmartCut { .. } => own,
+        _ => reference.or(own),
+    };
+    let video_of = |id: Option<SourceId>| {
+        id.and_then(|id| sources.get(&id))
+            .and_then(|facts| facts.video.as_ref())
+    };
+    let (Some(target), rendered) = (video_of(matched), video_of(own)) else {
         return;
     };
-    let Some(video) = sources.get(&first.source).and_then(|f| f.video.as_ref()) else {
-        return;
-    };
-    if video.geometry.hdr {
+    if target.geometry.hdr || rendered.is_some_and(|video| video.geometry.hdr) {
         segment.decline = Some(Decline::HdrWouldBeRendered);
     } else {
-        match &video.encoder {
+        match &target.encoder {
             Ok(choice) => segment.encoder = Some(choice.clone()),
             Err(unmatched) => {
                 segment.decline = Some(Decline::NoEncoder {
@@ -912,6 +940,9 @@ fn decline_unencodable(segment: &mut Segment, sources: &BTreeMap<SourceId, Sourc
             }
         }
     }
+    let (Some(first), Some(video)) = (segment.sources.first(), rendered) else {
+        return;
+    };
     if segment.decline.is_some()
         && let ExportTier::SmartCut { .. } = segment.tier
     {
@@ -1116,7 +1147,7 @@ fn plan_audio(
         segments.push(segment);
         signatures.push(signature);
     }
-    share_encoding(&mut segments, &signatures);
+    let _ = share_encoding(&mut segments, &signatures);
     for segment in &mut segments {
         segment.tier = tier_of(&segment.causes);
     }

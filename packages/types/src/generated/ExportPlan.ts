@@ -2,6 +2,7 @@
 import type { PlanSummary } from "./PlanSummary";
 import type { Rational } from "./Rational";
 import type { Segment } from "./Segment";
+import type { SequenceSettings } from "./SequenceSettings";
 
 /**
  * What an export will do, segment by segment.
@@ -10,7 +11,17 @@ export type ExportPlan = {
 /**
  * The unit of every segment's `start` and `length`.
  */
-timeBase: Rational, length: number, 
+timeBase: Rational, 
+/**
+ * The sequence's shape: what a re-encoded segment is rendered at.
+ */
+sequence: SequenceSettings, 
+/**
+ * The source whose encoding parameters the output's pictures take:
+ * the copied material's, or the first source's where nothing is copied.
+ * A re-encoded segment is encoded to match it (#55).
+ */
+reference?: number, length: number, 
 /**
  * In output order: every video segment, then every audio segment. Each
  * stream's segments tile `0..length` exactly, where the stream exists.

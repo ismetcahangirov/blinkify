@@ -35,6 +35,7 @@ use super::audio::{self, AudioEncoding, AudioTarget};
 use super::nut::{self, Header, NutError, Packet, StreamHeader};
 use super::plan::{ExportPlan, Media, Segment, SegmentSource};
 use super::profile::{EncoderChoice, JoinMismatch, validate_join};
+use super::render::{self, RenderJob};
 use super::seam::{self, Piece, Stitch};
 use crate::capability::VideoCodec;
 use crate::orchestrator::{
@@ -315,6 +316,40 @@ impl Opened {
         }
     }
 
+    /// Start `command` with its standard input fed from `input`.
+    fn start_fed(
+        orchestrator: &Orchestrator,
+        command: SidecarCommand,
+        input: Receiver<Vec<u8>>,
+    ) -> Result<Self, ExportError> {
+        let (sender, chunks) = mpsc::sync_channel::<Vec<u8>>(16);
+        let stop = Arc::new(AtomicBool::new(false));
+        let stopped = Arc::clone(&stop);
+        let job = orchestrator.run(
+            command,
+            Priority::Export,
+            JobOptions::default().stdin(input).on_chunk(move |chunk| {
+                if stopped.load(Ordering::SeqCst) || sender.send(chunk.to_vec()).is_err() {
+                    Flow::Stop
+                } else {
+                    Flow::Continue
+                }
+            }),
+        );
+        match nut::Reader::open(ChunkReader {
+            chunks,
+            current: Vec::new(),
+            at: 0,
+        }) {
+            Ok(reader) => Ok(Self { reader, job, stop }),
+            Err(error) => {
+                stop.store(true, Ordering::SeqCst);
+                job.wait()?;
+                Err(error.into())
+            }
+        }
+    }
+
     /// Stop the process, having read what was needed, and wait for it.
     fn finish(self) -> Result<(), ExportError> {
         self.stop.store(true, Ordering::SeqCst);
@@ -490,19 +525,31 @@ impl Context<'_> {
         let mut output_time_base = None;
         let mut sent = 0;
         let mut stitch: Option<Stitch> = None;
+        let mut reference: Option<Vec<u8>> = None;
+        if let Some((stream, codec)) = self.reference_first(route, header)? {
+            output_time_base = Some(stream.time_base);
+            stitch = codec.map(|codec| Stitch::new(codec, &stream.extradata));
+            reference = Some(stream.extradata);
+        }
         for segment in &route.segments {
             runnable(segment, self.encoding.is_some())?;
             if self.cancel.is_cancelled() {
                 return Err(ExportError::Cancelled);
             }
-            let (command, window) = self.producer(segment)?;
-            let window = if let (Window::Copy(source), ExportTier::SmartCut { .. }) =
-                (&window, segment.tier)
+            if route.media == Media::Video
+                && let ExportTier::FullReEncode { .. } = segment.tier
             {
-                Window::SmartCut(source)
-            } else {
-                window
-            };
+                sent += self.render_segment(
+                    segment,
+                    header,
+                    &mut output_time_base,
+                    &mut stitch,
+                    &mut reference,
+                    packets,
+                )?;
+                continue;
+            }
+            let (command, window) = self.producer(segment)?;
             self.commands
                 .lock()
                 .unwrap_or_else(PoisonError::into_inner)
@@ -518,15 +565,7 @@ impl Context<'_> {
             let out_base = if let Some(time_base) = output_time_base {
                 time_base
             } else {
-                let global = opened
-                    .reader
-                    .header()
-                    .metadata
-                    .iter()
-                    // What wrote the pipe, not what recorded the file.
-                    .filter(|(key, _)| key != "encoder")
-                    .cloned()
-                    .collect();
+                let global = self.global_metadata(&opened);
                 // The source's nominal rate is not the output's once speeds
                 // and joins retime it; the muxer derives the rate from the
                 // timestamps instead, down to the last frame's duration.
@@ -539,6 +578,7 @@ impl Context<'_> {
             if route.media == Media::Video && stitch.is_none() {
                 stitch = video_codec(self.inputs, segment)
                     .map(|codec| Stitch::new(codec, &stream.extradata));
+                reference = Some(stream.extradata.clone());
             }
             sent += match window {
                 Window::Copy(source) => {
@@ -609,7 +649,7 @@ impl Context<'_> {
                 source_in: first_copy,
                 ..source.clone()
             };
-            return Ok((reader_command(path, &from), Window::Copy(source)));
+            return Ok((reader_command(path, &from), Window::SmartCut(source)));
         }
         let encoding = self
             .encoding
@@ -662,6 +702,157 @@ impl Context<'_> {
                 })
                 .map_err(|_| ExportError::Cancelled)?;
             sent += 1;
+        }
+        Ok(sent)
+    }
+
+    /// Where a video stream starts with a rendered segment but copies packets
+    /// later, the output's configuration is the copied packets': open the
+    /// first copied segment's reader for its header, send it, and return it.
+    fn reference_first(
+        &self,
+        route: &Route<'_>,
+        header: &mpsc::Sender<Result<(StreamHeader, Metadata), String>>,
+    ) -> Result<Option<(StreamHeader, Option<VideoCodec>)>, ExportError> {
+        let rendered = |s: &&Segment| matches!(s.tier, ExportTier::FullReEncode { .. });
+        let (Media::Video, Some(first)) = (route.media, route.segments.first()) else {
+            return Ok(None);
+        };
+        let Some(copied) = route.segments.iter().find(|s| !rendered(s)) else {
+            return Ok(None);
+        };
+        if !rendered(first) {
+            return Ok(None);
+        }
+        let (command, _) = self.producer(copied)?;
+        let opened = Opened::start(self.orchestrator, command)?;
+        let stream = opened
+            .reader
+            .header()
+            .streams
+            .first()
+            .cloned()
+            .ok_or_else(|| ExportError::Mismatch("a reader wrote no stream".to_owned()))?;
+        let global = self.global_metadata(&opened);
+        opened.finish()?;
+        let mut output = stream.clone();
+        output.metadata.retain(|(key, _)| key != "r_frame_rate");
+        let _ = header.send(Ok((output, global)));
+        Ok(Some((stream, video_codec(self.inputs, copied))))
+    }
+
+    /// The file metadata a producer carries, less what describes the pipe.
+    fn global_metadata(&self, opened: &Opened) -> Metadata {
+        let _ = self;
+        opened
+            .reader
+            .header()
+            .metadata
+            .iter()
+            // What wrote the pipe, not what recorded the file.
+            .filter(|(key, _)| key != "encoder")
+            .cloned()
+            .collect()
+    }
+
+    /// Render a segment the plan re-encodes whole (#55), check it can join
+    /// the copied stream, and send its packets.
+    fn render_segment(
+        &self,
+        segment: &Segment,
+        header: &mpsc::Sender<Result<(StreamHeader, Metadata), String>>,
+        output_time_base: &mut Option<Rational>,
+        stitch: &mut Option<Stitch>,
+        reference: &mut Option<Vec<u8>>,
+        packets: &SyncSender<Routed>,
+    ) -> Result<u64, ExportError> {
+        let choice = segment.encoder.as_ref().ok_or_else(|| {
+            ExportError::Unsupported("a re-encode with no encoder chosen".to_owned())
+        })?;
+        let job = render::render_job(segment, self.plan, self.inputs, choice)?;
+        let (command, feeders) = match job {
+            RenderJob::Direct(command) => (command, Vec::new()),
+            RenderJob::Reverse { decoders, encoder } => (encoder, decoders),
+        };
+        let mut log = self.commands.lock().unwrap_or_else(PoisonError::into_inner);
+        log.push(command.to_string());
+        log.extend(feeders.iter().map(ToString::to_string));
+        drop(log);
+        let (mut opened, feeding) = if feeders.is_empty() {
+            (Opened::start(self.orchestrator, command)?, None)
+        } else {
+            // The decoders are started first: the encoder writes nothing,
+            // not even its header, until frames reach it.
+            let (sender, frames) = mpsc::sync_channel::<Vec<u8>>(8);
+            let orchestrator = self.orchestrator.clone();
+            let cancel = self.cancel.clone();
+            let feeding =
+                thread::spawn(move || feed_reversed(&orchestrator, feeders, &sender, &cancel));
+            (
+                Opened::start_fed(self.orchestrator, command, frames)?,
+                Some(feeding),
+            )
+        };
+        let encoded = opened
+            .reader
+            .header()
+            .streams
+            .first()
+            .cloned()
+            .ok_or_else(|| ExportError::Mismatch("a renderer wrote no stream".to_owned()))?;
+        let out_base = if let Some(base) = *output_time_base {
+            base
+        } else {
+            // Nothing in this stream is copied: the output is the encoder's.
+            let mut output = encoded.clone();
+            output.metadata.clear();
+            let _ = header.send(Ok((output, self.global_metadata(&opened))));
+            *output_time_base = Some(encoded.time_base);
+            *stitch = Some(Stitch::new(choice.codec, &encoded.extradata));
+            *reference = Some(encoded.extradata.clone());
+            encoded.time_base
+        };
+        if let Some(reference) = reference.as_deref() {
+            validate_join(choice.codec, reference, &encoded.extradata)?;
+        }
+        if let Some(stitch) = stitch.as_mut() {
+            stitch.begin_seam(&encoded.extradata);
+        }
+        let offset = convert(
+            render::RENDER_OFFSET_SECONDS,
+            Rational { num: 1, den: 1 },
+            encoded.time_base,
+        )?;
+        let start = convert(segment.start, self.plan.time_base, out_base)?;
+        let mut sent = 0;
+        while let Some(packet) = opened.reader.next_packet()? {
+            if self.cancel.is_cancelled() {
+                return Err(ExportError::Cancelled);
+            }
+            let data = match stitch.as_mut() {
+                Some(stitch) => stitch.seam(&packet.data),
+                None => packet.data,
+            };
+            packets
+                .send(Routed {
+                    pts: start + convert(packet.pts - offset, encoded.time_base, out_base)?,
+                    key: packet.key,
+                    data,
+                })
+                .map_err(|_| ExportError::Cancelled)?;
+            sent += 1;
+        }
+        opened.finish()?;
+        if let Some(feeding) = feeding {
+            feeding
+                .join()
+                .unwrap_or_else(|_| Err(ExportError::Mismatch("a decoder panicked".to_owned())))?;
+        }
+        if sent == 0 {
+            return Err(ExportError::Mismatch(format!(
+                "the re-encode at frame {} produced no pictures",
+                segment.start
+            )));
         }
         Ok(sent)
     }
@@ -963,7 +1154,7 @@ fn chapters(
 fn runnable(segment: &Segment, encodes_audio: bool) -> Result<(), ExportError> {
     match (segment.tier, segment.sources.as_slice()) {
         (ExportTier::StreamCopy, [_]) => Ok(()),
-        (ExportTier::SmartCut { .. }, [_])
+        (ExportTier::SmartCut { .. }, [_]) | (ExportTier::FullReEncode { .. }, _)
             if segment.media == Media::Video && segment.encoder.is_some() =>
         {
             Ok(())
@@ -1292,6 +1483,36 @@ fn muxer_command(
         .report_progress(total)
 }
 
+/// Run each chunk's decoder in turn — the last chunk of the clip first — and
+/// pass its raw, reversed frames to the encoder's input. One decoder runs at
+/// a time, so the frames held are one chunk's.
+fn feed_reversed(
+    orchestrator: &Orchestrator,
+    decoders: Vec<SidecarCommand>,
+    frames: &SyncSender<Vec<u8>>,
+    cancel: &CancelToken,
+) -> Result<(), ExportError> {
+    for decoder in decoders {
+        if cancel.is_cancelled() {
+            return Err(ExportError::Cancelled);
+        }
+        let sender = frames.clone();
+        let job = orchestrator.run(
+            decoder,
+            Priority::Export,
+            JobOptions::default().on_chunk(move |chunk| {
+                if sender.send(chunk.to_vec()).is_err() {
+                    Flow::Fail("the encoder stopped reading".to_owned())
+                } else {
+                    Flow::Continue
+                }
+            }),
+        );
+        job.wait()?;
+    }
+    Ok(())
+}
+
 /// Where seams put parameter sets in-band, the MP4 sample entry that says
 /// they may change there: `avc3` for H.264, `hev1` for HEVC. Matroska needs
 /// nothing.
@@ -1306,7 +1527,12 @@ fn in_band_tag(
     let seam = plan
         .segments
         .iter()
-        .find(|s| s.media == Media::Video && matches!(s.tier, ExportTier::SmartCut { .. }))?;
+        .find(|s| s.media == Media::Video && !s.tier.is_lossless())?;
+    let seam = plan
+        .segments
+        .iter()
+        .find(|s| s.media == Media::Video && !s.sources.is_empty())
+        .filter(|_| !seam.tier.is_lossless())?;
     match video_codec(inputs, seam)? {
         VideoCodec::H264 => Some("avc3"),
         VideoCodec::Hevc => Some("hev1"),

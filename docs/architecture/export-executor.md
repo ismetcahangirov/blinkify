@@ -82,8 +82,8 @@ and no overlap, and the output starts at zero.
   its reader, which stops that process. Each reader has its own cancel
   switch, because a reader stopped on purpose once its segment is complete
   must not cancel the export.
-- A segment the executor cannot run yet — a smart-cut, a video re-encode —
-  is an `Unsupported` error before any output is written. It is never substituted by a copy or by an encode the
+- A segment the plan declines — no encoder here can make it, or it would
+  render HDR — is refused before any output is written, never substituted. It is never substituted by a copy or by an encode the
   plan did not choose.
 
 ## Encoded sound (#43)
@@ -156,3 +156,60 @@ they stay in sync.
 The source's nominal frame-rate metadata is not carried into the output: once
 speeds and joins retime a stream it would misstate it, so the muxer derives the
 rate from the timestamps, down to the last frame's duration.
+
+## Full re-encode (#55)
+
+Code: `crates/blinkify-engine/src/export/render.rs`.
+
+A video segment the plan re-encodes whole — a hold, a reverse, a clip at a
+speed no file carries, a clip not in the sequence's shape, sources whose
+parameters cannot share a copied stream, a gap — is **rendered** at the
+sequence's size, pixel aspect and frame rate, and encoded to join the rest of
+the output. This path stays rare, visible and slow by admission: nothing
+reaches it without the plan's recorded reason.
+
+| Segment                 | What the renderer does                                                   |
+| ----------------------- | ------------------------------------------------------------------------ |
+| held frame              | decodes the one frame at the in-point and repeats it for the held length |
+| reversed clip           | decodes a chunk at a time, last chunk first, each reversed (below)       |
+| speed no file carries   | retimes the pictures by the speed, then puts them on the sequence's grid |
+| clip in another shape   | scales to fit the sequence, pads the rest black, conforms the frame rate |
+| incompatible parameters | encodes the source's pictures to the output's parameters                 |
+| gap                     | black at the sequence's shape                                            |
+
+Every rendered segment is exactly its planned number of frames: short input is
+padded by repeating its last frame, long input is cut, and frames are stamped
+on the sequence's grid from the segment's start.
+
+### The encoder
+
+The encoder is the plan's choice for the output's **reference** source — the
+copied material's, or the first source where nothing is copied — so a rendered
+segment is the same kind of stream as the copied ones around it (#44). Its
+join is checked on the SPS before a packet of it is written, as a seam's is,
+and its parameter sets travel in-band exactly as a seam's do. Where no encoder
+on this machine qualifies, the plan declines the segment and the export
+refuses before anything runs. Where nothing in the stream is copied, the
+output is the encoder's stream.
+
+### Reverse, in bounded memory
+
+Decoding a clip to reverse it would hold all of it. Instead the clip is split
+into chunks of `REVERSE_CHUNK_FRAMES` (32) frames. One decoder at a time, from
+the last chunk to the first, decodes its chunk from the keyframe before it,
+reverses it with `reverse` — which holds that chunk only — and writes raw
+frames to a pipe; one encoder reads them in order. The most held at once is a
+chunk: about 400 MB at 4K, however long the clip.
+
+### Sound of a held or reversed clip
+
+A held picture's moment does not move, so its sound is silence. A reversed
+clip's sound is reversed with `areverse`, which holds the stretch: clips up to
+ten minutes (about 230 MB of stereo float) are reversed, and longer ones are
+refused with the reason rather than silenced.
+
+### Progress and cancellation
+
+The muxer's progress reports the output's position, so a mixed copy-and-render
+export shows real progress. Cancelling stops every process of the export —
+renderers and reverse decoders included — and leaves no partial file.
