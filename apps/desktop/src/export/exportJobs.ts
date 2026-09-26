@@ -58,6 +58,8 @@ export function statusLine(job: ExportJob): string {
     case "running":
       if (state.stage === "preparing")
         return "Preparing: measuring loudness and planning";
+      if (state.stage === "verifying")
+        return "Verifying: comparing every packet with its source's for the report";
       return state.remainingSeconds === null
         ? `Exporting — ${Math.floor(state.fraction * 100)}%`
         : `Exporting — ${Math.floor(state.fraction * 100)}%, ${remaining(state.remainingSeconds)}`;

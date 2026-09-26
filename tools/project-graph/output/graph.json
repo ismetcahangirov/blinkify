@@ -583,6 +583,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./ExportReportDialog.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/export/ExportReportDialog.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./exportJobs.store.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -654,7 +671,199 @@
       "dependents": [
         "apps/desktop/src/App.tsx",
         "apps/desktop/src/export/ExportQueue.test.tsx",
+        "apps/desktop/src/export/ExportReportDialog.test.tsx",
         "apps/desktop/src/shell/AppBar.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/export/ExportReportDialog.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ExportQueue.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/export/ExportQueue.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ExportReportDialog.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/export/ExportReportDialog.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./exportJobs.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/export/exportJobs.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./exportJobs.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/export/exportJobs.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/export/ExportReportDialog.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./exportJobs.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/export/exportJobs.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./exportJobs.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/export/exportJobs.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/ExportReportDialog.test.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -872,6 +1081,8 @@
         "apps/desktop/src/export/ExportDialog.tsx",
         "apps/desktop/src/export/ExportQueue.test.tsx",
         "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/ExportReportDialog.test.tsx",
+        "apps/desktop/src/export/ExportReportDialog.tsx",
         "apps/desktop/src/export/exportJobs.test.ts"
       ],
       "orphan": false,
@@ -962,6 +1173,8 @@
       "dependents": [
         "apps/desktop/src/export/ExportDialog.tsx",
         "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/ExportReportDialog.test.tsx",
+        "apps/desktop/src/export/ExportReportDialog.tsx",
         "apps/desktop/src/export/exportChoices.ts",
         "apps/desktop/src/export/exportJobs.test.ts"
       ],
@@ -9006,6 +9219,7 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/ExportOverview.ts",
+        "packages/types/src/generated/ExportReport.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -10045,6 +10259,16 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Execution.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/ReportSegment.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/ExportJob.ts",
       "dependencies": [
         {
@@ -10291,6 +10515,88 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/ExportReport.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AudioEncoding",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/AudioEncoding.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./FileFacts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/FileFacts.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ReportSegment",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ReportSegment.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./StreamTotals",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/StreamTotals.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/ExportState.ts",
       "dependencies": [
         {
@@ -10361,8 +10667,19 @@
       ],
       "dependents": [
         "packages/types/src/generated/Reason.ts",
+        "packages/types/src/generated/ReportSegment.ts",
         "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/SpeedVerdict.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/FileFacts.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/ExportReport.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -10858,6 +11175,7 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/Reason.ts",
+        "packages/types/src/generated/ReportSegment.ts",
         "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -11763,6 +12081,71 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/ReportSegment.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Execution",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Execution.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ExportTier",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ExportTier.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Media",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Media.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/ExportReport.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/SeamReason.ts",
       "dependencies": [],
       "dependents": [
@@ -12584,6 +12967,16 @@
       ],
       "dependents": [
         "packages/types/src/generated/StreamInfo.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/StreamTotals.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/ExportReport.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -13727,6 +14120,23 @@
         },
         {
           "dynamic": false,
+          "module": "./Execution",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Execution.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./ExportJob",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -13778,6 +14188,23 @@
         },
         {
           "dynamic": false,
+          "module": "./ExportReport",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ExportReport.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./ExportState",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -13803,6 +14230,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/ExportTier.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./FileFacts",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/FileFacts.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -14747,6 +15191,23 @@
         },
         {
           "dynamic": false,
+          "module": "./ReportSegment",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ReportSegment.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./SeamReason",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15121,6 +15582,23 @@
         },
         {
           "dynamic": false,
+          "module": "./StreamTotals",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/StreamTotals.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Timeline",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15356,6 +15834,8 @@
         "apps/desktop/src/export/ExportDialog.tsx",
         "apps/desktop/src/export/ExportQueue.test.tsx",
         "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/ExportReportDialog.test.tsx",
+        "apps/desktop/src/export/ExportReportDialog.tsx",
         "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/export/exportChoices.test.ts",
         "apps/desktop/src/export/exportChoices.ts",
@@ -17055,6 +17535,8 @@
         "apps/desktop/src/export/ExportDialog.test.tsx",
         "apps/desktop/src/export/ExportDialog.tsx",
         "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/ExportReportDialog.test.tsx",
+        "apps/desktop/src/export/ExportReportDialog.tsx",
         "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
@@ -17497,8 +17979,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 339,
-    "totalDependenciesCruised": 799,
+    "totalCruised": 346,
+    "totalDependenciesCruised": 822,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

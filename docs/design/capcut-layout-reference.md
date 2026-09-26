@@ -161,7 +161,7 @@ Full width, 48px, fixed. Left to right:
 4. **The lossless indicator** — see [below](#the-lossless-indicator).
 5. **Exports** — the export queue (#51): a quiet button naming how many
    exports are under way, opening each one's progress, time left and Cancel,
-   and the history below. A background export is never invisible. An export a
+   and the history below, where a finished export opens its report (#52). A background export is never invisible. An export a
    crash interrupted is offered in a banner at the bottom right.
 6. **Export** — the primary action, at the far right, carrying the brand
    treatment. It is the only brand-gradient surface in the shell.

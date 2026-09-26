@@ -28,7 +28,7 @@
 
 use std::collections::BTreeMap;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
 
@@ -185,7 +185,7 @@ pub struct SourceFacts {
 }
 
 /// Which of the output's streams a segment belongs to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "kebab-case")]
 #[ts(export)]
 pub enum Media {

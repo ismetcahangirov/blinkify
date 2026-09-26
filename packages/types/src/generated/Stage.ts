@@ -3,4 +3,4 @@
 /**
  * The two stages of a running export.
  */
-export type Stage = "preparing" | "exporting";
+export type Stage = "preparing" | "exporting" | "verifying";

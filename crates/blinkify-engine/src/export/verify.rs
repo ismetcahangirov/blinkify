@@ -34,6 +34,9 @@ use std::sync::{Arc, Mutex, PoisonError};
 /// Seconds a reader adds to every timestamp, so none is negative.
 const OFFSET_SECONDS: f64 = 100.0;
 
+/// Seconds read either side of a range.
+const RANGE_MARGIN_SECONDS: f64 = 3.0;
+
 /// One packet, by the hash boundary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PacketHash {
@@ -54,6 +57,8 @@ pub enum VerifyError {
     Nut(#[from] NutError),
     #[error("the file has no stream {0}")]
     NoStream(String),
+    #[error("the output could not be read: {0}")]
+    Probe(String),
 }
 
 /// Where two streams first disagree.
@@ -180,13 +185,41 @@ pub fn payload_hashes(
     path: &Path,
     selector: &str,
 ) -> Result<Vec<PacketHash>, VerifyError> {
+    payload_hashes_between(orchestrator, path, selector, None)
+}
+
+/// [`payload_hashes`], read only around `range` — seconds of the file's own
+/// timeline — where one is given: from the keyframe before its start to a
+/// little past its end. What the export report (#52) reads of a long source
+/// a short clip was taken from.
+///
+/// # Errors
+///
+/// The file or the stream cannot be read.
+pub fn payload_hashes_between(
+    orchestrator: &Orchestrator,
+    path: &Path,
+    selector: &str,
+    range: Option<(f64, f64)>,
+) -> Result<Vec<PacketHash>, VerifyError> {
     let collected = Arc::new(Mutex::new(Vec::new()));
     let sink = Arc::clone(&collected);
+    let mut command = SidecarCommand::ffmpeg()
+        .option("-v", "error")
+        .flag("-copyts");
+    if let Some((from, to)) = range {
+        // The demuxer seeks to the keyframe before `-ss`; the margin keeps a
+        // rounding from landing just after the one the range starts on.
+        command = command
+            .option(
+                "-ss",
+                format!("{:.6}", (from - RANGE_MARGIN_SECONDS).max(0.0)),
+            )
+            .option("-to", format!("{:.6}", to + RANGE_MARGIN_SECONDS));
+    }
     orchestrator
         .run(
-            SidecarCommand::ffmpeg()
-                .option("-v", "error")
-                .flag("-copyts")
+            command
                 .input(path)
                 .option("-map", format!("0:{selector}"))
                 .option("-c", "copy")

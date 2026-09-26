@@ -112,6 +112,9 @@ pub fn run() {
             library::import_media,
             export::submit_export,
             export::export_overview,
+            export::export_report,
+            export::export_report_text,
+            export::save_export_report,
             export::export_jobs,
             export::cancel_export,
             export::resume_export,
@@ -125,41 +128,7 @@ pub fn run() {
             updater::pending_update,
             updater::install_update
         ])
-        .setup(|app| {
-            // The one outbound request the application is allowed to make
-            // (`CLAUDE.md` section 20 rule 8). Spawned, not awaited: the window
-            // must appear whether or not the network answers, and it applies
-            // nothing on its own — see `updater`.
-            updater::check_on_launch(app.handle());
-
-            // The engine needs the OS cache directory, which only exists
-            // once the app does — hence managed here rather than on the
-            // builder.
-            app.manage(MediaEngine::locate(
-                app.path().app_cache_dir().ok(),
-                app.path().resource_dir().ok(),
-            ));
-
-            // ADR-0003 part 1: what this machine can encode is measured, not
-            // assumed, and measured before anything needs the answer.
-            app.state::<MediaEngine>().probe_encoders_in_background();
-
-            // Exports run in the background, one at a time (#51). Opening the
-            // queue finds what a crash interrupted, and offers it again
-            // rather than starting it.
-            app.manage(export::open_queue(app.handle()));
-
-            // Put the window back where the user left it, if that is still
-            // somewhere they can see it. `window_state::restore` validates the
-            // saved rectangle against the monitors attached right now, because
-            // a window restored onto a display that has been unplugged is
-            // running, invisible, and unreachable.
-            if let Some(window) = app.get_webview_window("main") {
-                window_state::restore(app.handle(), &window);
-            }
-
-            Ok(())
-        })
+        .setup(|app| setup(app))
         .on_window_event(|window, event| {
             // Saved on the way out rather than on every move and resize. A
             // drag emits hundreds of events and writing the file on each one
@@ -198,4 +167,44 @@ fn shutdown(app: &tauri::AppHandle) {
         queue.shutdown();
     }
     app.state::<MediaEngine>().shutdown();
+}
+
+/// What the application does once it exists: the update check, the engine,
+/// the export queue and the window's place.
+// Tauri's setup hook takes this exact signature.
+#[allow(clippy::unnecessary_wraps)]
+fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    // The one outbound request the application is allowed to make
+    // (`CLAUDE.md` section 20 rule 8). Spawned, not awaited: the window
+    // must appear whether or not the network answers, and it applies
+    // nothing on its own — see `updater`.
+    updater::check_on_launch(app.handle());
+
+    // The engine needs the OS cache directory, which only exists
+    // once the app does — hence managed here rather than on the
+    // builder.
+    app.manage(MediaEngine::locate(
+        app.path().app_cache_dir().ok(),
+        app.path().resource_dir().ok(),
+    ));
+
+    // ADR-0003 part 1: what this machine can encode is measured, not
+    // assumed, and measured before anything needs the answer.
+    app.state::<MediaEngine>().probe_encoders_in_background();
+
+    // Exports run in the background, one at a time (#51). Opening the
+    // queue finds what a crash interrupted, and offers it again
+    // rather than starting it.
+    app.manage(export::open_queue(app.handle()));
+
+    // Put the window back where the user left it, if that is still
+    // somewhere they can see it. `window_state::restore` validates the
+    // saved rectangle against the monitors attached right now, because
+    // a window restored onto a display that has been unplugged is
+    // running, invisible, and unreachable.
+    if let Some(window) = app.get_webview_window("main") {
+        window_state::restore(app.handle(), &window);
+    }
+
+    Ok(())
 }

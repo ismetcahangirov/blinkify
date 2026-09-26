@@ -9,4 +9,8 @@ export type ExportJob = { id: number, name: string, target: string, audio: Audio
 /**
  * Milliseconds since the Unix epoch.
  */
-submitted: number, started: number | null, finished: number | null, state: ExportState, };
+submitted: number, started: number | null, finished: number | null, state: ExportState, 
+/**
+ * A report of what the export did is kept (#52).
+ */
+hasReport: boolean, };
