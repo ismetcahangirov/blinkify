@@ -523,3 +523,129 @@ body {
   font-size: var(--type-caption-size);
   pointer-events: none;
 }
+
+/* The export queue (#51): in the application bar, and the offer to export
+   again what a crash interrupted. */
+.export-queue {
+  width: min(420px, calc(100vw - 2 * var(--space-4)));
+  max-height: min(520px, 70vh);
+  overflow-y: auto;
+}
+
+.export-queue__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.export-queue__heading,
+.export-queue__subheading,
+.export-queue__empty,
+.export-queue__status,
+.export-queue__error {
+  margin: 0;
+}
+
+.export-queue__heading {
+  font-size: var(--type-title-size);
+  line-height: var(--type-title-line);
+  font-weight: var(--type-title-weight);
+}
+
+.export-queue__subheading {
+  font-size: var(--type-label-size);
+  color: var(--text-secondary);
+}
+
+.export-queue__history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.export-queue__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.export-queue__job {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.export-queue__job-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.export-queue__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.export-queue__progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.export-queue__status {
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.export-queue__job[data-state="failed"] .export-queue__status,
+.export-queue__error {
+  color: var(--danger);
+}
+
+.export-banner {
+  position: fixed;
+  bottom: var(--space-4);
+  right: var(--space-4);
+  max-width: min(480px, calc(100vw - 2 * var(--space-4)));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--elevation-2-background);
+  border: var(--border-width) solid var(--warning);
+  border-radius: var(--radius-md);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+}
+
+.export-banner__text {
+  margin: 0;
+}
+
+.export-banner__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.export-banner__job {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.export-banner__job strong {
+  flex: 1;
+  min-width: 0;
+}

@@ -16,6 +16,7 @@ pub mod loudness;
 pub mod nut;
 pub mod plan;
 pub mod profile;
+pub mod queue;
 pub mod render;
 pub mod seam;
 pub mod sps;

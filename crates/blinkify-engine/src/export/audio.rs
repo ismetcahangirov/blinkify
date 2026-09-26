@@ -30,7 +30,7 @@
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use super::execute::{Container, ExportError, ExportInput};
@@ -59,7 +59,7 @@ const REVERSE_LIMIT_SECONDS: f64 = 600.0;
 const PRIMING_FRAMES: i64 = 2;
 
 /// What the output's sound is encoded to where none of it is copied.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(
     tag = "codec",
     rename_all = "kebab-case",

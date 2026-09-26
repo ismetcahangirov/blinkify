@@ -54,7 +54,7 @@ timeline across the bottom.
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  0  APPLICATION BAR                                                     │
-│  ≡ menus   Project name          ↶ ↷   ◆ Lossless   [ Export ]   – □ ×  │
+│  ≡ menus   Project name   ↶ ↷  ◆ Lossless  Exports  [ Export ]   – □ ×  │
 ├───────────────┬─────────────────────────────────┬───────────────────────┤
 │               │                                 │                       │
 │  1  LIBRARY   │  2  PLAYER                      │  3  INSPECTOR         │
@@ -159,9 +159,13 @@ Full width, 48px, fixed. Left to right:
    tooltip. An undo stack the user cannot read is an undo stack they do not
    trust. Backed by #37.
 4. **The lossless indicator** — see [below](#the-lossless-indicator).
-5. **Export** — the primary action, at the far right, carrying the brand
+5. **Exports** — the export queue (#51): a quiet button naming how many
+   exports are under way, opening each one's progress, time left and Cancel,
+   and the history below. A background export is never invisible. An export a
+   crash interrupted is offered in a banner at the bottom right.
+6. **Export** — the primary action, at the far right, carrying the brand
    treatment. It is the only brand-gradient surface in the shell.
-6. **Window controls** — minimise, maximise, close. Custom chrome means these
+7. **Window controls** — minimise, maximise, close. Custom chrome means these
    are ours to draw, and double-click-to-maximise and snap behaviour are ours to
    implement rather than to inherit (#19).
 

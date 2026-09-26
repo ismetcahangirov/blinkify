@@ -9,6 +9,7 @@
 //! process boundary, so a per-frame or per-clip command is a performance bug
 //! waiting to be written.
 
+pub mod export;
 pub mod library;
 pub mod lifecycle;
 pub mod loudness;
@@ -18,6 +19,7 @@ pub mod updater;
 pub mod window_state;
 
 use blinkify_engine::ExportTier;
+use blinkify_engine::export::queue::ExportQueue;
 use tauri::{Manager, RunEvent, WindowEvent};
 
 use media::MediaEngine;
@@ -108,6 +110,12 @@ pub fn run() {
             lifecycle::discard_recovery,
             lifecycle::quit_app,
             library::import_media,
+            export::submit_export,
+            export::export_jobs,
+            export::cancel_export,
+            export::resume_export,
+            export::discard_export,
+            export::clear_export_history,
             project::operations_at,
             project::plan_export,
             project::gain_advice,
@@ -134,6 +142,11 @@ pub fn run() {
             // ADR-0003 part 1: what this machine can encode is measured, not
             // assumed, and measured before anything needs the answer.
             app.state::<MediaEngine>().probe_encoders_in_background();
+
+            // Exports run in the background, one at a time (#51). Opening the
+            // queue finds what a crash interrupted, and offers it again
+            // rather than starting it.
+            app.manage(export::open_queue(app.handle()));
 
             // Put the window back where the user left it, if that is still
             // somewhere they can see it. `window_state::restore` validates the
@@ -171,7 +184,17 @@ pub fn run() {
             // No sidecar process outlives the window. This is the orderly
             // path; the engine's job object covers the disorderly one.
             if matches!(event, RunEvent::Exit) {
-                app.state::<MediaEngine>().shutdown();
+                shutdown(app);
             }
         });
+}
+
+/// Stop every piece of media work as the application exits. The export
+/// first: it is left interrupted, to be offered again at the next launch,
+/// before its processes are stopped with everything else's.
+fn shutdown(app: &tauri::AppHandle) {
+    if let Some(queue) = app.try_state::<ExportQueue>() {
+        queue.shutdown();
+    }
+    app.state::<MediaEngine>().shutdown();
 }
