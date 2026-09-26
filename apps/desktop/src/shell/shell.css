@@ -79,6 +79,23 @@
   /* The bar is a drag handle. Selecting the project name by accident while
      dragging the window is the small annoyance this prevents. */
   user-select: none;
+
+  /* The bar is the window's caption, and WebView2 treats it as one (#80). Not
+     a script that moves the window on mousedown: WebView2's non-client region
+     support, which wry switches on, hands this rectangle to Windows as a real
+     caption. Windows then does everything a caption does — drag, drag to a
+     screen edge to snap, double-click to maximise and restore, right-click
+     for the system menu — because it is Windows doing it. */
+  app-region: drag;
+}
+
+/* Everything on the bar that is not the project name is a control, and a
+   control inside a caption would never see its click: Windows takes the
+   mouse-down for the window. The project name stays a handle because it is
+   the widest piece of the bar — it takes the slack — and a bar whose empty
+   stretch cannot be grabbed is not a caption. */
+.shell__bar > :not(.shell__project) {
+  app-region: no-drag;
 }
 
 .shell__menus {
@@ -155,13 +172,18 @@
 }
 
 /*
- * No `-webkit-app-region` anywhere. That is Electron's mechanism and Tauri
- * ignores it; writing it would be a rule that looks like it protects the
- * buttons on the bar and does nothing.
+ * Why CSS rather than `data-tauri-drag-region` (#80).
  *
- * Tauri reads `data-tauri-drag-region` from the event's target, so a button
- * inside the bar — which does not carry the attribute — is a button and not a
- * handle. The bar is draggable and its controls are not, with no help from CSS.
+ * Tauri's attribute moves the window from a script: mousedown, then
+ * `startDragging()`. Windows never learns there is a caption, so none of what a
+ * caption gets for free happens — no Aero Snap when the window is dragged to an
+ * edge, and double-click goes through a second script that needs its own
+ * permission. It also reads the attribute from the event's target only, so the
+ * project name, which takes the bar's slack, was not a handle at all.
+ *
+ * `app-region` is the property Chromium reads for this, and WebView2 honours
+ * it in a windowed WebView once non-client region support is on (wry enables
+ * it). The hit test is then Windows' own, which is the whole point.
  */
 
 /* ────────────────────────────────────────────────────────────────────────────

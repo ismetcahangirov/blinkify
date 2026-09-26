@@ -361,6 +361,10 @@
 .bk-dialog__overlay {
   position: fixed;
   inset: 0;
+  /* A modal covers the window's caption too, and a caption under a scrim would
+     still take the click for the window: the dialog must own every pixel it
+     covers. Chromium subtracts a later no-drag box from an earlier drag one. */
+  app-region: no-drag;
   background: var(--scrim);
   animation: bk-fade-in var(--duration-normal) var(--easing-entrance);
 }

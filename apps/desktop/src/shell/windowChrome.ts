@@ -14,17 +14,13 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
  *
  * ── What that costs, stated rather than discovered ─────────────────────────
  *
- * Windows 11 Snap Layouts — the flyout when the pointer rests on the maximise
- * button — do not work on an undecorated Tauri window. That is upstream
- * (tauri-apps/tauri#4531, open since 2022, labelled `status: upstream`) and not
- * something this application can switch on. Dragging a window to a screen edge
- * is affected by the same limitation.
- *
- * It is a real loss for an editor, which people do put side by side with a
- * browser. It is recorded in the pull request and in a follow-up issue rather
- * than quietly not mentioned, because the alternative — native decorations —
- * is a one-line configuration change the owner may prefer once they have seen
- * both.
+ * The bar is a real caption to Windows through CSS `app-region` (#80), so
+ * dragging, snapping to a screen edge, double-click to maximise and the system
+ * menu are Windows' own. One gesture is not: the Snap Layouts flyout when the
+ * pointer rests on the maximise button. The button is drawn by the webview, so
+ * the pointer over it belongs to WebView2's window rather than to the one
+ * Windows would ask; Win+Z opens the same flyout. The decision and what was
+ * measured are in docs/design/capcut-layout-reference.md.
  *
  * ── Why every call is guarded ──────────────────────────────────────────────
  *
