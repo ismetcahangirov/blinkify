@@ -26,17 +26,17 @@ v1.
 Nine checks, each its own job so a failure is legible from the pull request
 without opening a log.
 
-| Check                       | Runs                                                                                                           |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Format (Prettier)**       | `pnpm format:check`                                                                                            |
-| **Lint (ESLint)**           | `pnpm lint`                                                                                                    |
-| **Typecheck (tsc)**         | `pnpm typecheck`, then `pnpm build`                                                                            |
-| **Test (Vitest)**           | `pnpm test:ts`                                                                                                 |
-| **Docs links**              | `pnpm check:links`                                                                                             |
-| **Project graph**           | `graph:validate`, `graph:injection`, `graph:determinism`, `graph:check`                                        |
-| **Rust**                    | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test --workspace`                                      |
-| **Boundaries and licences** | `boundaries:rust`, `boundaries:rust:test`, `deny:licenses`, `deny:test`, `sidecar:check`, `sidecar:check:test` |
-| **Installer**               | `pnpm tauri build`, installs it silently and runs the installed sidecar, and uploads the `.exe`                |
+| Check                       | Runs                                                                                                                                                                                                            |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Format (Prettier)**       | `pnpm format:check`                                                                                                                                                                                             |
+| **Lint (ESLint)**           | `pnpm lint`                                                                                                                                                                                                     |
+| **Typecheck (tsc)**         | `pnpm typecheck`, then `pnpm build`                                                                                                                                                                             |
+| **Test (Vitest)**           | `pnpm test:ts`                                                                                                                                                                                                  |
+| **Docs links**              | `pnpm check:links`                                                                                                                                                                                              |
+| **Project graph**           | `graph:validate`, `graph:injection`, `graph:determinism`, `graph:check`                                                                                                                                         |
+| **Rust**                    | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test --workspace`                                                                                                                                       |
+| **Boundaries and licences** | `boundaries:rust`, `boundaries:rust:test`, `deny:licenses`, `deny:test`, `attribution:check`, `attribution:injection`, `attribution:determinism`, `attribution:coverage`, `sidecar:check`, `sidecar:check:test` |
+| **Installer**               | `pnpm tauri build`, installs it silently and runs the installed sidecar, and uploads the `.exe`                                                                                                                 |
 
 `cargo fmt`, `clippy` and `cargo test` share one job on purpose. Each compiles
 the whole Tauri dependency tree; three jobs would compile it three times, and

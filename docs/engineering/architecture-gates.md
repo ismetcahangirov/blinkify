@@ -1,27 +1,28 @@
 # Architecture gates
 
-Eleven checks stand between a change and `main`. Each one enforces a boundary
+Twelve checks stand between a change and `main`. Each one enforces a boundary
 that [`../../CLAUDE.md`](../../CLAUDE.md) states as a rule. This document says
 how they work, what each one does **not** cover, and how to prove one still
 works after you touch it.
 
 ## The gates
 
-| Command                | Enforces                                                   | Rule       |
-| ---------------------- | ---------------------------------------------------------- | ---------- |
-| `pnpm graph:validate`  | TypeScript import boundaries                               | section 2  |
-| `pnpm graph:check`     | The committed project graph matches the source tree        | section 14 |
-| `pnpm boundaries:rust` | No engine crate reaches `tauri`, directly or transitively  | section 2  |
-| `pnpm deny:licenses`   | No GPL, AGPL or LGPL Rust crate                            | section 10 |
-| `pnpm colours:check`   | No colour value outside the design token file              | #15        |
-| `pnpm offline:check`   | No remote asset the interface needs in order to appear     | #16        |
-| `pnpm tokens:check`    | No hard-coded length, duration or weight in `packages/ui`  | #17        |
-| `pnpm sidecar:check`   | The bundled FFmpeg is LGPL-only, ours, and complete        | #21        |
-| `pnpm types:check`     | The committed IPC contract is what the Rust types generate | #32        |
-| `pnpm evaluator:check` | Only the shared evaluator interprets the edit graph        | #30        |
-| `pnpm edits:check`     | Every change to the open graph is an edit on the history   | #37        |
+| Command                  | Enforces                                                   | Rule       |
+| ------------------------ | ---------------------------------------------------------- | ---------- |
+| `pnpm graph:validate`    | TypeScript import boundaries                               | section 2  |
+| `pnpm graph:check`       | The committed project graph matches the source tree        | section 14 |
+| `pnpm boundaries:rust`   | No engine crate reaches `tauri`, directly or transitively  | section 2  |
+| `pnpm deny:licenses`     | No GPL, AGPL or LGPL Rust crate                            | section 10 |
+| `pnpm colours:check`     | No colour value outside the design token file              | #15        |
+| `pnpm offline:check`     | No remote asset the interface needs in order to appear     | #16        |
+| `pnpm tokens:check`      | No hard-coded length, duration or weight in `packages/ui`  | #17        |
+| `pnpm sidecar:check`     | The bundled FFmpeg is LGPL-only, ours, and complete        | #21        |
+| `pnpm types:check`       | The committed IPC contract is what the Rust types generate | #32        |
+| `pnpm evaluator:check`   | Only the shared evaluator interprets the edit graph        | #30        |
+| `pnpm edits:check`       | Every change to the open graph is an edit on the history   | #37        |
+| `pnpm attribution:check` | The shipped third-party notices match the dependency tree  | #73        |
 
-All eleven run in `pnpm verify`, and all eleven block a merge — see
+All twelve run in `pnpm verify`, and all twelve block a merge — see
 [`ci.md`](./ci.md) for how they are wired into the pipeline and in what order.
 
 ## Two languages, two tools — and why that is not pedantry
@@ -151,6 +152,51 @@ What it does **not** catch:
   are cleared in `styles.css` so that a utility either maps to a Blinkify token
   or does not exist.
 
+## The attribution gate
+
+`tools/attribution/` writes `apps/desktop/src-tauri/THIRD-PARTY-NOTICES.txt`:
+the copyright notice and licence text of every crate `cargo metadata` resolves
+for the Windows target, every package in the renderer's production dependency
+tree, and every bundled component with no package metadata — FFmpeg and its
+libraries, the noise model, the typefaces. The installer bundles it and the
+application shows it under Help. Why it is our own tool rather than
+`cargo-about` is
+[ADR-0017](../decisions/ADR-0017-the-attribution-document-is-generated-from-local-sources.md).
+
+`pnpm attribution:check` regenerates it in memory and fails on any difference
+from the committed file, listing the packages added and removed. The failure it
+prevents is silent in the way that matters: a new dependency changes nothing a
+user or a test can see, and the binary ships without its notice. After a
+rebase onto a `main` that moved `Cargo.lock` or `pnpm-lock.yaml`, run
+`pnpm attribution` and commit the result — never edit the document by hand.
+
+Like the project graph, it is only a signal because the generator is a pure
+function of the tree: no clock, no local path, every collection sorted by code
+unit. `pnpm attribution:determinism` runs it twice and compares bytes.
+
+What it catches: a crate or renderer package added, removed or bumped without
+regenerating; a changed licence or licence file; a bundled component whose text
+or version moved (FFmpeg's is read from `sidecar.lock.json` and
+`configure.txt`).
+
+What it does **not** catch:
+
+- A bundled component nobody described. A new binary in `externalBin`, a new
+  model or font, needs an entry in `tools/attribution/components.json`; review
+  catches its absence, as it catches a missing `THIRD_PARTY.md` row.
+- A licence text worded in a way the classifier does not recognise. It is
+  carried as a notice rather than lost, and the standard text is added if it
+  was the only one — but a human reads the diff.
+
+It fails, rather than skips, on a package it cannot attribute: no licence
+declared, an unreadable expression, or a licence with neither a file in the
+package nor a standard text under `tools/attribution/licences/`. The error names
+every such package at once.
+
+It needs `cargo metadata` to have unpacked every crate into the local registry
+— which `cargo metadata` does itself — and an installed `node_modules`. It
+makes no network request of its own.
+
 ## What no gate covers: the IPC edge
 
 The most important coupling in this codebase is invisible to static analysis in
@@ -197,19 +243,22 @@ So CLAUDE.md section 14 requires an injection test for any change under
 pnpm gates:prove
 ```
 
-| Script                      | Proves                                                                                                                                                                                                                                                                       |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm graph:injection`      | Each of the seven rules fires on its own violation, **by name**                                                                                                                                                                                                              |
-| `pnpm graph:determinism`    | Two generator runs over an unchanged tree are byte-identical                                                                                                                                                                                                                 |
-| `pnpm boundaries:rust:test` | The Tauri check catches a direct **and** a transitive dependency                                                                                                                                                                                                             |
-| `pnpm deny:test`            | The licence gate rejects GPL, AGPL and LGPL, and accepts MIT                                                                                                                                                                                                                 |
-| `pnpm colours:check:test`   | The colour gate catches a hex, an `rgb()` and a named colour, and does not catch a `var()` reference or a comment                                                                                                                                                            |
-| `pnpm offline:check:test`   | The offline gate catches a font-service `<link>`, a remote `url()`, a remote `@import` and a remote `src`, and does not catch a URL in a comment or an `<a href>` a user clicks                                                                                              |
-| `pnpm sidecar:check:test`   | The sidecar gate rejects a GPL build, a non-free build, a distributor's "LGPL" build carrying `openh264`, a build missing `arnndn` or `hevc_nvenc`, a binary whose hash differs from the lock, and a committed `ffmpeg.exe` — see [`ffmpeg-sidecar.md`](./ffmpeg-sidecar.md) |
-| `pnpm evaluator:check:test` | The evaluator boundary catches an `Operation::` taken apart in the shell or the player, and a renderer or design-system file reading `.operations`; it lets through the evaluator itself, tests, `AudioOperation::` and renderer test fixtures                               |
-| `pnpm edits:check:test`     | The edit boundary catches a `&mut Project` or a mutable `Project` binding outside the edit layer, and a renderer component invoking `edit_project` or `undo_edit` directly; it lets through the edit layer, the project store, tests and read-only borrows                   |
-| `pnpm types:check:test`     | The IPC contract gate catches a type changed without regenerating, a new type not committed, and a removed type still committed                                                                                                                                              |
-| `pnpm tokens:check:test`    | The design-token gate catches a pixel padding, a rem radius, a millisecond duration, a numeric font weight and a length in an inline style, and does not catch a percentage, a `calc()` over tokens, zero, or the token files themselves                                     |
+| Script                         | Proves                                                                                                                                                                                                                                                                       |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm graph:injection`         | Each of the seven rules fires on its own violation, **by name**                                                                                                                                                                                                              |
+| `pnpm graph:determinism`       | Two generator runs over an unchanged tree are byte-identical                                                                                                                                                                                                                 |
+| `pnpm boundaries:rust:test`    | The Tauri check catches a direct **and** a transitive dependency                                                                                                                                                                                                             |
+| `pnpm deny:test`               | The licence gate rejects GPL, AGPL and LGPL, and accepts MIT                                                                                                                                                                                                                 |
+| `pnpm colours:check:test`      | The colour gate catches a hex, an `rgb()` and a named colour, and does not catch a `var()` reference or a comment                                                                                                                                                            |
+| `pnpm offline:check:test`      | The offline gate catches a font-service `<link>`, a remote `url()`, a remote `@import` and a remote `src`, and does not catch a URL in a comment or an `<a href>` a user clicks                                                                                              |
+| `pnpm sidecar:check:test`      | The sidecar gate rejects a GPL build, a non-free build, a distributor's "LGPL" build carrying `openh264`, a build missing `arnndn` or `hevc_nvenc`, a binary whose hash differs from the lock, and a committed `ffmpeg.exe` — see [`ffmpeg-sidecar.md`](./ffmpeg-sidecar.md) |
+| `pnpm evaluator:check:test`    | The evaluator boundary catches an `Operation::` taken apart in the shell or the player, and a renderer or design-system file reading `.operations`; it lets through the evaluator itself, tests, `AudioOperation::` and renderer test fixtures                               |
+| `pnpm edits:check:test`        | The edit boundary catches a `&mut Project` or a mutable `Project` binding outside the edit layer, and a renderer component invoking `edit_project` or `undo_edit` directly; it lets through the edit layer, the project store, tests and read-only borrows                   |
+| `pnpm types:check:test`        | The IPC contract gate catches a type changed without regenerating, a new type not committed, and a removed type still committed                                                                                                                                              |
+| `pnpm attribution:injection`   | The attribution gate fails, naming the package, when a real crate or a real renderer package is added without regenerating, and passes again once it is removed                                                                                                              |
+| `pnpm attribution:determinism` | Two generator runs over an unchanged tree are byte-identical, and no local path reaches the document                                                                                                                                                                         |
+| `pnpm attribution:coverage`    | Every crate in `cargo metadata` is in the document; `serde`'s text is the one in its own unpacked source; `ts-rs`, which ships no licence file, is covered by the marked standard text; a crate or package that cannot be attributed fails generation                        |
+| `pnpm tokens:check:test`       | The design-token gate catches a pixel padding, a rem radius, a millisecond duration, a numeric font weight and a length in an inline style, and does not catch a percentage, a `calc()` over tokens, zero, or the token files themselves                                     |
 
 Asserting on the rule _name_ rather than on a non-zero exit code is the point.
 Exit 1 could come from any rule, or from the tool failing to start. Only the
