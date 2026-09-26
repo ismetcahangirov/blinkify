@@ -116,6 +116,14 @@ impl Cache {
             .join(format!("{}{suffix}", key.as_str()))
     }
 
+    /// Where the one entry `name` in `kind` lives — for an artefact there is
+    /// only ever one of, which carries its own key inside it, such as the
+    /// encoder capability profile (#83).
+    #[must_use]
+    pub fn named(&self, kind: &str, name: &str) -> PathBuf {
+        self.root.join(kind).join(name)
+    }
+
     /// Read an entry, marking it recently used.
     #[must_use]
     pub fn read(&self, path: &Path) -> Option<Vec<u8>> {

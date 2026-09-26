@@ -31,6 +31,12 @@ ts-rs = { workspace = true }
 # changed since Windows 8, so it is finished rather than abandoned.
 [target.'cfg(windows)'.dependencies]
 win32job = "2.0.3"
+# The version of every display adapter's driver, read from the registry, as
+# part of the key of the cached encoder capability profile (#83): a new driver
+# can add or remove what a hardware encoder does. Microsoft's `windows-rs`,
+# MIT OR Apache-2.0, released with it. Already in the tree through the
+# updater's `reqwest`, so this adds no new package to what ships.
+windows-registry = "0.6.1"
 
 [dev-dependencies]
 serde_json = { workspace = true }

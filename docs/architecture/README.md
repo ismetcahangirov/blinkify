@@ -68,6 +68,9 @@ How Blinkify is put together and why the structure holds under change.
   sound beside copied pictures, the codec choice and clean joins (#43);
   constant speed by retiming copied packets (#42); the full re-encode of holds,
   reverses, gaps and clips in another shape, reverse in bounded memory (#55)
+- [`encoder-capability-cache.md`](./encoder-capability-cache.md) — the
+  encoder capability profile kept between launches, keyed on the sidecar's
+  hash and every display driver's version, and never reported stale (#83)
 - [`re-encode-profiles.md`](./re-encode-profiles.md) — matching a re-encode
   to the source it joins: the source's profile, the encoder that makes it or
   a named refusal, and the join checked on the SPS before writing (#44)

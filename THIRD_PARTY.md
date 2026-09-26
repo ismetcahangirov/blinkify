@@ -198,6 +198,7 @@ allowed in `deny.toml`.
 | `win32job`             | 2.0.3   | MIT OR Apache-2.0 | The kill-on-close job object that stops any `ffmpeg.exe` outliving Blinkify (#22).                                            |
 | `cpal`                 | 0.18.2  | Apache-2.0        | Preview audio output through WASAPI; audio is the playback clock (#28).                                                       |
 | `fs4`                  | 1.1.0   | MIT OR Apache-2.0 | Free space on the export target's drive, checked before an export starts (#50).                                               |
+| `windows-registry`     | 0.6.1   | MIT OR Apache-2.0 | Display driver versions, part of the key the encoder capability profile is cached under (#83). Already shipped via `reqwest`. |
 
 One entry is worth reading twice. `tauri-plugin-updater` pulls in `reqwest` and,
 under it, `webpki-root-certs` — Mozilla's root CA bundle, licensed

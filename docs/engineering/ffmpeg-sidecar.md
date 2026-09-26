@@ -73,6 +73,11 @@ and makes it encode a few synthetic frames at each profile and bit depth
 (`crates/blinkify-engine/src/capability.rs`), and reports only what worked.
 Nothing downstream may assume an encoder exists. See ADR-0003 part 1.
 
+The answer is cached, keyed on the SHA-256 of `ffmpeg.exe` and every display
+driver's version, so replacing the sidecar re-probes on the next launch by
+itself — there is no cache to clear after an upgrade. See
+[`encoder-capability-cache.md`](../architecture/encoder-capability-cache.md).
+
 ## Rebuilding or upgrading
 
 Do this when moving to a new FFmpeg release, when a library needs a security
