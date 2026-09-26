@@ -1,27 +1,7 @@
-import type { MonitorLevels } from "@blinkify/types";
 import { IconButton, Slider } from "@blinkify/ui";
-import { useEffect } from "react";
 
+import { LevelMeter } from "./LevelMeter.js";
 import { usePreviewStore } from "./preview.store.js";
-
-/** How often the meter is read: often enough to look alive, cheap to ask. */
-const METER_MS = 66;
-
-/** The bottom of the meter's scale, in dBFS. */
-const FLOOR_DB = -60;
-
-/** Where a level sits on the meter, 0 to 100 percent. */
-export function meterPercent(db: number | null): number {
-  if (db === null) return 0;
-  const clamped = Math.min(0, Math.max(FLOOR_DB, db));
-  return ((clamped - FLOOR_DB) / -FLOOR_DB) * 100;
-}
-
-/** The meter's colour role for a peak: loud is a warning before it is a clip. */
-function band(db: number | null): "ok" | "loud" | "hot" {
-  if (db === null || db < -18) return "ok";
-  return db < -6 ? "loud" : "hot";
-}
 
 function SpeakerGlyph({ muted }: { muted: boolean }) {
   return (
@@ -48,37 +28,6 @@ function SpeakerGlyph({ muted }: { muted: boolean }) {
   );
 }
 
-function Meter({ levels }: { levels: MonitorLevels | null }) {
-  const peaks = levels?.peakDb ?? [null, null];
-  const lufs = levels?.shortTermLufs ?? null;
-  return (
-    <div className="player__meter" data-testid="level-meter">
-      {peaks.map((db, channel) => (
-        <div
-          key={channel}
-          className="player__meter-track"
-          role="meter"
-          aria-label={channel === 0 ? "Left peak" : "Right peak"}
-          aria-valuemin={FLOOR_DB}
-          aria-valuemax={0}
-          aria-valuenow={db ?? FLOOR_DB}
-        >
-          <div
-            className={`player__meter-bar player__meter-bar--${band(db)}`}
-            style={{ width: `${String(meterPercent(db))}%` }}
-          />
-        </div>
-      ))}
-      <output
-        className="player__loudness type-timecode"
-        aria-label="Short-term loudness"
-      >
-        {lufs === null ? "— LUFS" : `${lufs.toFixed(1)} LUFS`}
-      </output>
-    </div>
-  );
-}
-
 /**
  * Monitoring (#31): mute, the monitor volume, and the level meter with its
  * clip indication.
@@ -91,20 +40,8 @@ function Meter({ levels }: { levels: MonitorLevels | null }) {
  */
 export function MonitorControls() {
   const monitoring = usePreviewStore((state) => state.monitoring);
-  const levels = usePreviewStore((state) => state.levels);
   const monitor = usePreviewStore((state) => state.monitor);
-  const refreshLevels = usePreviewStore((state) => state.refreshLevels);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      void refreshLevels();
-    }, METER_MS);
-    return () => {
-      clearInterval(timer);
-    };
-  }, [refreshLevels]);
-
-  const clipped = levels?.clipped ?? false;
   return (
     <div className="player__monitor">
       <IconButton
@@ -128,19 +65,7 @@ export function MonitorControls() {
           void monitor({ type: "volume", level });
         }}
       />
-      <Meter levels={levels} />
-      <button
-        type="button"
-        className={`player__clip${clipped ? " player__clip--lit" : ""}`}
-        aria-pressed={clipped}
-        aria-label={clipped ? "Clipped — reset" : "No clipping"}
-        disabled={!clipped}
-        onClick={() => {
-          void monitor({ type: "reset-clip" });
-        }}
-      >
-        CLIP
-      </button>
+      <LevelMeter />
     </div>
   );
 }

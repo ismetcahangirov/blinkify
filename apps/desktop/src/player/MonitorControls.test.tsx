@@ -5,7 +5,8 @@ import userEvent from "@testing-library/user-event";
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { meterPercent, MonitorControls } from "./MonitorControls.js";
+import { meterPercent } from "./LevelMeter.js";
+import { MonitorControls } from "./MonitorControls.js";
 import { usePreviewStore } from "./preview.store.js";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));

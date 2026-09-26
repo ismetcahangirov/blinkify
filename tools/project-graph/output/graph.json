@@ -322,6 +322,23 @@
         },
         {
           "dynamic": false,
+          "module": "../player/preview.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/preview.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../project/project.store.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -459,6 +476,40 @@
             "import"
           ],
           "resolved": "apps/desktop/src/inspector/mixedValue.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../player/LevelMeter.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/LevelMeter.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../player/preview.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/preview.store.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2611,8 +2662,89 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/player/LevelMeter.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./metering.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/metering.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./preview.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/preview.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/player/MonitorControls.test.tsx",
+        "apps/desktop/src/player/MonitorControls.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/player/MonitorControls.test.tsx",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./LevelMeter.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/LevelMeter.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./MonitorControls.js",
@@ -2692,14 +2824,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./preview.store.js",
+          "module": "./LevelMeter.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "apps/desktop/src/player/preview.store.ts",
+          "resolved": "apps/desktop/src/player/LevelMeter.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2709,15 +2841,14 @@
         },
         {
           "dynamic": false,
-          "module": "@blinkify/types",
+          "module": "./preview.store.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
-            "undetermined",
-            "type-only",
+            "local",
             "import"
           ],
-          "resolved": "packages/types/src/index.ts",
+          "resolved": "apps/desktop/src/player/preview.store.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -3303,6 +3434,33 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/player/metering.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./preview.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/player/preview.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/player/LevelMeter.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/player/orientation.test.ts",
       "dependencies": [
         {
@@ -3420,7 +3578,10 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
+        "apps/desktop/src/player/LevelMeter.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
@@ -3428,6 +3589,7 @@
         "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/player/metering.ts",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
@@ -13923,8 +14085,8 @@
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/library/assets.ts",
         "apps/desktop/src/library/library.store.ts",
+        "apps/desktop/src/player/LevelMeter.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
-        "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/OperationsPanel.test.tsx",
         "apps/desktop/src/player/OperationsPanel.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
@@ -16034,8 +16196,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 316,
-    "totalDependenciesCruised": 730,
+    "totalCruised": 318,
+    "totalDependenciesCruised": 738,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

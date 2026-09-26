@@ -287,12 +287,12 @@ a user ends up with a fully re-encoded export and no idea why.
 
 **A video clip selected.** In order:
 
-| Section   | Contents                                                | Tier                                                                                                       |
-| --------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Clip      | Source file, in and out points, duration                | Tier 1 or 2 — a trim is a cut, not a filter.                                                               |
-| Speed     | Constant speed change (#56, #42)                        | Tier 1 while the resulting rate is 1–240 fps: timestamps are rescaled and the pixels untouched (ADR-0009). |
-| Transform | Crop, scale, rotation — reserved, not yet built         | **Tier 3.** Any of these changes pixels and forces a re-encode of the segment.                             |
-| Audio     | The clip's own audio: gain, and detaching it (#36, #46) | Its own tier. Audio is a separate stream and a gain filter must not drag video into tier 3.                |
+| Section   | Contents                                                                                | Tier                                                                                                       |
+| --------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Clip      | Source file, in and out points, duration                                                | Tier 1 or 2 — a trim is a cut, not a filter.                                                               |
+| Speed     | Constant speed change (#56, #42)                                                        | Tier 1 while the resulting rate is 1–240 fps: timestamps are rescaled and the pixels untouched (ADR-0009). |
+| Transform | Crop, scale, rotation — reserved, not yet built                                         | **Tier 3.** Any of these changes pixels and forces a re-encode of the segment.                             |
+| Audio     | The clip's own audio: noise reduction, gain, loudness (#46–#49), and detaching it (#36) | Its own tier. Audio is a separate stream and a gain filter must not drag video into tier 3.                |
 
 Several clips selected show each property they share, and **mixed** for one
 they do not; setting a mixed property is explicit and applies to every selected
@@ -303,9 +303,20 @@ user commits to it — not in the export dialog afterwards. `CLAUDE.md` section 
 rule 3: if the output will differ from the source, the user is told before the
 export starts.
 
-**An audio clip selected.** Volume and gain with true-peak limiting (#46), noise
-reduction strength (#47), and loudness normalisation (#48), with a live preview
-of the filter chain (#49).
+**An audio clip selected — and the Audio section of a video clip with sound.**
+In the order the chain runs them (ADR-0011):
+
+| Part            | Contents                                                                                                                                 |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Header          | Reset audio; "the video stream is still copied"; bypass the whole chain; the level meter with its clip indication, after the chain (#49) |
+| Noise reduction | Strength as a blend, "Hear original" for A/B, and that it is a speech denoiser (#47)                                                     |
+| Gain            | Slider and field, the limiter's ceiling, bypass, what the limiter is doing, a suggested gain (#46)                                       |
+| Loudness        | This clip or the whole sequence, a platform's target, ceiling, bypass, loudness before and after in LUFS (#48)                           |
+
+Every control is heard while playing without a gap: a change to audio chains
+retunes the running preview rather than restarting it. Each step has its own
+bypass, because finding which filter causes an artefact is the reason bypass
+exists; the whole chain has one too, and it keeps every setting.
 
 **A transition or an effect selected.** Not applicable. Blinkify has neither —
 see below.

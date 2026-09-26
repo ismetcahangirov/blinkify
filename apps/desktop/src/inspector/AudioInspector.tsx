@@ -4,6 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
 import { useProjectStore } from "../project/project.store.js";
 import type { Placement } from "../timeline/draw.js";
+import { LevelMeter } from "../player/LevelMeter.js";
+import { usePreviewStore } from "../player/preview.store.js";
 import { DenoiseControl } from "./DenoiseControl.js";
 import { LoudnessControl } from "./LoudnessControl.js";
 import { editGesture, type EditGesture } from "./editGesture.js";
@@ -24,9 +26,13 @@ import {
 import { shared } from "./mixedValue.js";
 
 /**
- * The audio section (#46, #47; completed by #49): what the selected clips'
- * sound goes through, in the order the chain runs it — noise reduction,
- * gain, loudness — and a statement that none of it touches the pictures.
+ * The audio section (#46–#49): what the selected clips' sound goes
+ * through, in the order the chain runs it — noise reduction, gain, loudness
+ * — with a bypass for each step and for the whole chain, the level after the
+ * chain, and a statement that none of it touches the pictures.
+ *
+ * Every change is heard while playing, without a gap: an edit that changes
+ * only audio chains retunes the running preview (ADR-0012).
  *
  * A view of the selection and of the graph, like the video section: every
  * control sends an edit, and a drag is one gesture and one undo entry.
@@ -35,6 +41,9 @@ export function AudioInspector({ clips }: { clips: readonly Placement[] }) {
   const edit = useProjectStore((state) => state.edit);
   const ids = clips.map((clip) => clip.clip);
   const untouched = clips.every((clip) => clip.audio.length === 0);
+  const steps = clips.flatMap((clip) => clip.audio);
+  const allBypassed = steps.length > 0 && steps.every((step) => step.bypassed);
+  const session = usePreviewStore((state) => state.session);
 
   return (
     <div className="audio-inspector">
@@ -60,6 +69,22 @@ export function AudioInspector({ clips }: { clips: readonly Placement[] }) {
           Audio changes re-encode the sound only. The video stream is still
           copied, bit for bit.
         </p>
+        <Switch
+          label="Bypass the whole chain"
+          checked={allBypassed}
+          disabled={steps.length === 0}
+          onCheckedChange={(bypassed) =>
+            void edit({ edit: "bypass-audio", clips: [...ids], bypassed })
+          }
+        />
+        {session === null ? null : (
+          <div className="audio-inspector__meter">
+            <span className="inspector-note">Output, after the chain</span>
+            <div className="player__monitor">
+              <LevelMeter />
+            </div>
+          </div>
+        )}
       </section>
 
       <section
