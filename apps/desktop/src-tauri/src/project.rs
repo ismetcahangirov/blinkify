@@ -847,8 +847,9 @@ mod tests {
 
     /// An operation as the project file writes it: the shell never takes
     /// the graph apart itself (`pnpm evaluator:check`).
+    #[allow(clippy::expect_used)]
     fn operation(json: &str) -> Operation {
-        serde_json::from_str(json).unwrap_or_else(|error| panic!("{json}: {error}"))
+        serde_json::from_str(json).expect("an operation as the project file writes it")
     }
 
     #[test]
