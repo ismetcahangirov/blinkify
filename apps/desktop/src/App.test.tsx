@@ -40,8 +40,8 @@ describe("App", () => {
   });
 
   it("does not claim an export tier before anything has computed one", () => {
-    /* The planner is #39. Until it exists the indicator says so — the one
-       claim this product is built on is not made optimistically. */
+    /* With no project there is no plan (#39), and the indicator says so —
+       the one claim this product is built on is not made optimistically. */
     mount();
     expect(screen.getByTestId("lossless-indicator")).toHaveTextContent(
       "not computed",

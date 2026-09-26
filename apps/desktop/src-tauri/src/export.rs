@@ -14,12 +14,14 @@ use std::sync::Arc;
 use blinkify_engine::export::audio::AudioTarget;
 use blinkify_engine::export::execute::{Container, ExportRequest, export};
 use blinkify_engine::export::loudness::Resolver;
+use blinkify_engine::export::overview::{ExportOverview, OverviewRequest, overview};
 use blinkify_engine::export::plan::{PlanError, plan};
 use blinkify_engine::export::queue::{
     ExportJob, ExportQueue, ExportSpec, Report, RunOutcome, Stage,
 };
 use blinkify_engine::orchestrator::{CancelToken, JobProgress};
 use blinkify_engine::project::evaluate::evaluate;
+use std::path::Path;
 use tauri::{AppHandle, Emitter, Manager, State, UserAttentionType};
 
 use crate::loudness::{facts, inputs};
@@ -97,6 +99,22 @@ fn run(
             ),
             _ => error.to_string(),
         })?;
+    // The volume is checked now, before anything is written: a full disk
+    // found at 90 percent has cost the user the whole wait (#50).
+    let size = overview(&OverviewRequest {
+        plan: &plan,
+        timeline: &timeline,
+        inputs: &inputs,
+        target: &spec.target,
+        audio: spec.audio,
+        models: engine.models(),
+        available: available_space(&spec.target),
+    });
+    if let Some(space) = size.space
+        && !space.enough
+    {
+        return Err(size.problems.join("; "));
+    }
     report(Stage::Exporting, 0.0);
     let forward = Arc::clone(report);
     let outcome = export(
@@ -202,4 +220,58 @@ pub fn discard_export(queue: State<'_, ExportQueue>, id: u64) -> Result<ExportJo
 #[allow(clippy::needless_pass_by_value)]
 pub fn clear_export_history(queue: State<'_, ExportQueue>) {
     queue.clear_history();
+}
+
+/// Free bytes on the volume `target` would be written to: its folder's, or
+/// the nearest existing folder above it.
+fn available_space(target: &Path) -> Option<u64> {
+    target
+        .ancestors()
+        .skip(1)
+        .find(|folder| folder.is_dir())
+        .and_then(|folder| fs4::available_space(folder).ok())
+}
+
+/// What exporting the open project to `target`, with sound that must be
+/// encoded made as `audio`, will do (#50): each stream's claim, every
+/// reason with its time, the keyframe snap, the size and the space for it.
+/// Pure and cheap once the sources are indexed, so the dialog asks again
+/// whenever the graph or a setting changes.
+///
+/// # Errors
+///
+/// No project is open, or its timeline cannot be planned.
+#[tauri::command(async)]
+#[allow(clippy::needless_pass_by_value)]
+pub fn export_overview(
+    engine: State<'_, MediaEngine>,
+    state: State<'_, OpenProject>,
+    target: PathBuf,
+    audio: AudioTarget,
+) -> Result<ExportOverview, String> {
+    // Copied out, so no probe or index read happens under the lock.
+    let (project, timeline) = {
+        let guard = state.lock()?;
+        let opened = guard.as_ref().ok_or("no project is open")?;
+        let project = opened.session.document().project().clone();
+        let timeline = match &opened.timeline {
+            Some(timeline) => timeline.clone(),
+            None => evaluate(&project).map_err(|error| error.to_string())?,
+        };
+        (project, timeline)
+    };
+    let facts = facts(&engine, &project)?;
+    let inputs = inputs(&engine, &project)?;
+    let timeline = crate::loudness::resolved(&engine, &project, &timeline)?;
+    let plan =
+        plan(&timeline, &project.sequence.settings, &facts).map_err(|error| error.to_string())?;
+    Ok(overview(&OverviewRequest {
+        plan: &plan,
+        timeline: &timeline,
+        inputs: &inputs,
+        target: &target,
+        audio,
+        models: engine.models(),
+        available: available_space(&target),
+    }))
 }

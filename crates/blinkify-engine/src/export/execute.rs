@@ -1191,6 +1191,34 @@ fn runnable(
     }
 }
 
+/// Everything [`export`] checks before a process starts, answered before
+/// the export is asked for (#50): what its sound will be encoded to, or why
+/// it would be refused.
+///
+/// # Errors
+///
+/// What [`export`] would refuse with before running anything.
+pub fn check(
+    plan: &ExportPlan,
+    inputs: &BTreeMap<SourceId, ExportInput>,
+    target: &Path,
+    overwrite: bool,
+    audio: AudioTarget,
+    models: Option<&Models>,
+) -> Result<Option<AudioEncoding>, ExportError> {
+    preflight(&ExportRequest {
+        plan,
+        inputs,
+        target,
+        overwrite,
+        audio,
+        models,
+        cancel: CancelToken::default(),
+        on_progress: None,
+    })
+    .map(|(_, encoding)| encoding)
+}
+
 /// Check everything that can be checked before a process starts.
 fn preflight(
     request: &ExportRequest<'_>,

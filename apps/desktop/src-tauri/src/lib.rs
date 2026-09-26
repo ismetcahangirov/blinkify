@@ -111,6 +111,7 @@ pub fn run() {
             lifecycle::quit_app,
             library::import_media,
             export::submit_export,
+            export::export_overview,
             export::export_jobs,
             export::cancel_export,
             export::resume_export,

@@ -18,6 +18,11 @@ tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
 blinkify-engine = { workspace = true }
+# Free space on the export target's drive, checked before an export starts
+# rather than discovered at 90 percent (#50). A safe wrapper over
+# GetDiskFreeSpaceExW — the workspace forbids `unsafe` in our own code.
+# MIT OR Apache-2.0, released 2025; only its blocking API.
+fs4 = { version = "1.1.0", default-features = false, features = ["sync"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tauri = { version = "2.11.6", features = [] }

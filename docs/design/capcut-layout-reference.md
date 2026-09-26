@@ -412,10 +412,25 @@ the state of the project is to scan the whole timeline.
 - **It is visible without opening the export dialog**, and it updates as the
   edit changes. That is the whole requirement: a user must never have to guess
   whether quality was preserved.
-- **Before the planner exists**, it shows that the tier has not been computed.
-  It does not guess, and it does not show `Lossless` optimistically. A wrong
-  claim here is worse than no claim, because it is the one claim the product is
-  built on.
+- **Without a plan** — no project, nothing on the timeline, a source offline —
+  it shows that the tier has not been computed. It does not guess, and it does
+  not show `Lossless` optimistically. A wrong claim here is worse than no
+  claim, because it is the one claim the product is built on. Since #50 it
+  shows the plan: `Lossless`, `2 seams`, `1 segment re-encoded`, or
+  `1 cut cannot export`, in the lossless, warning and danger colours.
+
+### The export dialog
+
+Opened by Export (#50). Two columns: on the left the preset (with "Preserve
+the source exactly" first and chosen), the container, the sound that must be
+re-encoded — named, lossless choices included — the destination, and the
+sequence's resolution and frame rate, read-only with a pointer to Sequence
+settings; on the right the verdict — a lossless or "not fully lossless" line,
+the pictures' and the sound's claims apart, every reason with its timecode,
+the snap offer with each cut's shift, the duration, the size (saying whether
+it is an estimate) and the free space. Export stays disabled until a
+destination is chosen and nothing stops the export. What each line means:
+[`../architecture/export-overview.md`](../architecture/export-overview.md).
 
 ## What Blinkify deliberately does not copy
 

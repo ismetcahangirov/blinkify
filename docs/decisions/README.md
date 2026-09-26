@@ -80,3 +80,4 @@ Why it was plausible. Why it lost.
 | [0012](./ADR-0012-noise-reduction-is-a-bundled-rnnoise-speech-model-blended-in-the-graph.md) | Noise reduction is a bundled RNNoise speech model, blended in the graph         | Accepted |
 | [0013](./ADR-0013-loudness-normalisation-is-one-measured-gain-and-a-limiter.md)              | Loudness normalisation is one measured gain and a limiter                       | Accepted |
 | [0014](./ADR-0014-an-export-job-is-a-project-snapshot-restarted-never-resumed.md)            | An export job is a project snapshot, run one at a time, restarted after a crash | Accepted |
+| [0015](./ADR-0015-the-keyframe-snap-is-an-edit-of-the-project.md)                            | The keyframe snap is an edit of the project, rippled across unlocked tracks     | Accepted |

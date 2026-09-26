@@ -2,7 +2,6 @@ import {
   Button,
   DropdownMenu,
   IconButton,
-  Tooltip,
   type MenuGroupDefinition,
 } from "@blinkify/ui";
 import { useEffect, useState } from "react";
@@ -14,7 +13,9 @@ import {
   onWindowResized,
   toggleMaximiseWindow,
 } from "./windowChrome.js";
+import { ExportDialog } from "../export/ExportDialog.js";
 import { ExportQueueButton } from "../export/ExportQueue.js";
+import { LosslessIndicator } from "../export/LosslessIndicator.js";
 import { HistoryControls } from "../project/HistoryControls.js";
 import { SequenceSettingsDialog } from "../project/SequenceSettingsDialog.js";
 import { ShortcutReference } from "../shortcuts/ShortcutReference.js";
@@ -33,28 +34,18 @@ import {
  * menus, project name, undo and redo, the lossless indicator, Export, and the
  * window controls at the far right.
  *
- * ── The lossless indicator says it does not know ───────────────────────────
+ * ── The lossless indicator is the planner's ────────────────────────────────
  *
- * The export planner is #39 and does not exist. The reference is explicit about
- * what the indicator does until then: it reports that the tier has not been
- * computed. It does not show `Lossless` optimistically.
+ * It shows the export plan (#39) in one state and a count, asked again after
+ * every edit, and says the tier is not computed whenever there is no plan. It
+ * never shows `Lossless` optimistically: "every pixel was preserved" is the
+ * one claim the product is built on — `CLAUDE.md` section 1 — and the planner
+ * decides it, the bar displays it (section 2).
  *
- * That is not caution for its own sake. "Every pixel was preserved" is the one
- * claim the product is built on — `CLAUDE.md` section 1 — and an indicator that
- * says it before anything has decided it is worse than an indicator that says
- * nothing, because the user has no way to tell the two apart.
+ * ── Export ──────────────────────────────────────────────────────────────────
  *
- * The renderer will never compute this. The planner decides and the bar
- * displays, which is section 2's rule about the direction of the arrow.
- *
- * ── Every command here is inert on purpose ─────────────────────────────────
- *
- * New, Open, Save and Export are wired to nothing, because the project file
- * is #32 and #54 and the export dialog is #50. Undo and redo are live since
- * #37. They are present and disabled rather than absent, so the bar is the
- * shape the reference describes and the issues that fill it have somewhere to
- * attach. A disabled control that will work is honest; a working control that
- * silently does nothing is not.
+ * Opens the export dialog (#50); the queue beside it (#51) follows the exports
+ * in the background.
  */
 
 const noop = (): void => undefined;
@@ -215,6 +206,7 @@ export function AppBar() {
   const hasProject = useProjectStore((state) => state.view !== null);
   const recent = useProjectStore((state) => state.recent);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -275,22 +267,17 @@ export function AppBar() {
 
       <HistoryControls />
 
-      <Tooltip
-        label="The export planner has not run. Blinkify will not claim a tier it has not computed."
-        side="bottom"
-      >
-        <span
-          className="shell__lossless"
-          data-state="unknown"
-          data-testid="lossless-indicator"
-        >
-          Export tier: not computed
-        </span>
-      </Tooltip>
+      <LosslessIndicator />
 
       <ExportQueueButton />
 
-      <Button variant="primary" size="sm" disabled>
+      <Button
+        variant="primary"
+        size="sm"
+        disabled={!hasProject}
+        onClick={() => setExportOpen(true)}
+        data-testid="export-button"
+      >
         Export
       </Button>
 
@@ -329,6 +316,7 @@ export function AppBar() {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
       />
+      <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
       <ShortcutReference />
     </header>
   );

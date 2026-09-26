@@ -75,6 +75,19 @@ pub struct ClipMove {
     pub start: i64,
 }
 
+/// A clip's cut points moved to where a copy can start and end: its new
+/// trim, in its stream's ticks (#50).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct KeyframeSnap {
+    pub clip: ClipId,
+    #[ts(type = "number")]
+    pub from: i64,
+    #[ts(type = "number")]
+    pub to: i64,
+}
+
 /// One thing the user did to the graph.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(
@@ -248,6 +261,14 @@ pub enum Edit {
         clips: Vec<ClipId>,
         bypassed: bool,
     },
+    /// Move clips' cut points to the keyframes the export plan offers, so
+    /// they are copied rather than smart-cut (#50). Each clip keeps its
+    /// start; what comes after it on every unlocked track moves by the change
+    /// in its length, so nothing opens a gap or falls out of sync, and a
+    /// clip linked to one — its detached sound — is trimmed alike.
+    SnapToKeyframes {
+        snaps: Vec<KeyframeSnap>,
+    },
 }
 
 impl Edit {
@@ -322,6 +343,9 @@ impl Edit {
             } => clips(ids.len(), "Restore audio", "Restore audio of"),
             Self::SetSequenceLoudness { loudness: Some(_) } => "Normalise sequence".to_owned(),
             Self::SetSequenceLoudness { loudness: None } => "Stop normalising sequence".to_owned(),
+            Self::SnapToKeyframes { snaps } => {
+                clips(snaps.len(), "Snap cut to keyframes", "Snap cuts of")
+            }
         }
     }
 }
@@ -654,6 +678,7 @@ fn compile(
         Edit::FreezeFrame { clip, at, frames } => {
             return freeze_frame(project, *clip, *at, *frames);
         }
+        Edit::SnapToKeyframes { snaps } => return snap_to_keyframes(project, snaps, kept),
         _ => {}
     }
     Ok(Compiled::from(match edit {
@@ -734,6 +759,7 @@ fn compile(
         | Edit::Duplicate { .. }
         | Edit::Paste { .. }
         | Edit::FreezeFrame { .. }
+        | Edit::SnapToKeyframes { .. }
         | Edit::DetachAudio { .. } => unreachable!("compiled above"),
     }))
 }
@@ -972,6 +998,135 @@ fn duplicate(project: &Project, clips: &[ClipId]) -> Result<Compiled, EditError>
         selection: copies,
         clamped: false,
     })
+}
+
+/// Give each clip of `snaps` its new trim, keeping its start, trim every
+/// clip linked to one alike, and move what comes after each on every
+/// unlocked track by the change in its length.
+fn snap_to_keyframes(
+    project: &Project,
+    snaps: &[KeyframeSnap],
+    kept: Vec<ClipId>,
+) -> Result<Compiled, EditError> {
+    let timeline = timeline_of(project)?;
+    // Every clip to retime — the snapped ones and their linked partners —
+    // with its new trim.
+    let mut trims: BTreeMap<ClipId, (i64, i64)> = BTreeMap::new();
+    for snap in snaps {
+        let (_, placement) = placed(&timeline, snap.clip)?;
+        if placement.motion.is_some() {
+            return Err(EditError::Refused(format!(
+                "clip {} holds or reverses its pictures: it is re-encoded whatever its cuts",
+                snap.clip
+            )));
+        }
+        if snap.from >= snap.to {
+            return Err(EditError::Refused(format!(
+                "clip {}'s cut would run backwards",
+                snap.clip
+            )));
+        }
+        trims.insert(snap.clip, (snap.from, snap.to));
+        let (_, clip) = find(project, snap.clip)?;
+        let Some(link) = clip.link else { continue };
+        let moved = |ticks: i64, to: Rational, rounding| {
+            rescale(ticks, placement.time_base, to, rounding).ok_or_else(|| too_long(snap.clip))
+        };
+        for (_, partner) in project.clips() {
+            if partner.id == snap.clip
+                || partner.link != Some(link)
+                || partner.source != clip.source
+                || snaps.iter().any(|other| other.clip == partner.id)
+            {
+                continue;
+            }
+            let (_, partnered) = placed(&timeline, partner.id)?;
+            let from = partnered.source_in
+                + moved(
+                    snap.from - placement.source_in,
+                    partnered.time_base,
+                    Rounding::Nearest,
+                )?;
+            let to = partnered.source_out
+                + moved(
+                    snap.to - placement.source_out,
+                    partnered.time_base,
+                    Rounding::Nearest,
+                )?;
+            trims.insert(partner.id, (from, to));
+        }
+    }
+    if trims.is_empty() {
+        return Ok(Compiled::from((Vec::new(), kept)));
+    }
+    let after = retimed_alone(project, &trims)?;
+    // Each snapped clip's old end, and how much longer it became.
+    let mut shifts: Vec<(i64, i64)> = Vec::new();
+    for snap in snaps {
+        let (_, before) = placed(&timeline, snap.clip)?;
+        let (_, now) = placed(&after, snap.clip)?;
+        shifts.push((before.end(), now.length - before.length));
+    }
+    let shift_at = |start: i64| -> i64 {
+        shifts
+            .iter()
+            .filter(|&&(end, _)| end <= start)
+            .map(|&(_, change)| change)
+            .sum()
+    };
+    let mut changes = Vec::new();
+    for track in &project.sequence.tracks {
+        let skip_shift = track.locked;
+        for clip in &track.clips {
+            let retimed_clip = trims.get(&clip.id);
+            let shift = if skip_shift { 0 } else { shift_at(clip.start) };
+            match retimed_clip {
+                Some(&(from, to)) => {
+                    changes.push(Change::ReplaceClip(retimed(
+                        clip,
+                        from,
+                        to,
+                        clip.start + shift,
+                    )));
+                }
+                None if shift != 0 => changes.push(Change::ReplaceClip(Clip {
+                    start: clip.start + shift,
+                    ..clip.clone()
+                })),
+                None => {}
+            }
+        }
+    }
+    Ok(Compiled::from((changes, kept)))
+}
+
+/// The clips of `trims` with their new trims, each evaluated on a track of
+/// its own: the lengths the trims make, from the evaluator — the one place a
+/// trim becomes frames. Alone, since before the shifts a longer clip
+/// overlaps the next.
+fn retimed_alone(
+    project: &Project,
+    trims: &BTreeMap<ClipId, (i64, i64)>,
+) -> Result<Timeline, EditError> {
+    let mut measuring = project.clone();
+    measuring.sequence.tracks = project
+        .sequence
+        .tracks
+        .iter()
+        .flat_map(|track| {
+            track.clips.iter().filter_map(move |clip| {
+                let &(from, to) = trims.get(&clip.id)?;
+                Some((track, retimed(clip, from, to, clip.start)))
+            })
+        })
+        .zip(1..)
+        .map(|((track, clip), id)| Track {
+            id,
+            clips: vec![clip],
+            ..track.clone()
+        })
+        .collect();
+    timeline_of(&measuring)
 }
 
 fn paste(project: &Project, clips: &[ClipId], at: i64) -> Result<Compiled, EditError> {
@@ -4259,6 +4414,99 @@ mod tests {
         }
     }
 
+    #[test]
+    fn a_snap_trims_linked_sound_alike_and_moves_what_follows() {
+        let mut project = document().project().clone();
+        project.sequence.tracks[0].clips[1].link = Some(2);
+        let mut sound = Clip::new(9, 1, 1, TB, 30, vec![Operation::Trim { from: 0, to: 1000 }]);
+        sound.link = Some(2);
+        let later = Clip::new(10, 1, 1, TB, 60, vec![Operation::Trim { from: 0, to: 500 }]);
+        project.sequence.tracks[2].clips = vec![sound, later];
+        project.sequence.tracks[1].clips = vec![Clip::new(
+            11,
+            1,
+            0,
+            TB,
+            70,
+            vec![Operation::Trim { from: 0, to: 500 }],
+        )];
+        project.sequence.tracks[1].locked = true;
+        let mut document = Document::new(project).expect("valid");
+        let before = json(&document);
+
+        document
+            .apply(
+                &Edit::SnapToKeyframes {
+                    snaps: vec![KeyframeSnap {
+                        clip: 2,
+                        from: 0,
+                        to: 1500,
+                    }],
+                },
+                &EditContext::default(),
+            )
+            .expect("snaps");
+        let timeline = evaluate(document.project()).expect("evaluates");
+        let placement = |id| {
+            timeline
+                .placements()
+                .find(|p| p.clip == id)
+                .cloned()
+                .expect("placed")
+        };
+        // Half a second longer, from the same start.
+        assert_eq!((placement(2).start, placement(2).length), (30, 45));
+        // Its linked sound is trimmed alike.
+        assert_eq!(
+            (
+                placement(9).source_in,
+                placement(9).source_out,
+                placement(9).start
+            ),
+            (0, 1500, 30)
+        );
+        // What followed it moves by the change on every unlocked track, so
+        // nothing overlaps and nothing falls out of sync.
+        assert_eq!(placement(3).start, 105);
+        assert_eq!(placement(10).start, 75);
+        // A locked track is left where it is.
+        assert_eq!(placement(11).start, 70);
+
+        document.undo().expect("undo");
+        assert_eq!(json(&document), before);
+    }
+
+    #[test]
+    fn a_snap_refuses_a_held_or_reversed_clip_and_a_backwards_cut() {
+        let mut document = document();
+        document
+            .apply(
+                &Edit::SetReverse {
+                    clips: vec![1],
+                    reverse: true,
+                },
+                &EditContext::default(),
+            )
+            .expect("reverse");
+        for snaps in [
+            vec![KeyframeSnap {
+                clip: 1,
+                from: 0,
+                to: 500,
+            }],
+            vec![KeyframeSnap {
+                clip: 2,
+                from: 500,
+                to: 500,
+            }],
+        ] {
+            assert!(matches!(
+                document.apply(&Edit::SnapToKeyframes { snaps }, &EditContext::default()),
+                Err(EditError::Refused(_))
+            ));
+        }
+    }
+
     #[allow(clippy::too_many_lines, clippy::cast_precision_loss)]
     fn random_edit(random: &mut Random, document: &Document) -> Edit {
         let project = document.project();
@@ -4266,7 +4514,17 @@ mod tests {
         let tracks: Vec<TrackId> = project.sequence.tracks.iter().map(|t| t.id).collect();
         let clip = random.pick(&clips).unwrap_or(1);
         let track = random.pick(&tracks).unwrap_or(1);
-        match random.below(15) {
+        match random.below(16) {
+            15 => {
+                let from = random.int(5000);
+                Edit::SnapToKeyframes {
+                    snaps: vec![KeyframeSnap {
+                        clip,
+                        from,
+                        to: from + 1 + random.int(3000),
+                    }],
+                }
+            }
             14 => Edit::BypassAudio {
                 clips: vec![clip],
                 bypassed: random.below(2) == 0,

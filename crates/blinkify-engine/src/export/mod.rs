@@ -14,6 +14,7 @@ pub mod execute;
 pub mod facts;
 pub mod loudness;
 pub mod nut;
+pub mod overview;
 pub mod plan;
 pub mod profile;
 pub mod queue;

@@ -135,6 +135,17 @@
   color: var(--lossless);
 }
 
+.shell__lossless[data-state="seams"],
+.shell__lossless[data-state="re-encoded"] {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.shell__lossless[data-state="declined"] {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 .shell__window-controls {
   display: flex;
   gap: var(--space-1);
