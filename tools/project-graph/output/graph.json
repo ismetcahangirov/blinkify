@@ -5345,6 +5345,23 @@
         },
         {
           "dynamic": false,
+          "module": "./ThirdPartyNotices.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shell/ThirdPartyNotices.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./windowChrome.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -5447,7 +5464,8 @@
         }
       ],
       "dependents": [
-        "apps/desktop/src/shell/AppShell.tsx"
+        "apps/desktop/src/shell/AppShell.tsx",
+        "apps/desktop/src/shell/ThirdPartyNotices.test.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -5647,6 +5665,93 @@
       ],
       "dependents": [
         "apps/desktop/src/shell/AppShell.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/shell/ThirdPartyNotices.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AppBar.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shell/AppBar.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ThirdPartyNotices.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shell/ThirdPartyNotices.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/shell/ThirdPartyNotices.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shell/ThirdPartyNotices.test.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -17559,6 +17664,8 @@
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
+        "apps/desktop/src/shell/ThirdPartyNotices.test.tsx",
+        "apps/desktop/src/shell/ThirdPartyNotices.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
@@ -17665,6 +17772,144 @@
     {
       "source": "tools/apply-labels.mjs",
       "dependencies": [],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/attribution/attribution.mjs",
+      "dependencies": [],
+      "dependents": [
+        "tools/attribution/check.mjs",
+        "tools/attribution/coverage-test.mjs",
+        "tools/attribution/determinism-test.mjs",
+        "tools/attribution/generate.mjs",
+        "tools/attribution/injection-test.mjs"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/attribution/check.mjs",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./attribution.mjs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "tools/attribution/attribution.mjs",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/attribution/coverage-test.mjs",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./attribution.mjs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "tools/attribution/attribution.mjs",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/attribution/determinism-test.mjs",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./attribution.mjs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "tools/attribution/attribution.mjs",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/attribution/generate.mjs",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./attribution.mjs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "tools/attribution/attribution.mjs",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "tools/attribution/injection-test.mjs",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./attribution.mjs",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "tools/attribution/attribution.mjs",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [],
       "orphan": false,
       "valid": true
@@ -17979,8 +18224,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 346,
-    "totalDependenciesCruised": 822,
+    "totalCruised": 354,
+    "totalDependenciesCruised": 832,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

@@ -19,6 +19,7 @@ import { LosslessIndicator } from "../export/LosslessIndicator.js";
 import { HistoryControls } from "../project/HistoryControls.js";
 import { SequenceSettingsDialog } from "../project/SequenceSettingsDialog.js";
 import { ShortcutReference } from "../shortcuts/ShortcutReference.js";
+import { ThirdPartyNotices } from "./ThirdPartyNotices.js";
 import { keyFor } from "../shortcuts/shortcuts.js";
 import { useShortcutsUi } from "../shortcuts/shortcuts.store.js";
 import { useTimelineStore } from "../timeline/timeline.store.js";
@@ -58,6 +59,8 @@ interface MenuActions {
   readonly hasProject: boolean;
   /** Recently opened projects (#54), most recent first. */
   readonly recent: readonly { path: string; name: string }[];
+  /** Show the third-party notices (#73). */
+  readonly notices: () => void;
 }
 
 const menus = (
@@ -194,6 +197,11 @@ const menus = (
             disabled: true,
             onSelect: noop,
           },
+          {
+            id: "third-party-notices",
+            label: "Third-party notices…",
+            onSelect: actions.notices,
+          },
         ],
       },
     ],
@@ -207,6 +215,7 @@ export function AppBar() {
   const recent = useProjectStore((state) => state.recent);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [noticesOpen, setNoticesOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -245,6 +254,7 @@ export function AppBar() {
           sequenceSettings: hasProject ? () => setSettingsOpen(true) : null,
           hasProject,
           recent,
+          notices: () => setNoticesOpen(true),
         }).map((menu) => (
           <DropdownMenu
             key={menu.label}
@@ -318,6 +328,7 @@ export function AppBar() {
       />
       <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
       <ShortcutReference />
+      <ThirdPartyNotices open={noticesOpen} onOpenChange={setNoticesOpen} />
     </header>
   );
 }

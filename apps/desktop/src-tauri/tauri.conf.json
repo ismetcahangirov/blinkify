@@ -47,7 +47,8 @@
     "category": "Video",
     "externalBin": ["binaries/ffmpeg", "binaries/ffprobe"],
     "resources": {
-      "../../../crates/blinkify-engine/models/rnnoise/sh.rnnn": "rnnoise/sh.rnnn"
+      "../../../crates/blinkify-engine/models/rnnoise/sh.rnnn": "rnnoise/sh.rnnn",
+      "THIRD-PARTY-NOTICES.txt": "THIRD-PARTY-NOTICES.txt"
     },
     "fileAssociations": [
       {

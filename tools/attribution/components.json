@@ -1,0 +1,291 @@
+{
+  "components": [
+    {
+      "name": "FFmpeg (ffmpeg.exe and ffprobe.exe)",
+      "licence": "LGPL-2.1-or-later",
+      "sidecar": {
+        "lock": "tools/ffmpeg-sidecar/sidecar.lock.json",
+        "configure": "tools/ffmpeg-sidecar/configure.txt"
+      },
+      "notice": [
+        "ffmpeg.exe and ffprobe.exe, installed in the same folder as Blinkify.exe, are FFmpeg, licensed under the GNU Lesser General Public License version 2.1 or later. The build enables no GPL, non-free or version-3 component.",
+        "They are separate programs. Blinkify starts them as child processes and does not link them into itself. You may replace them with your own build of FFmpeg: Blinkify runs whichever ffmpeg.exe and ffprobe.exe are in its installation folder.",
+        "They are built from the unmodified FFmpeg source named below, with the configure line below, by the script published at https://github.com/ismetcahangirov/blinkify/tree/main/tools/ffmpeg-sidecar. The libraries built into them are listed next, each with its own licence."
+      ],
+      "texts": [
+        {
+          "licence": "LGPL-2.1-or-later",
+          "path": "tools/attribution/components/ffmpeg/COPYING.LGPLv2.1.txt"
+        }
+      ]
+    },
+    {
+      "name": "libvpx, built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "BSD-3-Clause, with the WebM Project's additional patent grant",
+      "notice": ["VP9 encoding and decoding."],
+      "texts": [
+        {
+          "licence": "BSD-3-Clause",
+          "path": "tools/attribution/components/libvpx/LICENSE.txt"
+        },
+        {
+          "licence": "patent grant",
+          "path": "tools/attribution/components/libvpx/PATENTS.txt"
+        }
+      ]
+    },
+    {
+      "name": "SVT-AV1, built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "BSD-3-Clause-Clear, with the Alliance for Open Media Patent License 1.0",
+      "notice": ["AV1 encoding."],
+      "texts": [
+        {
+          "licence": "BSD-3-Clause-Clear",
+          "path": "tools/attribution/components/svt-av1/LICENSE.txt"
+        },
+        {
+          "licence": "AOMedia Patent License 1.0",
+          "path": "tools/attribution/components/svt-av1/PATENTS.txt"
+        }
+      ]
+    },
+    {
+      "name": "libaom, built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "BSD-2-Clause, with the Alliance for Open Media Patent License 1.0",
+      "notice": ["AV1 encoding."],
+      "texts": [
+        {
+          "licence": "BSD-2-Clause",
+          "path": "tools/attribution/components/libaom/LICENSE.txt"
+        },
+        {
+          "licence": "AOMedia Patent License 1.0",
+          "path": "tools/attribution/components/libaom/PATENTS.txt"
+        }
+      ]
+    },
+    {
+      "name": "dav1d, built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "BSD-2-Clause",
+      "notice": ["AV1 decoding."],
+      "texts": [
+        {
+          "licence": "BSD-2-Clause",
+          "path": "tools/attribution/components/dav1d/COPYING.txt"
+        }
+      ]
+    },
+    {
+      "name": "Opus, built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "BSD-3-Clause",
+      "notice": ["Opus audio encoding."],
+      "texts": [
+        {
+          "licence": "BSD-3-Clause",
+          "path": "tools/attribution/components/opus/COPYING.txt"
+        }
+      ]
+    },
+    {
+      "name": "LAME, built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "LGPL-2.0-or-later",
+      "notice": [
+        "MP3 audio encoding. Covered by the same replaceability as FFmpeg above: it is part of ffmpeg.exe, a separate program you may replace."
+      ],
+      "texts": [
+        {
+          "licence": "LGPL-2.0-or-later",
+          "path": "tools/attribution/components/lame/COPYING.txt"
+        }
+      ]
+    },
+    {
+      "name": "libvorbis, built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "BSD-3-Clause",
+      "notice": ["Vorbis audio encoding."],
+      "texts": [
+        {
+          "licence": "BSD-3-Clause",
+          "path": "tools/attribution/components/libvorbis/COPYING.txt"
+        }
+      ]
+    },
+    {
+      "name": "libogg, built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "BSD-3-Clause",
+      "notice": ["The Ogg container, for Vorbis."],
+      "texts": [
+        {
+          "licence": "BSD-3-Clause",
+          "path": "tools/attribution/components/libogg/COPYING.txt"
+        }
+      ]
+    },
+    {
+      "name": "zimg, built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "WTFPL",
+      "notice": ["The zscale filter, for preview proxies."],
+      "texts": [
+        {
+          "licence": "WTFPL",
+          "path": "tools/attribution/components/zimg/COPYING.txt"
+        }
+      ]
+    },
+    {
+      "name": "SoX Resampler (soxr), built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "LGPL-2.1-or-later",
+      "notice": [
+        "Audio resampling. Covered by the same replaceability as FFmpeg above: it is part of ffmpeg.exe, a separate program you may replace."
+      ],
+      "texts": [
+        {
+          "licence": "notice",
+          "path": "tools/attribution/components/soxr/LICENCE.txt"
+        },
+        {
+          "licence": "LGPL-2.1-or-later",
+          "path": "tools/attribution/components/soxr/COPYING.LGPL.txt"
+        }
+      ]
+    },
+    {
+      "name": "Intel oneVPL dispatcher (libvpl), built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "MIT",
+      "notice": ["Intel Quick Sync hardware encoding."],
+      "texts": [
+        {
+          "licence": "MIT",
+          "path": "tools/attribution/components/libvpl/LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "name": "nv-codec-headers, built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "MIT",
+      "notice": ["NVIDIA NVENC and NVDEC hardware encoding and decoding."],
+      "texts": [
+        {
+          "licence": "MIT",
+          "path": "tools/attribution/components/nv-codec-headers/LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "name": "AMD Advanced Media Framework headers, built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "MIT",
+      "notice": ["AMD hardware encoding."],
+      "texts": [
+        {
+          "licence": "MIT",
+          "path": "tools/attribution/components/amf/LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "name": "zlib, built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "Zlib",
+      "notice": ["Compressed container headers."],
+      "texts": [
+        {
+          "licence": "Zlib",
+          "path": "tools/attribution/components/zlib/LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "name": "liblzma (XZ Utils), built into FFmpeg",
+      "version": "as supplied by the pinned FFmpeg build image",
+      "licence": "0BSD",
+      "notice": ["Compressed container headers."],
+      "texts": [
+        {
+          "licence": "notice",
+          "path": "tools/attribution/components/xz/COPYING.txt"
+        },
+        {
+          "licence": "0BSD",
+          "path": "tools/attribution/components/xz/COPYING.0BSD.txt"
+        }
+      ]
+    },
+    {
+      "name": "RNNoise, built into FFmpeg",
+      "version": "as ported into FFmpeg's arnndn filter",
+      "licence": "BSD-3-Clause",
+      "notice": ["The network that runs the noise reduction model."],
+      "texts": [
+        {
+          "licence": "BSD-3-Clause",
+          "path": "tools/attribution/components/rnnoise/COPYING.txt"
+        }
+      ]
+    },
+    {
+      "name": "RNNoise model somnolent-hogwash (rnnoise/sh.rnnn)",
+      "version": "2018-09-01, rnnoise-models commit 3eee541a283f",
+      "licence": "none claimed",
+      "notice": [
+        "The noise reduction model, by Gregor Richards, from https://github.com/GregorR/rnnoise-models. Its repository claims no copyright over the model; it is attributed anyway."
+      ],
+      "texts": [
+        {
+          "licence": "statement of the model's author",
+          "path": "tools/attribution/components/rnnoise-models/README-excerpt.txt"
+        }
+      ]
+    },
+    {
+      "name": "Inter (typeface)",
+      "version": "@fontsource-variable/inter 5.3.0, Latin subset, unmodified",
+      "licence": "OFL-1.1",
+      "notice": ["The interface typeface, embedded in the application."],
+      "texts": [
+        {
+          "licence": "OFL-1.1",
+          "path": "packages/ui/src/fonts/LICENSE-Inter.txt"
+        }
+      ]
+    },
+    {
+      "name": "JetBrains Mono (typeface)",
+      "version": "@fontsource/jetbrains-mono 5.3.0, weight 400, Latin subset, unmodified",
+      "licence": "OFL-1.1",
+      "notice": ["The timecode typeface, embedded in the application."],
+      "texts": [
+        {
+          "licence": "OFL-1.1",
+          "path": "packages/ui/src/fonts/LICENSE-JetBrainsMono.txt"
+        }
+      ]
+    },
+    {
+      "name": "smartcut (ported code)",
+      "version": "main branch, 2026-09",
+      "licence": "MIT",
+      "notice": [
+        "The smart-cut algorithm in Blinkify's export engine is ported from smartcut by Santtu Keskinen, https://github.com/skeskinen/smartcut."
+      ],
+      "texts": [
+        {
+          "licence": "MIT",
+          "path": "tools/attribution/components/smartcut/LICENSE.txt"
+        }
+      ]
+    }
+  ]
+}

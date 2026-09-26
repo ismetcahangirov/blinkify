@@ -785,3 +785,28 @@ body {
 .export-report__suggestion {
   color: var(--text-accent);
 }
+
+/* The third-party notices (#73): the installed attribution document, as
+   plain text. Wide enough for its 78-column lines, and scrolled inside the
+   dialog rather than growing it. */
+.third-party-notices {
+  width: min(760px, calc(100vw - 2 * var(--space-4)));
+}
+
+.third-party-notices__scroll {
+  height: min(560px, 70vh);
+}
+
+.third-party-notices__text {
+  margin: 0;
+  font-family: var(--type-family-mono);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.third-party-notices__problem {
+  margin: 0;
+  color: var(--danger);
+}

@@ -72,8 +72,7 @@ Libraries statically linked into those two binaries, and therefore shipped:
 
 Every one is permissive or LGPL, and LGPL is satisfied the same way as for
 FFmpeg itself: the whole sidecar is a separate, replaceable executable. Their
-licence texts ship in the attribution bundle tracked by
-[#73](https://github.com/ismetcahangirov/blinkify/issues/73).
+licence texts ship in the [attribution document](#licence-texts).
 
 **The FFmpeg entry is load-bearing.** It is invoked as a separate sidecar
 process, never linked into the Blinkify process, which is how the LGPL
@@ -169,8 +168,7 @@ Every package is MIT.
 They pull in a small set of their own — `react-remove-scroll`,
 `react-style-singleton`, `use-callback-ref`, `use-sidecar`, `aria-hidden` and
 `tslib` — all MIT or 0BSD, all shipped in the renderer bundle, and all covered
-by the generated attribution bundle tracked in
-[#73](https://github.com/ismetcahangirov/blinkify/issues/73).
+by the generated [attribution document](#licence-texts).
 
 **Storybook, axe-core and the testing libraries are deliberately absent from
 this file.** They are development dependencies, they do not reach a user, and
@@ -252,14 +250,20 @@ SOFTWARE.
 
 ## Licence texts
 
-**Not yet shipped with the installer.** This is an open obligation, not a solved
-one.
+This file says _why_ each component ships. The notices themselves — every
+package's licence text and copyright line, for every Rust crate the build
+resolves, every package in the renderer bundle, and everything above — are in
+[`apps/desktop/src-tauri/THIRD-PARTY-NOTICES.txt`](./apps/desktop/src-tauri/THIRD-PARTY-NOTICES.txt).
 
-The permissive licences above require the notice to travel with the binary. With
-496 transitive packages, the only version of that which stays true is
-**generated** at build time and bundled by the installer — a hand-maintained
-table goes stale on the first `cargo update`, and a stale attribution file is a
-compliance failure rather than a formatting one.
+That document is **generated**, never edited: `pnpm attribution` writes it from
+`cargo metadata` and the installed renderer dependencies, and
+`pnpm attribution:check` fails CI when a dependency moves without it being
+regenerated. The installer puts it beside `Blinkify.exe`, and the application
+shows it under **Help ▸ Third-party notices**, offline. How it is built, and why
+not with `cargo-about`, is
+[ADR-0017](./docs/decisions/ADR-0017-the-attribution-document-is-generated-from-local-sources.md).
 
-Tracked in [#73](https://github.com/ismetcahangirov/blinkify/issues/73). Until it
-lands, this document is the record and it covers direct dependencies only.
+A component added to the sections above that no package manager describes — a
+bundled binary, a model, a typeface, ported code — also needs an entry in
+[`tools/attribution/components.json`](./tools/attribution/components.json), with
+its licence text committed beside it.

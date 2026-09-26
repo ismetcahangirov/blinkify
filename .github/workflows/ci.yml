@@ -244,6 +244,23 @@ jobs:
       - name: That gate still rejects one (deny:test)
         run: pnpm deny:test
 
+      # #73: the notices the installer ships name every crate and renderer
+      # package in the tree. A dependency added without regenerating ships
+      # unattributed and nothing else would notice. Texts come from the
+      # registry sources `cargo metadata` has just unpacked and from
+      # node_modules; the tool makes no request of its own.
+      - name: Third-party notices are current (attribution:check)
+        run: pnpm attribution:check
+
+      - name: That gate still catches a new dependency (attribution:injection)
+        run: pnpm attribution:injection
+
+      - name: The notices are deterministic (attribution:determinism)
+        run: pnpm attribution:determinism
+
+      - name: Every crate is covered, or generation fails (attribution:coverage)
+        run: pnpm attribution:coverage
+
       # ADR-0002's first gate, #21: the bundled binary is asked what it is.
       # No GPL configuration, no software H.264 or HEVC encoder, the committed
       # configure line exactly, every encoder and filter Epics #6 and #7 need,
@@ -287,6 +304,18 @@ jobs:
             if ($version -notmatch 'blinkify') { throw "$exe is not the Blinkify build: $version" }
             Write-Output "$name installed and runs: $version"
           }
+
+      # #73: the notices the application shows under Help are a file the
+      # installer put beside it — and exactly the committed one.
+      - name: The installed third-party notices are the committed ones
+        shell: pwsh
+        run: |
+          $installed = Join-Path $env:LOCALAPPDATA 'Blinkify/THIRD-PARTY-NOTICES.txt'
+          if (-not (Test-Path $installed)) { throw "$installed was not installed" }
+          $expected = (Get-FileHash apps/desktop/src-tauri/THIRD-PARTY-NOTICES.txt).Hash
+          $actual = (Get-FileHash $installed).Hash
+          if ($actual -ne $expected) { throw "installed notices differ from the committed document" }
+          Write-Output "THIRD-PARTY-NOTICES.txt installed, $((Get-Item $installed).Length) bytes, matches the committed document"
 
       # Uploaded on every run so a reviewer can install the pull request rather
       # than take a green tick on faith. The installer is unsigned — see #14 and
