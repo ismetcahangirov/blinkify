@@ -162,7 +162,8 @@ describe("the export dialog", () => {
   });
 
   it("exports only to a destination the user chose", async () => {
-    answer({ ...SMART_CUT, lossless: true, reasons: [], snap: undefined });
+    const { snap: _snap, ...copied } = SMART_CUT;
+    answer({ ...copied, lossless: true, reasons: [] });
     show();
     const start = await screen.findByTestId("start-export");
     expect(start).toBeDisabled();
