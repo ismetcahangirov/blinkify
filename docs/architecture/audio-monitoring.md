@@ -9,7 +9,7 @@ audio drives is [`playback.md`](./playback.md).
  track 0 (the pictures' own sound)   track n (sound only: detached audio, music)
         │ decoder per segment                 │ decoder per segment
         ▼                                     ▼
-   insertion point (AudioInsert — Epic #7's filter chain attaches here)
+   insertion point (AudioInsert — after the clip's audio chain, which runs in its decoder)
         │                                     │
         └──── mixed, if the monitor hears the track (solo, track mute) ────┘
                                    │
@@ -43,8 +43,8 @@ places:
 `OutputBuffer` measures every sample the sink takes: what is being _played_,
 now, after the insertion point and before the monitor volume.
 
-- **Peak**: sample peak per channel over the last 300 ms, in dBFS. True peak is
-  Epic #7's (#46).
+- **Peak**: sample peak per channel over the last 300 ms, in dBFS. True peak
+  is measured by `audio::loudness` ([`audio-chain.md`](./audio-chain.md)).
 - **Short-term loudness**: ITU-R BS.1770-4 — K-weighting (the head's high shelf
   and the RLB high-pass, coefficients computed for the device's actual rate),
   mean square per 100 ms block, the mean of the last 30 blocks, ungated, as EBU
@@ -65,10 +65,12 @@ main one — its own decoders, started ahead of its own boundaries — and mixes
 the tracks the monitor hears. A gap on every track is silence, exactly, and the
 clock runs through it.
 
-Every segment's samples pass through `AudioInsert::process` after decoding and
-before the mix. It is `PassThrough` until Epic #7 attaches gain, RNNoise and
-normalisation there, and nothing assumes a chain is present. Because the meter
-sits after it, the user will see what the chain produced.
+Each segment's decoder runs the clip's audio chain — gain, noise reduction,
+normalisation — as FFmpeg filters, the same filters the export runs
+([`audio-chain.md`](./audio-chain.md)). Its samples then pass through
+`AudioInsert::process` before the mix; it is `PassThrough`, and nothing
+assumes otherwise. Because the meter sits after both, the user sees what the
+chain produced.
 
 ## Following the default device
 

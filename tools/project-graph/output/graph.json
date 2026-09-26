@@ -301,6 +301,216 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/inspector/AudioInspector.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AudioInspector.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/AudioInspector.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/inspector/AudioInspector.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./editGesture.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/editGesture.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./gain.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/gain.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./mixedValue.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/mixedValue.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/shell/zones/InspectorZone.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/inspector/ClipTimingFields.test.ts",
       "dependencies": [
         {
@@ -995,8 +1205,117 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/inspector/gain.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./gain.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/gain.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/inspector/gain.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../timeline/draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/inspector/gain.test.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1005,6 +1324,7 @@
       "source": "apps/desktop/src/inspector/mixedValue.ts",
       "dependencies": [],
       "dependents": [
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/inspector/speed.test.ts"
@@ -3217,6 +3537,8 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
@@ -3808,6 +4130,23 @@
     {
       "source": "apps/desktop/src/shell/zones/InspectorZone.tsx",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../inspector/AudioInspector.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/AudioInspector.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "../../inspector/SequenceSummary.js",
@@ -5914,10 +6253,14 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
+        "apps/desktop/src/inspector/gain.test.ts",
+        "apps/desktop/src/inspector/gain.ts",
         "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
@@ -7229,6 +7572,16 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/AudioStage.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/AudioSummary.ts",
       "dependencies": [],
       "dependents": [
@@ -7746,6 +8099,24 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./AudioStage",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/AudioStage.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./ClipMove",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -7773,6 +8144,24 @@
             "import"
           ],
           "resolved": "packages/types/src/generated/Edge.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Operation",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Operation.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8353,6 +8742,34 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/GainAdvice.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Loudness",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Loudness.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/GopKind.ts",
       "dependencies": [],
       "dependents": [
@@ -8653,6 +9070,16 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Loudness.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/GainAdvice.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/MasteringDisplay.ts",
       "dependencies": [],
       "dependents": [
@@ -8812,6 +9239,7 @@
         "packages/types/src/generated/AppliedClip.ts",
         "packages/types/src/generated/Clip.ts",
         "packages/types/src/generated/DiagnosticOperation.ts",
+        "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -10752,6 +11180,23 @@
         },
         {
           "dynamic": false,
+          "module": "./AudioStage",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/AudioStage.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./AudioSummary",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -11449,6 +11894,23 @@
         },
         {
           "dynamic": false,
+          "module": "./GainAdvice",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/GainAdvice.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./GopKind",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -11678,6 +12140,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/LoopRange.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./Loudness",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Loudness.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -12717,12 +13196,16 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/inspector/editGesture.ts",
+        "apps/desktop/src/inspector/gain.test.ts",
+        "apps/desktop/src/inspector/gain.ts",
         "apps/desktop/src/inspector/speed.test.ts",
         "apps/desktop/src/inspector/speed.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
@@ -14399,6 +14882,7 @@
       "dependents": [
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
@@ -14837,8 +15321,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 301,
-    "totalDependenciesCruised": 672,
+    "totalCruised": 308,
+    "totalDependenciesCruised": 695,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

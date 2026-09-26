@@ -109,6 +109,7 @@ pub fn run() {
             library::import_media,
             project::operations_at,
             project::plan_export,
+            project::gain_advice,
             updater::pending_update,
             updater::install_update
         ])

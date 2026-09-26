@@ -3,4 +3,4 @@
 /**
  * One step of a clip's audio chain.
  */
-export type AudioOperation = { "op": "gain", db: number, } | { "op": "denoise", strength: number, } | { "op": "normalise", targetLufs: number, };
+export type AudioOperation = { "op": "gain", db: number, ceilingDbtp: number, bypassed: boolean, } | { "op": "denoise", strength: number, bypassed: boolean, } | { "op": "normalise", targetLufs: number, ceilingDbtp: number, bypassed: boolean, };

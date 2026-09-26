@@ -1034,7 +1034,9 @@ fn single_sound<'a>(
     if let Some(reason) = sound.placement.forced {
         causes.push(Cause::Operation { reason });
     }
-    if !sound.placement.audio.is_empty() {
+    // A bypassed step is kept in the graph and applied to nothing: it does
+    // not stop the sound being copied.
+    if sound.placement.audio.iter().any(|step| !step.bypassed()) {
         causes.push(Cause::AudioChain);
     }
     if sound.placement.speed != (Rational { num: 1, den: 1 }) {

@@ -75,6 +75,11 @@ How Blinkify is put together and why the structure holds under change.
   the windows their frames depend on, leading pictures, in-band parameter
   sets across the joins, and the decline where no encoder matches (#41)
 
+- [`audio-chain.md`](./audio-chain.md) — one FFmpeg chain for a clip's sound
+  in the preview and the export, in a fixed order; gain with a two-stage
+  true-peak limiter; loudness and true-peak measurement, cached by content;
+  the limiter's effect worked out before export (#46)
+
 ## What does not belong here
 
 - **A choice between alternatives** — that is an ADR in

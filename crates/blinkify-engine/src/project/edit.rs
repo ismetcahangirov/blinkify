@@ -39,8 +39,8 @@ use super::settings::{CopyEligibility, SettingsError, StreamGeometry, copy_eligi
 use super::split::halves;
 use super::trim::{Edge, StreamExtent, reach, retimed, trim};
 use super::{
-    Clip, ClipId, Operation, Project, ProjectError, SequenceSettings, SourceId, SourceRef, Track,
-    TrackId, TrackKind,
+    AudioStage, Clip, ClipId, Operation, Project, ProjectError, SequenceSettings, SourceId,
+    SourceRef, Track, TrackId, TrackKind,
 };
 use crate::probe::Rational;
 use crate::time::{Rounding, rescale};
@@ -222,6 +222,20 @@ pub enum Edit {
     SetSettings {
         settings: SequenceSettings,
     },
+    /// Set one step of the clips' audio chain (Epic #7): `step` — a gain, a
+    /// noise reduction or a normalisation — replaces the clip's step of the
+    /// same kind, or is added. A gain of 0 dB or a noise reduction of 0 does
+    /// nothing, and removes the step, so the sound is copied again.
+    SetAudio {
+        clips: Vec<ClipId>,
+        step: Operation,
+    },
+    /// Remove one stage of the clips' audio chain, or with none named every
+    /// stage: back to the sound as recorded.
+    ResetAudio {
+        clips: Vec<ClipId>,
+        stage: Option<AudioStage>,
+    },
 }
 
 impl Edit {
@@ -271,6 +285,21 @@ impl Edit {
             }
             Self::RemoveClips { clips: ids } => clips(ids.len(), "Delete clip", "Delete"),
             Self::SetSettings { .. } => "Change sequence settings".to_owned(),
+            Self::SetAudio { clips: ids, step } => {
+                let what = match step.audio_stage() {
+                    Some(AudioStage::Denoise) => "noise reduction",
+                    Some(AudioStage::Normalise) => "loudness",
+                    Some(AudioStage::Gain) | None => "gain",
+                };
+                clips(
+                    ids.len(),
+                    &format!("Change {what}"),
+                    &format!("Change {what} of"),
+                )
+            }
+            Self::ResetAudio { clips: ids, .. } => {
+                clips(ids.len(), "Reset audio", "Reset audio of")
+            }
         }
     }
 }
@@ -630,6 +659,8 @@ fn compile(
             (changes, remaining)
         }
         Edit::SetReverse { clips, reverse } => (set_reverse(project, clips, *reverse)?, kept),
+        Edit::SetAudio { clips, step } => (set_audio(project, clips, *step)?, kept),
+        Edit::ResetAudio { clips, stage } => (reset_audio(project, clips, *stage)?, kept),
         Edit::RemoveTrack { .. }
         | Edit::MoveTrack { .. }
         | Edit::RenameTrack { .. }
@@ -1087,6 +1118,88 @@ fn set_reverse(
             operations,
             ..clip.clone()
         }));
+    }
+    Ok(changes)
+}
+
+/// Whether `step` does nothing at all: it is removed rather than kept.
+fn no_op(step: &Operation) -> bool {
+    match *step {
+        Operation::Gain { db, .. } => db == 0.0,
+        Operation::Denoise { strength, .. } => strength == 0.0,
+        _ => false,
+    }
+}
+
+/// The clip, if its sound can take an audio step: a video clip whose sound
+/// was detached plays none, and its audio clip is the one to change.
+fn sounding(project: &Project, id: ClipId) -> Result<&Clip, EditError> {
+    let (_, clip) = find(project, id)?;
+    if clip.detached {
+        return Err(EditError::Refused(format!(
+            "clip {id}'s sound was detached: change its audio clip instead"
+        )));
+    }
+    Ok(clip)
+}
+
+fn set_audio(
+    project: &Project,
+    clips: &[ClipId],
+    step: Operation,
+) -> Result<Vec<Change>, EditError> {
+    let Some(stage) = step.audio_stage() else {
+        return Err(EditError::Refused(format!(
+            "{step:?} is not a step of the audio chain"
+        )));
+    };
+    let mut changes = Vec::new();
+    for &id in &clips.iter().copied().collect::<BTreeSet<_>>() {
+        let clip = sounding(project, id)?;
+        super::check_operation(id, &step).map_err(|error| EditError::Refused(error.to_string()))?;
+        let mut operations: Vec<Operation> = clip
+            .operations
+            .iter()
+            .filter(|operation| operation.audio_stage() != Some(stage))
+            .copied()
+            .collect();
+        if !no_op(&step) {
+            operations.push(step);
+        }
+        if operations != clip.operations {
+            changes.push(Change::ReplaceClip(Clip {
+                operations,
+                ..clip.clone()
+            }));
+        }
+    }
+    Ok(changes)
+}
+
+fn reset_audio(
+    project: &Project,
+    clips: &[ClipId],
+    stage: Option<AudioStage>,
+) -> Result<Vec<Change>, EditError> {
+    let mut changes = Vec::new();
+    for &id in &clips.iter().copied().collect::<BTreeSet<_>>() {
+        let (_, clip) = find(project, id)?;
+        let operations: Vec<Operation> = clip
+            .operations
+            .iter()
+            .filter(|operation| match (operation.audio_stage(), stage) {
+                (None, _) => true,
+                (Some(_), None) => false,
+                (Some(found), Some(stage)) => found != stage,
+            })
+            .copied()
+            .collect();
+        if operations != clip.operations {
+            changes.push(Change::ReplaceClip(Clip {
+                operations,
+                ..clip.clone()
+            }));
+        }
     }
     Ok(changes)
 }
@@ -2718,7 +2831,7 @@ mod tests {
             TB,
             0,
             vec![
-                Operation::Gain { db: -3.0 },
+                Operation::gain(-3.0),
                 Operation::Trim { from: 0, to: 10 },
                 Operation::Speed {
                     ratio: Rational { num: 2, den: 1 },
@@ -2734,7 +2847,7 @@ mod tests {
         assert_eq!(
             trimmed.operations,
             vec![
-                Operation::Gain { db: -3.0 },
+                Operation::gain(-3.0),
                 Operation::Trim { from: 4, to: 6 },
                 Operation::Speed {
                     ratio: Rational { num: 2, den: 1 },
@@ -2747,10 +2860,7 @@ mod tests {
         let normal = respeeded(&trimmed, Rational { num: 2, den: 2 });
         assert_eq!(
             normal.operations,
-            vec![
-                Operation::Gain { db: -3.0 },
-                Operation::Trim { from: 4, to: 6 },
-            ]
+            vec![Operation::gain(-3.0), Operation::Trim { from: 4, to: 6 },]
         );
         assert_eq!(
             respeeded(&normal, Rational { num: 1, den: 2 })
@@ -3497,6 +3607,152 @@ mod tests {
             .expect("clip")
     }
 
+    fn audio_of(document: &Document, id: ClipId) -> Vec<Operation> {
+        clip_of(document, id)
+            .operations
+            .into_iter()
+            .filter(|operation| operation.audio_stage().is_some())
+            .collect()
+    }
+
+    #[test]
+    fn an_audio_step_replaces_its_kind_and_a_step_doing_nothing_is_removed() {
+        let mut document = document();
+        let set = |step| Edit::SetAudio {
+            clips: vec![1, 2],
+            step,
+        };
+        document
+            .apply(&set(Operation::gain(6.0)), &EditContext::default())
+            .expect("gain");
+        document
+            .apply(&set(Operation::denoise(0.5)), &EditContext::default())
+            .expect("denoise");
+        let louder = Operation::Gain {
+            db: 9.0,
+            ceiling_dbtp: -2.0,
+            bypassed: true,
+        };
+        document
+            .apply(&set(louder), &EditContext::default())
+            .expect("again");
+        // One gain, the latest; the other step kept.
+        assert_eq!(
+            audio_of(&document, 1),
+            vec![Operation::denoise(0.5), louder]
+        );
+        assert_eq!(audio_of(&document, 2), audio_of(&document, 1));
+        assert!(audio_of(&document, 3).is_empty());
+        // 0 dB is no gain at all: the step goes, so the sound can be copied.
+        document
+            .apply(&set(Operation::gain(0.0)), &EditContext::default())
+            .expect("zero");
+        assert_eq!(audio_of(&document, 1), vec![Operation::denoise(0.5)]);
+        // Undo steps back through each.
+        document.undo();
+        assert_eq!(
+            audio_of(&document, 1),
+            vec![Operation::denoise(0.5), louder]
+        );
+    }
+
+    #[test]
+    fn resetting_audio_removes_one_stage_or_all_and_nothing_else() {
+        let mut document = document();
+        for step in [
+            Operation::gain(3.0),
+            Operation::denoise(0.25),
+            Operation::normalise(-16.0),
+        ] {
+            document
+                .apply(
+                    &Edit::SetAudio {
+                        clips: vec![1],
+                        step,
+                    },
+                    &EditContext::default(),
+                )
+                .expect("set");
+        }
+        document
+            .apply(
+                &Edit::ResetAudio {
+                    clips: vec![1],
+                    stage: Some(AudioStage::Gain),
+                },
+                &EditContext::default(),
+            )
+            .expect("reset gain");
+        assert_eq!(
+            audio_of(&document, 1),
+            vec![Operation::denoise(0.25), Operation::normalise(-16.0)]
+        );
+        document
+            .apply(
+                &Edit::ResetAudio {
+                    clips: vec![1],
+                    stage: None,
+                },
+                &EditContext::default(),
+            )
+            .expect("reset all");
+        assert!(audio_of(&document, 1).is_empty());
+        // The trim is not audio, and stays.
+        assert_eq!(clip_of(&document, 1).operations.len(), 1);
+    }
+
+    #[test]
+    fn an_audio_step_out_of_range_or_not_audio_is_refused() {
+        let mut document = document();
+        let original = json(&document);
+        for step in [
+            Operation::Gain {
+                db: 3.0,
+                ceiling_dbtp: 0.5,
+                bypassed: false,
+            },
+            Operation::Gain {
+                db: f64::NAN,
+                ceiling_dbtp: -1.0,
+                bypassed: false,
+            },
+            Operation::denoise(1.5),
+            Operation::Reverse,
+        ] {
+            assert!(
+                document
+                    .apply(
+                        &Edit::SetAudio {
+                            clips: vec![1],
+                            step,
+                        },
+                        &EditContext::default(),
+                    )
+                    .is_err(),
+                "{step:?}"
+            );
+        }
+        assert_eq!(json(&document), original);
+    }
+
+    #[test]
+    fn a_detached_video_clip_takes_no_audio_step() {
+        let mut document = with_sound();
+        document
+            .apply(&Edit::DetachAudio { clips: vec![2] }, &at(&[2], 0))
+            .expect("detach");
+        assert!(matches!(
+            document.apply(
+                &Edit::SetAudio {
+                    clips: vec![2],
+                    step: Operation::gain(3.0),
+                },
+                &EditContext::default(),
+            ),
+            Err(EditError::Refused(_))
+        ));
+    }
+
     #[test]
     fn detaching_audio_makes_a_linked_sound_clip_of_the_same_file() {
         let mut document = with_sound();
@@ -3879,13 +4135,42 @@ mod tests {
         }
     }
 
+    #[allow(clippy::too_many_lines, clippy::cast_precision_loss)]
     fn random_edit(random: &mut Random, document: &Document) -> Edit {
         let project = document.project();
         let clips: Vec<ClipId> = project.clips().map(|(_, c)| c.id).collect();
         let tracks: Vec<TrackId> = project.sequence.tracks.iter().map(|t| t.id).collect();
         let clip = random.pick(&clips).unwrap_or(1);
         let track = random.pick(&tracks).unwrap_or(1);
-        match random.below(11) {
+        match random.below(13) {
+            11 => Edit::SetAudio {
+                clips: vec![clip],
+                step: match random.below(3) {
+                    0 => Operation::Gain {
+                        db: (random.int(80) - 40) as f64 / 2.0,
+                        ceiling_dbtp: -(random.int(20) as f64),
+                        bypassed: random.below(2) == 0,
+                    },
+                    1 => Operation::Denoise {
+                        strength: random.int(5) as f64 / 4.0,
+                        bypassed: random.below(2) == 0,
+                    },
+                    _ => Operation::Normalise {
+                        target_lufs: -(1 + random.int(30)) as f64,
+                        ceiling_dbtp: -1.0,
+                        bypassed: random.below(2) == 0,
+                    },
+                },
+            },
+            12 => Edit::ResetAudio {
+                clips: vec![clip],
+                stage: match random.below(4) {
+                    0 => Some(AudioStage::Denoise),
+                    1 => Some(AudioStage::Gain),
+                    2 => Some(AudioStage::Normalise),
+                    _ => None,
+                },
+            },
             0 => Edit::Rename {
                 name: format!("n{}", random.below(5)),
             },

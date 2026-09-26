@@ -15,10 +15,11 @@
 //!   Where none is copied, the caller's [`AudioTarget`] decides: high-bitrate
 //!   AAC by default, or a lossless target — FLAC or PCM — for a user who
 //!   repaired a recording and does not want a second lossy encode on top.
-//! - **The same processing as the preview.** Gain is `volume`, speed is
-//!   pitch-preserving `atempo`, exactly as the preview decoder applies them.
-//!   Denoise and normalise are Epic #7's; until they exist the export refuses
-//!   them rather than inventing a filter the preview does not play.
+//! - **The same processing as the preview.** The clip's audio chain comes
+//!   from [`chain::filters`], the function the preview decoder calls, and
+//!   speed is pitch-preserving `atempo`, as there. A step the chain does not
+//!   apply yet is refused rather than approximated by a filter the preview
+//!   does not play.
 //! - **Exact length.** The encoded stretch is padded and trimmed to the
 //!   segment's duration in samples, so sound and pictures stay aligned.
 //! - **Clean joins.** A lossy encoder needs the sound before a stretch to
@@ -34,6 +35,7 @@ use ts_rs::TS;
 
 use super::execute::{Container, ExportError, ExportInput};
 use super::plan::{ExportPlan, Media, Segment, SegmentSource};
+use crate::audio::chain;
 use crate::audio::decoder::tempo_stages;
 use crate::orchestrator::SidecarCommand;
 use crate::probe::{Rational, StreamInfo, StreamKind};
@@ -260,20 +262,14 @@ pub fn check(segment: &Segment) -> Result<(), ExportError> {
             )));
         }
     }
-    for operation in segment.sources.iter().flat_map(|source| &source.audio) {
-        match operation {
-            AudioOperation::Gain { .. } => {}
-            AudioOperation::Denoise { .. } => {
-                return Err(ExportError::Unsupported(
-                    "noise reduction, which arrives with Epic #7".to_owned(),
-                ));
-            }
-            AudioOperation::Normalise { .. } => {
-                return Err(ExportError::Unsupported(
-                    "loudness normalisation, which arrives with Epic #7".to_owned(),
-                ));
-            }
+    for step in segment.sources.iter().flat_map(|source| &source.audio) {
+        if step.bypassed() || chain::applies(step) {
+            continue;
         }
+        return Err(ExportError::Unsupported(match step {
+            AudioOperation::Denoise { .. } => "noise reduction, which arrives with #47".to_owned(),
+            _ => "loudness normalisation, which arrives with #48".to_owned(),
+        }));
     }
     Ok(())
 }
@@ -283,8 +279,9 @@ fn speed_of(source: &SegmentSource) -> f64 {
 }
 
 /// The filter chain of input `i`: its range with `preroll` samples of real
-/// sound either side (silence where the stream has none), its gain, its
-/// speed, and the encoding's rate and layout; and where to seek it from.
+/// sound either side (silence where the stream has none), at the encoding's
+/// rate, through the clip's audio chain, at its speed, in the encoding's
+/// layout; and where to seek it from.
 fn source_chain(
     i: usize,
     source: &SegmentSource,
@@ -302,7 +299,7 @@ fn source_chain(
     let stream_start = stream.start_seconds.unwrap_or(0.0).max(0.0);
     let from = (in_ - preroll_in).max(stream_start);
     let missing = (from - (in_ - preroll_in)).max(0.0);
-    let mut chain = format!(
+    let mut graph = format!(
         "[{i}:{stream}]atrim=start={from:.6}:end={end:.6},asetpts=PTS-STARTPTS",
         stream = source.stream,
         end = out + preroll_in,
@@ -310,27 +307,27 @@ fn source_chain(
     if missing > 0.0 {
         #[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss)]
         let delay = (missing * input_rate as f64).round() as i64;
-        let _ = write!(chain, ",adelay=delays={delay}S:all=1");
+        let _ = write!(graph, ",adelay=delays={delay}S:all=1");
     }
-    for operation in &source.audio {
-        if let AudioOperation::Gain { db } = operation {
-            let _ = write!(chain, ",volume={db}dB");
-        }
+    let _ = write!(graph, ",aresample={rate}");
+    let filters = chain::filters(&source.audio, encoding.sample_rate);
+    if !filters.is_empty() {
+        let _ = write!(graph, ",{filters}");
     }
     if source.motion == Some(Motion::Reverse) {
         // The priming either side is the same length, so reversed it is
         // still priming either side.
-        chain.push_str(",areverse");
+        graph.push_str(",areverse");
     }
     for factor in tempo_stages(speed) {
-        let _ = write!(chain, ",atempo={factor}");
+        let _ = write!(graph, ",atempo={factor}");
     }
     let _ = write!(
-        chain,
-        ",aresample={rate},aformat=channel_layouts={layout}[p{i}];",
+        graph,
+        ",aformat=channel_layouts={layout}[p{i}];",
         layout = encoding.layout()
     );
-    (from - SEEK_MARGIN_SECONDS, chain)
+    (from - SEEK_MARGIN_SECONDS, graph)
 }
 
 /// An encoder process for one audio segment, and where in its output the

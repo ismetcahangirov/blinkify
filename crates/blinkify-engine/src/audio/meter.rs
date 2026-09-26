@@ -47,13 +47,13 @@ pub struct MonitorLevels {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct Biquad {
+pub(crate) struct Biquad {
     b: [f64; 3],
     a: [f64; 3],
 }
 
 impl Biquad {
-    fn run(&self, state: &mut [f64; 4], x: f64) -> f64 {
+    pub(crate) fn run(&self, state: &mut [f64; 4], x: f64) -> f64 {
         let [x1, x2, y1, y2] = *state;
         let y = self.b[0] * x + self.b[1] * x1 + self.b[2] * x2 - self.a[1] * y1 - self.a[2] * y2;
         *state = [x, x1, y, y1];
@@ -62,7 +62,7 @@ impl Biquad {
 }
 
 /// The two K-weighting stages for `rate`.
-fn k_weighting(rate: f64) -> (Biquad, Biquad) {
+pub(crate) fn k_weighting(rate: f64) -> (Biquad, Biquad) {
     // Stage 1: the high shelf that models the head.
     let f0 = 1_681.974_450_955_533;
     let gain_db = 3.999_843_853_973_347;

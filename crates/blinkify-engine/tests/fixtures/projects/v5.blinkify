@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 5,
+  "name": "Schema 5 fixture",
+  "sources": {
+    "1": {
+      "path": "C:\\Footage\\beach.mp4",
+      "fingerprint": {
+        "size": 796488,
+        "modified": 1790000000000,
+        "contentHash": "0123456789abcdef0123456789abcdef"
+      }
+    },
+    "2": {
+      "path": "D:\\Music\\theme.m4a",
+      "fingerprint": {
+        "size": 4000000,
+        "modified": null,
+        "contentHash": "fedcba9876543210fedcba9876543210"
+      }
+    }
+  },
+  "sequence": {
+    "settings": {
+      "width": 1920,
+      "height": 1080,
+      "frameRate": {
+        "num": 30000,
+        "den": 1001
+      },
+      "pixelAspect": {
+        "num": 1,
+        "den": 1
+      },
+      "colour": "sdr"
+    },
+    "matchFirstClip": false,
+    "tracks": [
+      {
+        "id": 1,
+        "kind": "video",
+        "name": "",
+        "muted": false,
+        "solo": false,
+        "locked": false,
+        "collapsed": false,
+        "clips": [
+          {
+            "id": 1,
+            "source": 1,
+            "stream": 0,
+            "timeBase": {
+              "num": 1,
+              "den": 90000
+            },
+            "start": 0,
+            "operations": [
+              {
+                "op": "trim",
+                "from": 90000,
+                "to": 288000
+              },
+              {
+                "op": "speed",
+                "ratio": {
+                  "num": 2,
+                  "den": 1
+                }
+              },
+              {
+                "op": "reverse"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "kind": "audio",
+        "name": "Music",
+        "muted": false,
+        "solo": false,
+        "locked": true,
+        "collapsed": false,
+        "clips": [
+          {
+            "id": 2,
+            "source": 2,
+            "stream": 0,
+            "timeBase": {
+              "num": 1,
+              "den": 48000
+            },
+            "start": 30,
+            "operations": [
+              {
+                "op": "trim",
+                "from": 0,
+                "to": 480000
+              },
+              {
+                "op": "gain",
+                "db": -6.5,
+                "ceilingDbtp": -1.0,
+                "bypassed": false
+              },
+              {
+                "op": "denoise",
+                "strength": 0.25,
+                "bypassed": false
+              },
+              {
+                "op": "normalise",
+                "targetLufs": -16.0,
+                "ceilingDbtp": -1.0,
+                "bypassed": false
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

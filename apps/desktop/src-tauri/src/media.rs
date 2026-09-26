@@ -13,6 +13,7 @@ use std::thread;
 use std::time::Duration;
 
 use blinkify_engine::audio::MonitorLevels;
+use blinkify_engine::audio::loudness::{Loudness, MeasureRequest, measure_cached};
 use blinkify_engine::cache::Cache;
 use blinkify_engine::capability;
 use blinkify_engine::filmstrip::{self, Filmstrip, Filmstrips};
@@ -721,6 +722,24 @@ impl MediaEngine {
         if let Some(removed) = removed {
             removed.close();
         }
+    }
+
+    /// The file's probe: what its streams are.
+    pub(crate) fn info_of(&self, path: &Path) -> Result<Arc<MediaInfo>, String> {
+        self.prober()?.probe(path).map_err(|e| e.to_string())
+    }
+
+    /// How loud `request`'s stretch is, from the content-keyed cache when it
+    /// was measured before (Epic #7). Blocks for a full decode otherwise; the
+    /// callers are async commands, off the UI thread.
+    pub(crate) fn loudness(&self, request: &MeasureRequest) -> Result<Loudness, String> {
+        measure_cached(
+            self.orchestrator()?,
+            self.cache.as_ref(),
+            request,
+            &CancelToken::default(),
+        )
+        .map_err(|error| error.to_string())
     }
 
     pub(crate) fn source_media(&self, path: &Path) -> Result<SourceMedia, String> {

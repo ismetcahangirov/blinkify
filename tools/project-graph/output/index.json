@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 301,
-    "tests": 42,
+    "files": 308,
+    "tests": 44,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 109,
-      "tests": 36,
+      "files": 113,
+      "tests": 38,
       "untested": [
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
@@ -41,7 +41,7 @@
       ]
     },
     "packages/types": {
-      "files": 123,
+      "files": 126,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
@@ -51,6 +51,7 @@
         "packages/types/src/generated/AudioInfo.ts",
         "packages/types/src/generated/AudioOperation.ts",
         "packages/types/src/generated/AudioOutputState.ts",
+        "packages/types/src/generated/AudioStage.ts",
         "packages/types/src/generated/AudioSummary.ts",
         "packages/types/src/generated/AudioTarget.ts",
         "packages/types/src/generated/Cause.ts",
@@ -92,6 +93,7 @@
         "packages/types/src/generated/FrameRate.ts",
         "packages/types/src/generated/FrameRateMode.ts",
         "packages/types/src/generated/FrameSize.ts",
+        "packages/types/src/generated/GainAdvice.ts",
         "packages/types/src/generated/GopKind.ts",
         "packages/types/src/generated/Hdr.ts",
         "packages/types/src/generated/HdrTransfer.ts",
@@ -106,6 +108,7 @@
         "packages/types/src/generated/KeyframeAlternative.ts",
         "packages/types/src/generated/KeyframePoint.ts",
         "packages/types/src/generated/LoopRange.ts",
+        "packages/types/src/generated/Loudness.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
         "packages/types/src/generated/Media.ts",
         "packages/types/src/generated/MediaInfo.ts",
@@ -305,6 +308,42 @@
       "coveredByTests": [],
       "hasNoDependents": true
     },
+    "apps/desktop/src/inspector/AudioInspector.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/inspector/AudioInspector.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/inspector/editGesture.ts",
+        "apps/desktop/src/inspector/gain.ts",
+        "apps/desktop/src/inspector/mixedValue.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/shell/zones/InspectorZone.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/inspector/ClipTimingFields.test.ts": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -431,11 +470,42 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/editGesture.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/inspector/gain.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/inspector/gain.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/inspector/gain.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/inspector/gain.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/gain.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -445,6 +515,7 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/inspector/speed.test.ts"
@@ -1114,6 +1185,8 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
@@ -1160,6 +1233,7 @@
         "apps/desktop/src/timeline/timelineCommands.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
@@ -1331,6 +1405,7 @@
       "layer": "renderer",
       "isTest": false,
       "dependsOn": [
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/project/project.store.ts",
@@ -1732,10 +1807,14 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
+        "apps/desktop/src/inspector/gain.test.ts",
+        "apps/desktop/src/inspector/gain.ts",
         "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
@@ -1754,7 +1833,9 @@
         "apps/desktop/src/timeline/timelineMedia.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/inspector/gain.test.ts",
         "apps/desktop/src/timeline/assetDrop.test.ts",
         "apps/desktop/src/timeline/draw.test.ts",
         "apps/desktop/src/timeline/interaction.test.ts"
@@ -2192,6 +2273,18 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/AudioStage.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/AudioSummary.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2482,8 +2575,10 @@
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
+        "packages/types/src/generated/AudioStage.ts",
         "packages/types/src/generated/ClipMove.ts",
         "packages/types/src/generated/Edge.ts",
+        "packages/types/src/generated/Operation.ts",
         "packages/types/src/generated/Rational.ts",
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/TrackKind.ts"
@@ -2735,6 +2830,19 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/GainAdvice.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Loudness.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/GopKind.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2910,6 +3018,18 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Loudness.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/GainAdvice.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/MasteringDisplay.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -3020,6 +3140,7 @@
         "packages/types/src/generated/AppliedClip.ts",
         "packages/types/src/generated/Clip.ts",
         "packages/types/src/generated/DiagnosticOperation.ts",
+        "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -3758,6 +3879,7 @@
         "packages/types/src/generated/AudioInfo.ts",
         "packages/types/src/generated/AudioOperation.ts",
         "packages/types/src/generated/AudioOutputState.ts",
+        "packages/types/src/generated/AudioStage.ts",
         "packages/types/src/generated/AudioSummary.ts",
         "packages/types/src/generated/AudioTarget.ts",
         "packages/types/src/generated/Cause.ts",
@@ -3799,6 +3921,7 @@
         "packages/types/src/generated/FrameRate.ts",
         "packages/types/src/generated/FrameRateMode.ts",
         "packages/types/src/generated/FrameSize.ts",
+        "packages/types/src/generated/GainAdvice.ts",
         "packages/types/src/generated/GopKind.ts",
         "packages/types/src/generated/Hdr.ts",
         "packages/types/src/generated/HdrTransfer.ts",
@@ -3813,6 +3936,7 @@
         "packages/types/src/generated/KeyframeAlternative.ts",
         "packages/types/src/generated/KeyframePoint.ts",
         "packages/types/src/generated/LoopRange.ts",
+        "packages/types/src/generated/Loudness.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
         "packages/types/src/generated/Media.ts",
         "packages/types/src/generated/MediaInfo.ts",
@@ -3887,12 +4011,16 @@
         "packages/types/src/generated/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/inspector/editGesture.ts",
+        "apps/desktop/src/inspector/gain.test.ts",
+        "apps/desktop/src/inspector/gain.ts",
         "apps/desktop/src/inspector/speed.test.ts",
         "apps/desktop/src/inspector/speed.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
@@ -3941,8 +4069,10 @@
         "apps/desktop/src/update.store.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/editGesture.test.ts",
+        "apps/desktop/src/inspector/gain.test.ts",
         "apps/desktop/src/inspector/speed.test.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
@@ -4498,6 +4628,7 @@
       "dependedOnBy": [
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",

@@ -112,15 +112,16 @@ The encoding is reported in `ExportOutcome.audio` for the export report.
 ### The filter graph
 
 Each source is trimmed to its range in the stream's own time
-(`-copyts`, `atrim`), given its gain (`volume`) and speed (`atempo`, in the
-same stages the preview uses), resampled to the encoding's rate and layout,
-and — where several sounds play at once — mixed with `amix` at unity gain.
-The result is padded and trimmed to exactly the segment's length in samples,
-so sound and pictures end together.
+(`-copyts`, `atrim`), resampled to the encoding's rate, put through its audio
+chain — `chain::filters`, the function the preview's decoder calls too
+([`audio-chain.md`](./audio-chain.md)) — then given its speed (`atempo`, in
+the same stages the preview uses) and the encoding's layout, and — where
+several sounds play at once — mixed with `amix` at unity gain. The result is
+padded and trimmed to exactly the segment's length in samples, so sound and
+pictures end together.
 
-Denoise and normalise are refused until Epic #7 gives the preview and the
-export the same filter for them; the export never applies processing the
-preview does not play.
+A step the chain does not apply yet is refused rather than approximated; the
+export never applies processing the preview does not play.
 
 ### Joins
 

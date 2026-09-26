@@ -25,7 +25,7 @@ use std::time::{Duration, Instant};
 use super::clock::{Anchor, PlaybackClock};
 use super::monitor::{AudioInsert, MonitorSettings};
 use super::plan::{PlaybackPlan, ProgramTime, Segment, TrackId, next_boundary, segment_at};
-use crate::audio::{AudioDecoder, AudioRequest, CHANNELS, OutputBuffer, SampleRing};
+use crate::audio::{AudioDecoder, AudioRequest, CHANNELS, OutputBuffer, SampleRing, chain};
 use crate::orchestrator::Orchestrator;
 use crate::project::evaluate::AudioOperation;
 
@@ -154,30 +154,40 @@ fn start_lane(
     segment: usize,
     at: ProgramTime,
 ) -> Option<Lane> {
-    let seg = segments.get(segment)?;
-    let audio = seg.source.audio?;
     let rate = config.buffer.sample_rate();
+    let request = audio_request(segments.get(segment)?, at, rate, config.speed)?;
     let ring = Arc::new(SampleRing::new(
         LANE_SECONDS * usize::try_from(rate).unwrap_or(48_000),
     ));
-    let decoder = AudioDecoder::start(
-        &config.orchestrator,
-        &AudioRequest {
-            source: seg.source.path.clone(),
-            stream: audio.index,
-            start_seconds: seg.source_seconds_at(at),
-            stream_start_seconds: audio.start_seconds,
-            sample_rate: rate,
-            // The clip's own speed (#30), under the transport's.
-            tempo: config.speed * seg.speed_factor(),
-        },
-        Arc::clone(&ring),
-    );
+    let decoder = AudioDecoder::start(&config.orchestrator, &request, Arc::clone(&ring));
     Some(Lane {
         segment,
         starts_at: at,
         ring,
         _decoder: decoder,
+    })
+}
+
+/// What the preview decodes to play `segment` from timeline position `at`
+/// at `sample_rate` and transport `speed`: `None` when it has no sound.
+#[must_use]
+pub fn audio_request(
+    segment: &Segment,
+    at: ProgramTime,
+    sample_rate: u32,
+    speed: f64,
+) -> Option<AudioRequest> {
+    let audio = segment.source.audio?;
+    Some(AudioRequest {
+        source: segment.source.path.clone(),
+        stream: audio.index,
+        start_seconds: segment.source_seconds_at(at),
+        stream_start_seconds: audio.start_seconds,
+        sample_rate,
+        // The clip's own speed (#30), under the transport's.
+        tempo: speed * segment.speed_factor(),
+        // The clip's audio chain, exactly as the export builds it.
+        filters: chain::filters(&segment.audio, sample_rate),
     })
 }
 
@@ -361,9 +371,8 @@ fn write_chunk(
             // Whatever did not arrive in time stays silent.
             lane.ring.take(samples);
         }
-        // The clip's audio chain as the evaluator resolved it (#30), then
-        // Epic #7's insert — both before the mix and the meter.
-        render_chain(&segment.audio, samples);
+        // The clip's audio chain ran in its decoder; the insert is after it,
+        // and both are before the mix and the meter.
         insert.process(track.id, i, samples, rate);
         if monitor.audible(track.id) {
             for (out, sample) in mix.iter_mut().zip(samples.iter()) {
@@ -375,32 +384,10 @@ fn write_chunk(
     walk.written += frames;
 }
 
-/// Apply what of a clip's audio chain the preview renders itself. Gain is
-/// exact arithmetic. Denoise and normalise are rendered by their own filters
-/// when #47 and #48 land; until then the preview plays them unprocessed and
-/// the diagnostic view says so (`chain_rendered`).
-fn render_chain(chain: &[AudioOperation], samples: &mut [f32]) {
-    let gain_db: f64 = chain
-        .iter()
-        .map(|operation| match *operation {
-            AudioOperation::Gain { db } => db,
-            AudioOperation::Denoise { .. } | AudioOperation::Normalise { .. } => 0.0,
-        })
-        .sum();
-    if gain_db == 0.0 {
-        return;
-    }
-    #[allow(clippy::cast_possible_truncation)]
-    let factor = 10_f64.powf(gain_db / 20.0) as f32;
-    for sample in samples {
-        *sample *= factor;
-    }
-}
-
-/// Whether the preview renders `operation` itself.
+/// Whether the preview renders `operation` itself: what the chain applies.
 #[must_use]
 pub fn chain_rendered(operation: &AudioOperation) -> bool {
-    matches!(operation, AudioOperation::Gain { .. })
+    chain::applies(operation)
 }
 
 /// Start what plays next on each track — its following segment, or the

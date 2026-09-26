@@ -16,6 +16,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
+use blinkify_engine::audio::chain;
 use blinkify_engine::export::audio::AudioTarget;
 use blinkify_engine::export::execute::{
     ExportError, ExportInput, ExportOutcome, ExportRequest, export,
@@ -25,7 +26,7 @@ use blinkify_engine::export::plan::{ExportPlan, Media, SourceFacts, plan};
 use blinkify_engine::keyframes::KeyframeIndex;
 use blinkify_engine::orchestrator::{CancelToken, Flow, JobOptions, Priority, SidecarCommand};
 use blinkify_engine::probe::{MediaInfo, Prober, Rational};
-use blinkify_engine::project::evaluate::evaluate;
+use blinkify_engine::project::evaluate::{AudioOperation, evaluate};
 use blinkify_engine::project::{
     Clip, Operation, Project, SequenceSettings, SourceRef, Track, TrackKind,
 };
@@ -192,7 +193,7 @@ fn a_gain_change_re_encodes_the_sound_and_copies_every_picture() {
     let plan = source.plan(vec![Track::new(
         1,
         TrackKind::Video,
-        vec![source.clip(1, 0, from, to, &[Operation::Gain { db: 6.0 }])],
+        vec![source.clip(1, 0, from, to, &[Operation::gain(6.0)])],
     )]);
     let audio_tiers: Vec<ExportTier> = plan
         .segments
@@ -227,7 +228,7 @@ fn a_gain_change_re_encodes_the_sound_and_copies_every_picture() {
         }
         assert!(!command.contains("-c:v"), "{command}");
     }
-    assert!(outcome.commands.iter().any(|c| c.contains("volume=6dB")));
+    assert!(outcome.commands.iter().any(|c| c.contains("volume=6dB,")));
     // Sound and pictures end together, to within one audio frame.
     let pictures = duration(&target, "v:0");
     let sound = duration(&target, "a:0");
@@ -242,7 +243,7 @@ fn a_lossless_target_decodes_to_exactly_the_filtered_sound() {
     let plan = source.plan(vec![Track::new(
         1,
         TrackKind::Video,
-        vec![source.clip(1, 0, from, to, &[Operation::Gain { db: -4.5 }])],
+        vec![source.clip(1, 0, from, to, &[Operation::gain(-4.5)])],
     )]);
     let target = common::scratch("export-audio-flac").join("quieter.mkv");
     let outcome = run(&plan, &source, &target, AudioTarget::Flac).expect("exports");
@@ -250,8 +251,14 @@ fn a_lossless_target_decodes_to_exactly_the_filtered_sound() {
     assert!(encoding.lossless);
     assert_eq!(encoding.codec, "flac");
 
-    // The same processing, applied by FFmpeg directly to the source, at the
-    // lossless targets' 24 bits.
+    // The same processing — the audio chain as the engine builds it —
+    // applied by FFmpeg directly to the source, at the lossless targets' 24
+    // bits.
+    let gain = AudioOperation::Gain {
+        db: -4.5,
+        ceiling_dbtp: -1.0,
+        bypassed: false,
+    };
     let tb = source.video_tb();
     let seconds = |ticks: i64| ticks as f64 * tb.num as f64 / tb.den as f64;
     let reference = decoded_md5(
@@ -263,9 +270,10 @@ fn a_lossless_target_decodes_to_exactly_the_filtered_sound() {
             .option(
                 "-af",
                 format!(
-                    "atrim=start={:.6}:end={:.6},asetpts=PTS-STARTPTS,volume=-4.5dB,aresample=48000,aformat=channel_layouts=stereo",
+                    "atrim=start={:.6}:end={:.6},asetpts=PTS-STARTPTS,aresample=48000,{},aformat=channel_layouts=stereo",
                     seconds(from),
-                    seconds(to)
+                    seconds(to),
+                    chain::filters(&[gain], 48_000),
                 ),
             )
             .option("-c:a", "pcm_s24le"),
@@ -289,7 +297,7 @@ fn a_sound_between_copies_is_encoded_to_match_them() {
     let tb = source.video_tb();
     let frames = |ticks: i64| ticks * 30 * tb.num / tb.den;
     let first = source.clip(1, 0, k[0], k[1], &[]);
-    let second = source.clip(2, frames(k[1]), k[1], k[2], &[Operation::Gain { db: 3.0 }]);
+    let second = source.clip(2, frames(k[1]), k[1], k[2], &[Operation::gain(3.0)]);
     let third = source.clip(3, frames(k[2]), k[2], k[4], &[]);
     let plan = source.plan(vec![Track::new(
         1,
@@ -364,7 +372,7 @@ fn an_invalid_container_and_codec_pair_is_refused_before_anything_runs() {
             0,
             video.keyframes[0].pts.max(0),
             end,
-            &[Operation::Gain { db: 2.0 }],
+            &[Operation::gain(2.0)],
         )],
     )]);
     let dir = common::scratch("export-audio-refused");
@@ -386,7 +394,7 @@ fn an_invalid_container_and_codec_pair_is_refused_before_anything_runs() {
 }
 
 #[test]
-fn an_operation_the_preview_does_not_play_yet_is_refused() {
+fn a_step_the_chain_does_not_apply_yet_is_refused() {
     let source = source("h264-high-closed-gop.mp4");
     let plan = source.plan(vec![Track::new(
         1,
@@ -396,7 +404,7 @@ fn an_operation_the_preview_does_not_play_yet_is_refused() {
             0,
             source.keyframe(1),
             source.keyframe(2),
-            &[Operation::Denoise { strength: 0.5 }],
+            &[Operation::denoise(0.5)],
         )],
     )]);
     let target = common::scratch("export-audio-denoise").join("out.mp4");

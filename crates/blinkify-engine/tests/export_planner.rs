@@ -306,7 +306,7 @@ fn an_out_point_on_an_open_gop_keyframe_is_a_seam() {
 #[test]
 fn a_gain_change_copies_the_pictures_and_re_encodes_only_the_sound() {
     let mut clip = video_clip(1, 1, 0, 2 * SECOND, 5 * SECOND);
-    clip.push(Operation::Gain { db: 6.0 });
+    clip.push(Operation::gain(6.0));
     let project = project(1, vec![video_track(vec![clip])]);
     let plan = plan_of(&project, &one_source());
     let video = of(&plan, Media::Video);
@@ -638,7 +638,7 @@ fn generated(random: &mut Random, clips_per_track: usize) -> Project {
                 )
             };
             match random.int(6) {
-                0 => clip.push(Operation::Gain { db: -3.0 }),
+                0 => clip.push(Operation::gain(-3.0)),
                 1 => clip.push(Operation::Speed {
                     ratio: Rational {
                         num: 1 + random.int(4),

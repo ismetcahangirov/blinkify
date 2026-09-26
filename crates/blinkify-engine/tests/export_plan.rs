@@ -58,7 +58,7 @@ fn project_of(path: &Path, facts: &SourceFacts, from: i64, to: i64, gain: bool) 
         vec![Operation::Trim { from, to }],
     );
     if gain {
-        clip.push(Operation::Gain { db: 3.0 });
+        clip.push(Operation::gain(3.0));
     }
     project.sequence.tracks = vec![Track::new(1, TrackKind::Video, vec![clip])];
     project

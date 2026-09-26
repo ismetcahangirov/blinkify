@@ -20,7 +20,7 @@ use super::{ProjectError, SCHEMA_VERSION};
 type Migration = fn(Value) -> Result<Value, ProjectError>;
 
 /// `MIGRATIONS[n]` migrates version `n + 1` to `n + 2`.
-const MIGRATIONS: &[Migration] = &[v1_to_v2, v2_to_v3, v3_to_v4];
+const MIGRATIONS: &[Migration] = &[v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5];
 
 /// Schema 2 (#57): the sequence records whether its settings still wait for
 /// the first clip. A version-1 sequence with no clip had never been given
@@ -133,6 +133,49 @@ fn v3_to_v4(mut value: Value) -> Result<Value, ProjectError> {
     Ok(value)
 }
 
+/// Schema 5 (#46): the audio steps carry their full settings. Gain and
+/// normalisation hold a true-peak ceiling — until now implied, now the
+/// default −1 dBTP — and every audio step can be bypassed, which none was.
+fn v4_to_v5(mut value: Value) -> Result<Value, ProjectError> {
+    let object = value
+        .as_object_mut()
+        .ok_or_else(|| ProjectError::Corrupt("the project is not an object".to_owned()))?;
+    let clips = object
+        .get_mut("sequence")
+        .and_then(|sequence| sequence.get_mut("tracks"))
+        .and_then(Value::as_array_mut)
+        .into_iter()
+        .flatten()
+        .filter_map(|track| track.get_mut("clips").and_then(Value::as_array_mut))
+        .flatten();
+    for clip in clips {
+        let operations = clip
+            .get_mut("operations")
+            .and_then(Value::as_array_mut)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_object_mut);
+        for operation in operations {
+            let kind = operation
+                .get("op")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_owned();
+            if matches!(kind.as_str(), "gain" | "normalise") {
+                operation.insert(
+                    "ceilingDbtp".to_owned(),
+                    Value::from(super::DEFAULT_CEILING_DBTP),
+                );
+            }
+            if matches!(kind.as_str(), "gain" | "denoise" | "normalise") {
+                operation.insert("bypassed".to_owned(), Value::Bool(false));
+            }
+        }
+    }
+    object.insert("schemaVersion".to_owned(), Value::from(5));
+    Ok(value)
+}
+
 #[cfg(test)]
 #[allow(
     clippy::expect_used,
@@ -216,6 +259,35 @@ mod tests {
             false
         );
         assert!(v1_to_v2(json!({ "schemaVersion": 1 })).is_err());
+    }
+
+    #[test]
+    fn schema_4_audio_steps_gain_the_default_ceiling_and_are_not_bypassed() {
+        let v4 = json!({
+            "schemaVersion": 4,
+            "sequence": { "tracks": [{ "clips": [{ "operations": [
+                { "op": "trim", "from": 0, "to": 1 },
+                { "op": "gain", "db": 3.0 },
+                { "op": "denoise", "strength": 0.5 },
+                { "op": "normalise", "targetLufs": -16.0 }
+            ] }] }] }
+        });
+        let migrated = v4_to_v5(v4).expect("migrate");
+        assert_eq!(migrated["schemaVersion"], 5);
+        let operations = &migrated["sequence"]["tracks"][0]["clips"][0]["operations"];
+        assert_eq!(operations[0], json!({ "op": "trim", "from": 0, "to": 1 }));
+        assert_eq!(
+            operations[1],
+            json!({ "op": "gain", "db": 3.0, "ceilingDbtp": -1.0, "bypassed": false })
+        );
+        assert_eq!(
+            operations[2],
+            json!({ "op": "denoise", "strength": 0.5, "bypassed": false })
+        );
+        assert_eq!(
+            operations[3],
+            json!({ "op": "normalise", "targetLufs": -16.0, "ceilingDbtp": -1.0, "bypassed": false })
+        );
     }
 
     #[test]

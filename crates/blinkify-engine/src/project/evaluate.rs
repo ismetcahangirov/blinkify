@@ -26,7 +26,9 @@ use serde::Serialize;
 use thiserror::Error;
 use ts_rs::TS;
 
-use super::{Clip, ClipId, Operation, Project, ProjectError, SourceId, TrackId, TrackKind};
+use super::{
+    AudioStage, Clip, ClipId, Operation, Project, ProjectError, SourceId, TrackId, TrackKind,
+};
 use crate::probe::Rational;
 use crate::tier::ReEncodeReason;
 use crate::time::{Rounding, rescale};
@@ -36,18 +38,95 @@ use crate::time::{Rounding, rescale};
 #[serde(tag = "op", rename_all = "kebab-case", rename_all_fields = "camelCase")]
 #[ts(export)]
 pub enum AudioOperation {
-    Gain { db: f64 },
-    Denoise { strength: f64 },
-    Normalise { target_lufs: f64 },
+    Gain {
+        db: f64,
+        ceiling_dbtp: f64,
+        bypassed: bool,
+    },
+    Denoise {
+        strength: f64,
+        bypassed: bool,
+    },
+    Normalise {
+        target_lufs: f64,
+        ceiling_dbtp: f64,
+        bypassed: bool,
+    },
+}
+
+impl AudioOperation {
+    /// Whether the step is bypassed: kept, and not applied.
+    #[must_use]
+    pub fn bypassed(&self) -> bool {
+        match *self {
+            Self::Gain { bypassed, .. }
+            | Self::Denoise { bypassed, .. }
+            | Self::Normalise { bypassed, .. } => bypassed,
+        }
+    }
+
+    /// Where the step runs in the chain's fixed order.
+    #[must_use]
+    pub fn stage(&self) -> AudioStage {
+        match self {
+            Self::Denoise { .. } => AudioStage::Denoise,
+            Self::Gain { .. } => AudioStage::Gain,
+            Self::Normalise { .. } => AudioStage::Normalise,
+        }
+    }
+
+    /// The operation this step came from.
+    #[must_use]
+    pub fn operation(&self) -> Operation {
+        match *self {
+            Self::Gain {
+                db,
+                ceiling_dbtp,
+                bypassed,
+            } => Operation::Gain {
+                db,
+                ceiling_dbtp,
+                bypassed,
+            },
+            Self::Denoise { strength, bypassed } => Operation::Denoise { strength, bypassed },
+            Self::Normalise {
+                target_lufs,
+                ceiling_dbtp,
+                bypassed,
+            } => Operation::Normalise {
+                target_lufs,
+                ceiling_dbtp,
+                bypassed,
+            },
+        }
+    }
 }
 
 /// The audio-chain step `operation` is, if it is one.
 #[must_use]
 pub fn audio_operation(operation: &Operation) -> Option<AudioOperation> {
     match *operation {
-        Operation::Gain { db } => Some(AudioOperation::Gain { db }),
-        Operation::Denoise { strength } => Some(AudioOperation::Denoise { strength }),
-        Operation::Normalise { target_lufs } => Some(AudioOperation::Normalise { target_lufs }),
+        Operation::Gain {
+            db,
+            ceiling_dbtp,
+            bypassed,
+        } => Some(AudioOperation::Gain {
+            db,
+            ceiling_dbtp,
+            bypassed,
+        }),
+        Operation::Denoise { strength, bypassed } => {
+            Some(AudioOperation::Denoise { strength, bypassed })
+        }
+        Operation::Normalise {
+            target_lufs,
+            ceiling_dbtp,
+            bypassed,
+        } => Some(AudioOperation::Normalise {
+            target_lufs,
+            ceiling_dbtp,
+            bypassed,
+        }),
         Operation::Trim { .. }
         | Operation::Speed { .. }
         | Operation::Freeze { .. }
@@ -183,11 +262,7 @@ impl Placement {
             Some(Motion::Reverse) => operations.push(Operation::Reverse),
             None => {}
         }
-        operations.extend(self.audio.iter().map(|operation| match *operation {
-            AudioOperation::Gain { db } => Operation::Gain { db },
-            AudioOperation::Denoise { strength } => Operation::Denoise { strength },
-            AudioOperation::Normalise { target_lufs } => Operation::Normalise { target_lufs },
-        }));
+        operations.extend(self.audio.iter().map(AudioOperation::operation));
         operations
     }
 }
@@ -441,10 +516,8 @@ fn place(
                     speed.1.checked_mul(ratio.den).ok_or_else(overflow)?,
                 );
             }
-            Operation::Gain { db } => audio.push(AudioOperation::Gain { db }),
-            Operation::Denoise { strength } => audio.push(AudioOperation::Denoise { strength }),
-            Operation::Normalise { target_lufs } => {
-                audio.push(AudioOperation::Normalise { target_lufs });
+            Operation::Gain { .. } | Operation::Denoise { .. } | Operation::Normalise { .. } => {
+                audio.extend(audio_operation(operation));
             }
             Operation::Freeze { frames } => hold = Some(frames),
             Operation::Reverse => reverse = true,
@@ -601,12 +674,12 @@ mod tests {
                 0,
                 vec![
                     Operation::Trim { from: 0, to: 9 },
-                    Operation::Gain { db: -3.0 },
+                    Operation::gain(-3.0),
                     Operation::Trim {
                         from: 90_000,
                         to: 180_000,
                     },
-                    Operation::Normalise { target_lufs: -16.0 },
+                    Operation::normalise(-16.0),
                 ],
             ),
         ]))
@@ -624,8 +697,8 @@ mod tests {
                     from: 90_000,
                     to: 180_000
                 },
-                Operation::Gain { db: -3.0 },
-                Operation::Normalise { target_lufs: -16.0 },
+                Operation::gain(-3.0),
+                Operation::normalise(-16.0),
             ]
         );
         // The gap between them has nothing, and the clip boundary is exact.
@@ -637,7 +710,7 @@ mod tests {
 
     #[test]
     fn an_unusable_graph_is_an_error_not_a_panic() {
-        let untrimmed = project(vec![clip(1, 0, vec![Operation::Gain { db: 1.0 }])]);
+        let untrimmed = project(vec![clip(1, 0, vec![Operation::gain(1.0)])]);
         assert_eq!(evaluate(&untrimmed), Err(EvaluateError::Untrimmed(1)));
 
         let overlapping = project(vec![
