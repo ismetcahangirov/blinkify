@@ -10,14 +10,12 @@
 # So they run here: weekly, on demand, and on a release tag.
 #
 # ────────────────────────────────────────────────────────────────────────────
-# The losslessness suite is NOT YET A GATE: it belongs to Epic #6 (#45), and
-# until it lands its job reports that it is absent and says so in the run
-# summary. The timeline benchmark (#33) exists: `pnpm bench:timeline`.
-#
-# The job for an absent suite is deliberately written now, because the shape of
-# the split — what blocks a merge versus what blocks a release — is a decision
-# from Epic #1 (#13) and belongs in the repository where the next person will
-# find it, not in an issue comment.
+# The losslessness suite (#45) runs in the pull-request gate too — it fits the
+# budget, and a regression in the product's one claim should not wait for a
+# release to be found. Here it runs again on a freshly generated corpus, and
+# the corpus is generated a second time and required to be byte-identical:
+# evidence produced from a corpus that does not reproduce is not evidence.
+# The timeline benchmark (#33) exists: `pnpm bench:timeline`.
 #
 # A job here that goes green while proving nothing is exactly the failure this
 # repository is built to avoid, so each one states plainly what it did not do.
@@ -49,8 +47,18 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-node-pnpm
+      - uses: ./.github/actions/setup-rust
+        with:
+          target-cache: debug
+      - uses: ./.github/actions/fetch-sidecar
+      - uses: ./.github/actions/corpus
 
-      - name: Run the suite, or report that it does not exist yet
+      # The same recipes, generated again elsewhere, must give the same bytes
+      # the manifest records — on this machine as on the one that made it.
+      - name: The corpus reproduces byte for byte
+        run: pnpm run corpus:verify
+
+      - name: Run the suite
         shell: pwsh
         run: |
           $scripts = (Get-Content package.json -Raw | ConvertFrom-Json).scripts

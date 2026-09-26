@@ -18,6 +18,7 @@ pub mod profile;
 pub mod render;
 pub mod seam;
 pub mod sps;
+pub mod verify;
 
 use std::collections::BTreeMap;
 

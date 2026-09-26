@@ -16,6 +16,8 @@ How to work on Blinkify day to day.
   from, how to fetch it, and how to rebuild or upgrade it
 - [`test-corpus.md`](./test-corpus.md) — the generated media test corpus, and
   why the tool that makes it is not the sidecar
+- [`losslessness.md`](./losslessness.md) — the hash boundary, the suite that
+  proves bit-identity and checks itself, and its generated results table
 - Local environment setup: toolchain versions, WebView2, MSVC build tools
 - Debugging guides — the Tauri IPC boundary, the FFmpeg sidecar, the timeline
   canvas
