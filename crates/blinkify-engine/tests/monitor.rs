@@ -63,6 +63,7 @@ fn player(
             max_width: 160,
             max_height: 90,
             default_device,
+            models: None,
         },
     );
     (player, samples)

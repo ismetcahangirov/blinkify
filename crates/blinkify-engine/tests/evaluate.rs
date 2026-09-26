@@ -93,6 +93,7 @@ fn player(orchestrator: &Orchestrator, plan: PlaybackPlan) -> (Player, Captured)
             max_width: 160,
             max_height: 90,
             default_device: DefaultDevice::System,
+            models: None,
         },
     );
     (player, samples)

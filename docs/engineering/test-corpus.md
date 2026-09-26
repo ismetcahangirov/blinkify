@@ -20,6 +20,14 @@ CI caches it on the recipes.
 **The corpus is never committed** — `CLAUDE.md` forbidden behaviour 12. Binary
 blobs in git history are permanent. `/corpus/` is ignored by git.
 
+## Recordings that are fetched
+
+Noise reduction (#47) is trained on speech, and no generator makes speech. So
+the recipes may start from a recording listed in `INPUTS` in `generate.mjs`:
+fetched once into `target/corpus-inputs/`, checked against the SHA-256 in the
+recipe, and never committed. Every input is public domain. Today there is one:
+LibriVox's "The Gettysburg Address", read by John Greenman.
+
 ## The corpus tool is not the sidecar
 
 Real footage is overwhelmingly H.264 and HEVC with B-frames. Making such files
@@ -58,6 +66,8 @@ distributes, and the corpus tool is neither linked nor distributed.
 | `multi-audio.mkv`          | VP9 with Opus stereo (aze) and AAC 5.1 (eng) tracks, and two chapters   |
 | `vp9.webm`                 | VP9 profile 0 and Opus                                                  |
 | `av1.mp4`                  | AV1 and AAC                                                             |
+| `speech-clean.flac`        | 20 s of a public-domain reading (LibriVox), mono 48 kHz                 |
+| `speech-noisy.flac`        | The same reading under steady pink noise, 8.9 dB SNR                    |
 | `hevc-main10.mp4`          | HEVC Main 10 without HDR: ten bits in BT.709                            |
 | `h264-high10.mp4`          | H.264 High 10: ten-bit H.264                                            |
 | `vp9-keyframes.webm`       | VP9 with a keyframe every second: GOPs to cut between                   |

@@ -71,6 +71,7 @@ fn player(orchestrator: &Orchestrator, source: SourceMedia) -> Player {
             max_width: 160,
             max_height: 90,
             default_device: DefaultDevice::System,
+            models: None,
         },
     )
 }
@@ -301,6 +302,7 @@ fn prefetch_while_scrubbing_stays_inside_its_bound() {
             max_width: 1920,
             max_height: 1080,
             default_device: DefaultDevice::System,
+            models: None,
         },
     );
     let mut worst = 0;
@@ -428,6 +430,7 @@ fn seek_latency_is_imperceptible_on_dense_keyframes_and_bounded_on_sparse() {
                 max_width: 960,
                 max_height: 540,
                 default_device: DefaultDevice::System,
+                models: None,
             },
         );
         let _ = settle(&player);

@@ -126,6 +126,7 @@ fn run(
             target,
             overwrite: false,
             audio,
+            models: None,
             cancel: CancelToken::default(),
             on_progress: None,
         },
@@ -273,7 +274,7 @@ fn a_lossless_target_decodes_to_exactly_the_filtered_sound() {
                     "atrim=start={:.6}:end={:.6},asetpts=PTS-STARTPTS,aresample=48000,{},aformat=channel_layouts=stereo",
                     seconds(from),
                     seconds(to),
-                    chain::filters(&[gain], 48_000),
+                    chain::filters(&[gain], 48_000, None).expect("built"),
                 ),
             )
             .option("-c:a", "pcm_s24le"),
@@ -404,10 +405,10 @@ fn a_step_the_chain_does_not_apply_yet_is_refused() {
             0,
             source.keyframe(1),
             source.keyframe(2),
-            &[Operation::denoise(0.5)],
+            &[Operation::normalise(-16.0)],
         )],
     )]);
-    let target = common::scratch("export-audio-denoise").join("out.mp4");
+    let target = common::scratch("export-audio-normalise").join("out.mp4");
     assert!(matches!(
         run(&plan, &source, &target, AudioTarget::default()),
         Err(ExportError::Unsupported(_))

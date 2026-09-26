@@ -41,6 +41,19 @@ pub(crate) fn same_segment(a: &Segment, b: &Segment) -> bool {
         && a.speed == b.speed
 }
 
+/// Whether `new` is `old` with only its segments' audio chains changed: the
+/// same segments of the same sources in the same places, heard the same way.
+pub(crate) fn only_chains_differ(old: &PlaybackPlan, new: &PlaybackPlan) -> bool {
+    let (a, b) = (old.timed_tracks(), new.timed_tracks());
+    old.main_sound == new.main_sound
+        && a.len() == b.len()
+        && a.iter().zip(&b).all(|((a_id, a), (b_id, b))| {
+            a_id == b_id
+                && a.len() == b.len()
+                && a.iter().zip(b.iter()).all(|(a, b)| same_segment(a, b))
+        })
+}
+
 /// A position on the playback timeline, in microseconds from its start.
 pub type ProgramTime = i64;
 

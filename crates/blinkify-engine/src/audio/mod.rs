@@ -10,6 +10,7 @@
 mod buffer;
 pub mod chain;
 pub mod decoder;
+pub mod denoise;
 pub mod gain;
 pub mod loudness;
 mod meter;

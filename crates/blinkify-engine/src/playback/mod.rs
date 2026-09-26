@@ -42,6 +42,7 @@ pub use plan::{
     SourceMedia, TrackId, VideoStream,
 };
 
+use crate::audio::denoise::Models;
 use crate::audio::sink::SilentSink;
 use crate::audio::{AudioOutputState, BufferSlot, MonitorLevels, OutputBuffer, Sink};
 use crate::decode::VideoFrame;
@@ -50,7 +51,7 @@ use clock::PlaybackClock;
 use feeder::{Feeder, FeederConfig, LoopRange as FeederLoop};
 use lanes::{LANE_BUDGET_BYTES, Lanes};
 use monitor::MonitorSettings;
-use plan::{PlanSlot, same_segment};
+use plan::{PlanSlot, only_chains_differ, same_segment};
 use scrub::{FrameCache, Picture, ScrubSlot, Worker};
 
 /// How far ahead of a boundary the next segment's video is started.
@@ -239,6 +240,9 @@ pub struct PlayerOptions {
     /// Where the identity of the system's default output device comes from,
     /// so that playback follows it when the user changes it.
     pub default_device: DefaultDevice,
+    /// The bundled models noise reduction runs with (#47), if they were
+    /// found. Without them the preview plays noise reduction unprocessed.
+    pub models: Option<Models>,
 }
 
 /// The source of truth for which output device is the default.
@@ -359,6 +363,7 @@ struct Inner {
     pending: Mutex<Option<ProgramTime>>,
     monitor: Arc<Mutex<MonitorSettings>>,
     insert: Arc<Mutex<Arc<dyn AudioInsert>>>,
+    models: Option<Models>,
     audio_choice: Mutex<AudioChoice>,
     default_device: DefaultDevice,
     /// The default device the current output was opened on.
@@ -422,6 +427,7 @@ impl Player {
             pending: Mutex::new(None),
             monitor: Arc::new(Mutex::new(MonitorSettings::default())),
             insert: Arc::new(Mutex::new(Arc::new(PassThrough))),
+            models: options.models.clone(),
             audio_choice: Mutex::new(options.audio.clone()),
             current_device: Mutex::new(options.default_device.current()),
             default_device: options.default_device.clone(),
@@ -630,7 +636,15 @@ impl Inner {
             *lock(&self.loop_range) =
                 (start.min(limit) < end.min(limit)).then(|| (start.min(limit), end.min(limit)));
         }
-        if !unchanged_here || t >= new.duration() {
+        let chains_only = only_chains_differ(&old, &new);
+        if chains_only
+            && control.state == PlaybackState::Playing
+            && let Some(feeder) = &control.feeder
+        {
+            // Only the sound's processing changed: it takes over without a
+            // gap, the pictures and the clock untouched (#47, #49).
+            feeder.retune(Arc::clone(&new));
+        } else if !unchanged_here || t >= new.duration() {
             // What is on screen changed: show the new content at the same
             // place, as a seek would.
             self.seek(&mut control, t);
@@ -812,6 +826,8 @@ impl Inner {
             ended: Arc::clone(&self.ended),
             monitor: Arc::clone(&self.monitor),
             insert: Arc::clone(&self.insert),
+            models: self.models.clone(),
+            retune: Arc::new(Mutex::new(None)),
         }));
     }
 

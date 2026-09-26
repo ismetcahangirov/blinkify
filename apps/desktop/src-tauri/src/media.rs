@@ -13,6 +13,7 @@ use std::thread;
 use std::time::Duration;
 
 use blinkify_engine::audio::MonitorLevels;
+use blinkify_engine::audio::denoise::{ModelError, Models};
 use blinkify_engine::audio::loudness::{Loudness, MeasureRequest, measure_cached};
 use blinkify_engine::cache::Cache;
 use blinkify_engine::capability;
@@ -87,6 +88,10 @@ pub const PLAYBACK_EVENT: &str = "media://playback";
 /// this runs out.
 const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(3);
 
+/// Where the bundled models are installed, under the resource directory: the
+/// bundler's `resources` map in `tauri.conf.json` puts them there.
+const MODELS_DIR: &str = "rnnoise";
+
 /// Application-wide engine state, managed by Tauri.
 #[derive(Debug)]
 pub struct MediaEngine {
@@ -102,6 +107,8 @@ pub struct MediaEngine {
     waveforms: Arc<Mutex<HashMap<(PathBuf, u32), Waveform>>>,
     previews: Mutex<HashMap<u32, Arc<Player>>>,
     next_preview: AtomicU32,
+    /// The bundled noise reduction model (#47), or why it cannot be used.
+    models: Result<Models, ModelError>,
 }
 
 /// A waveform being generated, or ready to draw.
@@ -140,7 +147,7 @@ impl MediaEngine {
     /// `cache_dir` is the OS cache directory for this application; without
     /// one, derived artefacts are computed but not kept.
     #[must_use]
-    pub fn locate(cache_dir: Option<PathBuf>) -> Self {
+    pub fn locate(cache_dir: Option<PathBuf>, resource_dir: Option<PathBuf>) -> Self {
         let orchestrator = Sidecar::beside_current_exe()
             .map(|sidecar| Orchestrator::new(sidecar, Limits::for_this_machine()))
             .map_err(|error| error.to_string());
@@ -158,7 +165,14 @@ impl MediaEngine {
             waveforms: Arc::new(Mutex::new(HashMap::new())),
             previews: Mutex::new(HashMap::new()),
             next_preview: AtomicU32::new(1),
+            // Installed with the application, never fetched (#47).
+            models: Models::in_dir(&resource_dir.unwrap_or_default().join(MODELS_DIR)),
         }
+    }
+
+    /// The bundled models, if they are installed and intact.
+    pub(crate) fn models(&self) -> Option<&Models> {
+        self.models.as_ref().ok()
     }
 
     /// The orchestrator, or why there is none.
@@ -777,6 +791,7 @@ impl MediaEngine {
                 max_width,
                 max_height,
                 default_device: DefaultDevice::System,
+                models: engine.models().cloned(),
             },
         );
         let session = engine.next_preview.fetch_add(1, Ordering::Relaxed);
@@ -1116,7 +1131,7 @@ mod tests {
         std::fs::create_dir_all(&sheets).expect("dir");
         let sheet = sheets.join("ab-h48-i1000-0.jpg");
         std::fs::write(&sheet, b"jpeg").expect("sheet");
-        let engine = MediaEngine::locate(Some(dir));
+        let engine = MediaEngine::locate(Some(dir), None);
         let inside = format!("/sheet/{}", sheet.display().to_string().replace('%', "%25"));
         let response = serve_sheet(&engine, &inside).expect("a sheet request");
         assert_eq!(response.status(), StatusCode::OK);
@@ -1149,7 +1164,7 @@ mod tests {
 
     #[test]
     fn an_unknown_session_is_not_found_rather_than_a_hang() {
-        let engine = MediaEngine::locate(None);
+        let engine = MediaEngine::locate(None, None);
         assert_eq!(
             serve_frame(&engine, "/99/0").status(),
             StatusCode::NOT_FOUND

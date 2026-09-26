@@ -12,6 +12,11 @@
 //!   time — takes over on the very next sample. No gap, no overlap.
 //! - **The timeline position never drifts.** It is computed from the anchor
 //!   and an integer count of frames written since, never accumulated.
+//! - **A changed audio chain takes over without a gap** (#47, #49). When
+//!   only clips' audio chains changed — a gain moved, noise reduction
+//!   bypassed for an A/B comparison — the feeder keeps playing: it starts a
+//!   decoder with the new chain a little ahead of what it is writing, keeps
+//!   the old one going until then, and switches on the exact sample.
 //! - **Audio never stalls.** A decoder that falls behind costs a moment of
 //!   silence, not a stopped clock; a decoder that failed costs its segment's
 //!   sound, not the playback. A gap in every track is silence, and the clock
@@ -25,6 +30,7 @@ use std::time::{Duration, Instant};
 use super::clock::{Anchor, PlaybackClock};
 use super::monitor::{AudioInsert, MonitorSettings};
 use super::plan::{PlaybackPlan, ProgramTime, Segment, TrackId, next_boundary, segment_at};
+use crate::audio::denoise::Models;
 use crate::audio::{AudioDecoder, AudioRequest, CHANNELS, OutputBuffer, SampleRing, chain};
 use crate::orchestrator::Orchestrator;
 use crate::project::evaluate::AudioOperation;
@@ -47,6 +53,10 @@ const PREFETCH: ProgramTime = 1_500_000;
 /// How much decoded audio a segment's decoder may hold.
 const LANE_SECONDS: usize = 2;
 
+/// How far ahead of what is being written a retuned decoder starts: time for
+/// it to produce its first samples before they are needed.
+const RETUNE_AHEAD: Duration = Duration::from_millis(300);
+
 /// A loop over part of the timeline, `[start, end)`.
 pub(crate) type LoopRange = Option<(ProgramTime, ProgramTime)>;
 
@@ -67,11 +77,17 @@ pub(crate) struct FeederConfig {
     pub monitor: Arc<Mutex<MonitorSettings>>,
     /// The filter chain's insertion point.
     pub insert: Arc<Mutex<Arc<dyn AudioInsert>>>,
+    /// The bundled models noise reduction runs with, if they were found.
+    pub models: Option<Models>,
+    /// A plan that differs from the one playing only in its audio chains,
+    /// handed over while playing (see [`Feeder::retune`]).
+    pub retune: Arc<Mutex<Option<Arc<PlaybackPlan>>>>,
 }
 
 /// A running feeder.
 pub(crate) struct Feeder {
     stop: Arc<AtomicBool>,
+    retune: Arc<Mutex<Option<Arc<PlaybackPlan>>>>,
     thread: Option<JoinHandle<()>>,
 }
 
@@ -84,6 +100,7 @@ impl std::fmt::Debug for Feeder {
 impl Feeder {
     pub(crate) fn start(config: FeederConfig) -> Self {
         let stop = Arc::new(AtomicBool::new(false));
+        let retune = Arc::clone(&config.retune);
         let thread = {
             let stop = Arc::clone(&stop);
             thread::Builder::new()
@@ -91,7 +108,18 @@ impl Feeder {
                 .spawn(move || run(&config, &stop))
                 .ok()
         };
-        Self { stop, thread }
+        Self {
+            stop,
+            retune,
+            thread,
+        }
+    }
+
+    /// Play `plan` from here on without stopping: it must differ from the
+    /// playing plan only in its segments' audio chains. Each track whose
+    /// chain changed switches to it shortly, on an exact sample.
+    pub(crate) fn retune(&self, plan: Arc<PlaybackPlan>) {
+        *self.retune.lock().unwrap_or_else(PoisonError::into_inner) = Some(plan);
     }
 
     /// Stop writing and wait for the thread, and its decoders, to finish.
@@ -155,7 +183,13 @@ fn start_lane(
     at: ProgramTime,
 ) -> Option<Lane> {
     let rate = config.buffer.sample_rate();
-    let request = audio_request(segments.get(segment)?, at, rate, config.speed)?;
+    let request = audio_request(
+        segments.get(segment)?,
+        at,
+        rate,
+        config.speed,
+        config.models.as_ref(),
+    )?;
     let ring = Arc::new(SampleRing::new(
         LANE_SECONDS * usize::try_from(rate).unwrap_or(48_000),
     ));
@@ -176,6 +210,7 @@ pub fn audio_request(
     at: ProgramTime,
     sample_rate: u32,
     speed: f64,
+    models: Option<&Models>,
 ) -> Option<AudioRequest> {
     let audio = segment.source.audio?;
     Some(AudioRequest {
@@ -187,7 +222,7 @@ pub fn audio_request(
         // The clip's own speed (#30), under the transport's.
         tempo: speed * segment.speed_factor(),
         // The clip's audio chain, exactly as the export builds it.
-        filters: chain::filters(&segment.audio, sample_rate),
+        filters: chain::playable(&segment.audio, sample_rate, models),
     })
 }
 
@@ -198,6 +233,8 @@ struct Track {
     segments: Vec<Segment>,
     current: Option<Lane>,
     upcoming: Option<Lane>,
+    /// The current segment with a changed chain, from a point just ahead.
+    retuned: Option<Lane>,
 }
 
 impl Track {
@@ -250,7 +287,22 @@ fn run(config: &FeederConfig, stop: &AtomicBool) {
             config.buffer.wait_below(lead, Duration::from_millis(20));
             continue;
         }
-        let boundary = config.plan.next_boundary(t).min(end);
+        let retuned = config
+            .retune
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take();
+        if let Some(plan) = retuned {
+            retune(config, &mut walk, &plan, t);
+        }
+        // Chunks are cut where a retuned decoder takes over, as at a clip
+        // boundary.
+        let boundary = walk
+            .tracks
+            .iter()
+            .filter_map(|track| track.retuned.as_ref().map(|lane| lane.starts_at))
+            .filter(|&at| at > t)
+            .fold(config.plan.next_boundary(t).min(end), ProgramTime::min);
         let frames = chunk.min(frames_covering(boundary - t, rate, config.speed));
         write_chunk(config, &mut walk, t, frames, &mut mix, &mut samples);
         prefetch(config, &mut walk, loop_range, end);
@@ -273,6 +325,7 @@ fn preroll(config: &FeederConfig, chunk: u64) -> Walk {
                 segments: segments.to_vec(),
                 current: None,
                 upcoming: None,
+                retuned: None,
             })
             .collect(),
     };
@@ -293,6 +346,28 @@ fn preroll(config: &FeederConfig, chunk: u64) -> Walk {
         generation: walk.generation,
     });
     walk
+}
+
+/// Take `plan`'s audio chains: every track whose current segment's chain
+/// changed gets a decoder with the new one, starting a little ahead of `t`;
+/// what was prepared for later segments is dropped and prepared again.
+fn retune(config: &FeederConfig, walk: &mut Walk, plan: &PlaybackPlan, t: ProgramTime) {
+    let rate = config.buffer.sample_rate();
+    let ahead = micros(frames_for(RETUNE_AHEAD, rate), rate, config.speed);
+    let at = t.saturating_add(ahead);
+    for (track, (id, segments)) in walk.tracks.iter_mut().zip(plan.sound_tracks()) {
+        if track.id != id || track.segments.len() != segments.len() {
+            continue;
+        }
+        let restart = track.current.as_ref().and_then(|lane| {
+            let before = track.segments.get(lane.segment)?;
+            let after = segments.get(lane.segment)?;
+            (before.audio != after.audio && at < after.timeline_end()).then_some(lane.segment)
+        });
+        track.retuned = restart.and_then(|i| start_lane(config, segments, i, at));
+        track.upcoming = None;
+        track.segments = segments.to_vec();
+    }
 }
 
 /// Jump back to the start of the loop: a new generation, a new anchor, and
@@ -364,6 +439,7 @@ fn write_chunk(
                 _ => start_lane(config, &track.segments, i, t),
             };
         }
+        take_retuned(track, i, t, count, rate, config.speed);
         samples.clear();
         samples.resize(count, 0.0);
         if let Some(lane) = &track.current {
@@ -382,6 +458,37 @@ fn write_chunk(
     }
     config.buffer.push(mix);
     walk.written += frames;
+}
+
+/// Switch `track` to its retuned decoder once the walk reaches the point it
+/// starts at and it has the samples to take over — first dropping any it
+/// made for a stretch already written. Until then the old decoder plays, so
+/// there is never a gap.
+fn take_retuned(
+    track: &mut Track,
+    segment: usize,
+    t: ProgramTime,
+    count: usize,
+    rate: u32,
+    speed: f64,
+) {
+    let Some(lane) = &track.retuned else {
+        return;
+    };
+    if lane.segment != segment {
+        track.retuned = None;
+        return;
+    }
+    if t < lane.starts_at {
+        return;
+    }
+    let behind = usize::try_from(frames_covering(t - lane.starts_at, rate, speed))
+        .unwrap_or(0)
+        .saturating_mul(CHANNELS);
+    if lane.ring.buffered() >= behind + count {
+        lane.ring.discard(behind);
+        track.current = track.retuned.take();
+    }
 }
 
 /// Whether the preview renders `operation` itself: what the chain applies.

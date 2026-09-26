@@ -28,6 +28,9 @@
 
 use std::fmt::Write as _;
 
+use thiserror::Error;
+
+use super::denoise::{self, Models};
 pub use crate::project::AudioStage as Stage;
 use crate::project::evaluate::AudioOperation;
 
@@ -49,46 +52,102 @@ const ATTACK_MS: f64 = 5.0;
 /// pump on speech; short enough not to duck the syllable after a peak.
 const RELEASE_MS: f64 = 50.0;
 
-/// Whether the chain applies `step` itself. Noise reduction arrives with
-/// #47 and normalisation with #48; until then the preview plays them
-/// unprocessed — the diagnostics say so — and the export refuses them.
+/// Whether the chain applies `step` itself. Normalisation arrives with #48;
+/// until then the preview plays it unprocessed — the diagnostics say so —
+/// and the export refuses it.
 #[must_use]
 pub fn applies(step: &AudioOperation) -> bool {
-    matches!(step, AudioOperation::Gain { .. })
+    matches!(
+        step,
+        AudioOperation::Gain { .. } | AudioOperation::Denoise { .. }
+    )
+}
+
+/// Why a chain could not be built.
+#[derive(Debug, Clone, Copy, Error, PartialEq, Eq)]
+pub enum ChainError {
+    /// Noise reduction was asked for and its model is not installed.
+    #[error("noise reduction needs its model, which is missing from the installation or damaged")]
+    NoModel,
 }
 
 /// The FFmpeg filters that apply `chain` to sound at `sample_rate`, in the
 /// fixed order, comma-separated: empty when nothing applies. A bypassed
-/// step is absent, exactly.
-#[must_use]
-pub fn filters(chain: &[AudioOperation], sample_rate: u32) -> String {
-    build(chain.iter(), sample_rate)
+/// step is absent, exactly. `models` are the bundled models, if they could
+/// be found.
+///
+/// # Errors
+///
+/// A step needs a model that is not there.
+pub fn filters(
+    chain: &[AudioOperation],
+    sample_rate: u32,
+    models: Option<&Models>,
+) -> Result<String, ChainError> {
+    build(chain.iter(), sample_rate, models)
 }
 
 /// The filters of the steps that run before `stage`: what a measurement at
 /// that point in the chain hears.
-#[must_use]
-pub fn filters_before(chain: &[AudioOperation], stage: Stage, sample_rate: u32) -> String {
+///
+/// # Errors
+///
+/// As [`filters`].
+pub fn filters_before(
+    chain: &[AudioOperation],
+    stage: Stage,
+    sample_rate: u32,
+    models: Option<&Models>,
+) -> Result<String, ChainError> {
     build(
         chain.iter().filter(|step| step.stage() < stage),
         sample_rate,
+        models,
     )
 }
 
-fn build<'a>(chain: impl Iterator<Item = &'a AudioOperation>, sample_rate: u32) -> String {
+/// What the preview plays: [`filters`], or — when a model is missing — the
+/// chain without the steps that need it. The preview keeps playing; the
+/// diagnostics and the inspector say what is not heard, and the export
+/// refuses rather than leave it out.
+#[must_use]
+pub fn playable(chain: &[AudioOperation], sample_rate: u32, models: Option<&Models>) -> String {
+    build(chain.iter(), sample_rate, models).unwrap_or_else(|_| {
+        build(
+            chain
+                .iter()
+                .filter(|step| !matches!(step, AudioOperation::Denoise { .. })),
+            sample_rate,
+            models,
+        )
+        .unwrap_or_default()
+    })
+}
+
+fn build<'a>(
+    chain: impl Iterator<Item = &'a AudioOperation>,
+    sample_rate: u32,
+    models: Option<&Models>,
+) -> Result<String, ChainError> {
     let mut steps: Vec<&AudioOperation> = chain.filter(|step| !step.bypassed()).collect();
     steps.sort_by_key(|step| step.stage());
     let mut out = Vec::new();
     for step in steps {
-        if let AudioOperation::Gain {
-            db, ceiling_dbtp, ..
-        } = *step
-        {
-            out.push(format!("volume={db}dB"));
-            out.extend(true_peak_limiter(ceiling_dbtp, sample_rate));
+        match *step {
+            AudioOperation::Denoise { strength, .. } => {
+                let models = models.ok_or(ChainError::NoModel)?;
+                out.push(denoise::filters(models, strength, sample_rate));
+            }
+            AudioOperation::Gain {
+                db, ceiling_dbtp, ..
+            } => {
+                out.push(format!("volume={db}dB"));
+                out.extend(true_peak_limiter(ceiling_dbtp, sample_rate));
+            }
+            AudioOperation::Normalise { .. } => {}
         }
     }
-    out.join(",")
+    Ok(out.join(","))
 }
 
 /// A limiter that holds the sound's true peak — the peak of the waveform the
@@ -125,7 +184,7 @@ pub fn linear(db: f64) -> f64 {
 }
 
 #[cfg(test)]
-#[allow(clippy::indexing_slicing)]
+#[allow(clippy::indexing_slicing, clippy::expect_used)]
 mod tests {
     use super::*;
 
@@ -139,18 +198,18 @@ mod tests {
 
     #[test]
     fn nothing_to_apply_is_no_filter_at_all() {
-        assert_eq!(filters(&[], 48_000), "");
+        assert_eq!(filters(&[], 48_000, None).expect("built"), "");
         let bypassed = AudioOperation::Gain {
             db: 6.0,
             ceiling_dbtp: -1.0,
             bypassed: true,
         };
-        assert_eq!(filters(&[bypassed], 48_000), "");
+        assert_eq!(filters(&[bypassed], 48_000, None).expect("built"), "");
     }
 
     #[test]
     fn gain_is_followed_by_an_oversampled_limiter_and_a_guard_at_the_ceiling() {
-        let chain = filters(&[gain(6.0, -1.0)], 44_100);
+        let chain = filters(&[gain(6.0, -1.0)], 44_100, None).expect("built");
         let steps: Vec<&str> = chain.split(',').collect();
         assert_eq!(steps.len(), 5, "{chain}");
         assert_eq!(steps.first(), Some(&"volume=6dB"));
@@ -178,21 +237,51 @@ mod tests {
     }
 
     #[test]
-    fn steps_not_yet_applied_are_left_out_rather_than_approximated() {
-        let chain = [
-            AudioOperation::Denoise {
-                strength: 0.5,
-                bypassed: false,
-            },
-            gain(-3.0, -2.0),
-            AudioOperation::Normalise {
-                target_lufs: -16.0,
-                ceiling_dbtp: -1.0,
-                bypassed: false,
-            },
-        ];
-        assert!(filters(&chain, 48_000).starts_with("volume=-3dB,"));
-        assert!(applies(&chain[1]));
-        assert!(!applies(&chain[0]) && !applies(&chain[2]));
+    fn the_order_is_fixed_whatever_order_the_steps_were_added_in() {
+        let models = Models::in_dir(
+            &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("models/rnnoise"),
+        )
+        .expect("bundled");
+        let denoise = AudioOperation::Denoise {
+            strength: 0.5,
+            bypassed: false,
+        };
+        let normalise = AudioOperation::Normalise {
+            target_lufs: -16.0,
+            ceiling_dbtp: -1.0,
+            bypassed: false,
+        };
+        let one = filters(&[gain(-3.0, -2.0), denoise], 48_000, Some(&models)).expect("built");
+        let other = filters(
+            &[denoise, normalise, gain(-3.0, -2.0)],
+            48_000,
+            Some(&models),
+        )
+        .expect("built");
+        assert_eq!(one, other);
+        let arnndn = one.find("arnndn").expect("denoised");
+        let volume = one.find("volume=-3dB").expect("gained");
+        assert!(arnndn < volume, "{one}");
+        assert!(applies(&denoise) && applies(&gain(0.0, -1.0)));
+        assert!(!applies(&normalise));
+    }
+
+    #[test]
+    fn noise_reduction_without_its_model_is_an_error_to_export_and_left_out_of_the_preview() {
+        let denoise = AudioOperation::Denoise {
+            strength: 0.5,
+            bypassed: false,
+        };
+        let chain = [denoise, gain(2.0, -1.0)];
+        assert_eq!(filters(&chain, 48_000, None), Err(ChainError::NoModel));
+        let heard = playable(&chain, 48_000, None);
+        assert!(heard.starts_with("volume=2dB,"), "{heard}");
+        assert!(!heard.contains("arnndn"));
+        // Bypassed, it needs nothing.
+        let bypassed = AudioOperation::Denoise {
+            strength: 0.5,
+            bypassed: true,
+        };
+        assert_eq!(filters(&[bypassed], 48_000, None), Ok(String::new()));
     }
 }

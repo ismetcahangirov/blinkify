@@ -311,10 +311,10 @@ fn the_preview_decodes_through_exactly_the_filters_the_export_encodes_with() {
     let operations = [Operation::gain(7.5)];
     let (_, plan) = preview_of(&source, &operations);
     let segment = plan.segments().first().expect("a segment");
-    let chain = chain::filters(&segment.audio, 48_000);
+    let chain = chain::filters(&segment.audio, 48_000, None).expect("built");
     assert!(chain.starts_with("volume=7.5dB,"), "{chain}");
 
-    let preview = audio_request(segment, segment.timeline_start, 48_000, 1.0)
+    let preview = audio_request(segment, segment.timeline_start, 48_000, 1.0, None)
         .expect("sound")
         .command()
         .to_string();
@@ -355,7 +355,7 @@ fn the_preview_decodes_through_exactly_the_filters_the_export_encodes_with() {
     }];
     let (_, plan) = preview_of(&source, &bypassed);
     let segment = plan.segments().first().expect("a segment");
-    let preview = audio_request(segment, segment.timeline_start, 48_000, 1.0)
+    let preview = audio_request(segment, segment.timeline_start, 48_000, 1.0, None)
         .expect("sound")
         .command()
         .to_string();
@@ -369,8 +369,15 @@ fn the_advice_predicts_the_limiting_the_export_does() {
     let (project, _) = preview_of(&source, &[Operation::gain(12.0)]);
     let timeline = evaluate(&project).expect("evaluates");
     let placement = timeline.placements().next().expect("clip");
-    let request =
-        measure_request(placement, &source.path, &source.info, AudioStage::Gain).expect("sound");
+    let request = measure_request(
+        placement,
+        &source.path,
+        &source.info,
+        AudioStage::Gain,
+        None,
+    )
+    .expect("built")
+    .expect("sound");
     // Measured before the gain: nothing of the chain runs before it here.
     assert!(request.filters.is_empty());
     let before =
@@ -397,8 +404,15 @@ fn a_measurement_is_cached_by_content_and_by_the_filters_before_it() {
     let (project, _) = preview_of(&source, &[Operation::gain(3.0)]);
     let timeline = evaluate(&project).expect("evaluates");
     let placement = timeline.placements().next().expect("clip");
-    let request =
-        measure_request(placement, &source.path, &source.info, AudioStage::Gain).expect("sound");
+    let request = measure_request(
+        placement,
+        &source.path,
+        &source.info,
+        AudioStage::Gain,
+        None,
+    )
+    .expect("built")
+    .expect("sound");
     let orchestrator = common::orchestrator();
     let cancel = CancelToken::default();
     let first = measure_cached(&orchestrator, Some(&cache), &request, &cancel).expect("first");
@@ -408,8 +422,15 @@ fn a_measurement_is_cached_by_content_and_by_the_filters_before_it() {
     assert_eq!(first, again);
     assert_eq!(entries(), 1, "answered from the cache");
     // A different chain before the point measured is a different answer.
-    let later = measure_request(placement, &source.path, &source.info, AudioStage::Normalise)
-        .expect("sound");
+    let later = measure_request(
+        placement,
+        &source.path,
+        &source.info,
+        AudioStage::Normalise,
+        None,
+    )
+    .expect("built")
+    .expect("sound");
     assert_ne!(later.filters, request.filters);
     let after_gain = measure_cached(&orchestrator, Some(&cache), &later, &cancel).expect("later");
     assert_eq!(entries(), 2);

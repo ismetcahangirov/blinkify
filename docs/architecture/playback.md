@@ -147,3 +147,11 @@ user _changes_ it, rather than when it fails, is #31.
 - **A video timer as the clock.** Timers drift from the sound card's crystal;
   over ten minutes the difference is audible, and audio cannot be corrected by
   dropping samples without clicks.
+
+## A changed audio chain while playing
+
+An edit that changes only clips' audio chains — gain, noise reduction, their
+bypass — does not restart playback. The player hands the new plan to the
+running feeder, which switches each affected track to a decoder with the new
+chain on an exact sample a moment ahead; the clock and the picture carry on.
+See [`audio-chain.md`](./audio-chain.md) (#47).

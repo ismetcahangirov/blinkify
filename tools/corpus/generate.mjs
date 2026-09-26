@@ -68,6 +68,20 @@ const TONE = (seconds = 4, layout = "stereo") => [
 ];
 
 /**
+ * Recordings the recipes start from, fetched and checked against their
+ * SHA-256 rather than synthesised: noise reduction (#47) is trained on
+ * speech, and no generator makes speech. Each is public domain, cached in
+ * `target/corpus-inputs/`, and never committed.
+ */
+const INPUTS = {
+  // LibriVox, "The Gettysburg Address", read by John Greenman. Public domain.
+  speech: {
+    url: "https://archive.org/download/gettysburg_johng_librivox/gettysburg_address.mp3",
+    sha256: "66ffab650fff988fc9ce55457f6112f828815cf37d263dab49eb10ae5a193346",
+  },
+};
+
+/**
  * One file per property. `steps` run in order; `{out}` is the file being made,
  * `{corpus}` the corpus directory for inputs made by an earlier recipe.
  */
@@ -266,6 +280,33 @@ const RECIPES = [
     ],
   },
   {
+    file: "speech-clean.flac",
+    note: "Twenty seconds of a man reading, mono 48 kHz: the reference a denoiser is measured against",
+    steps: [
+      [
+        "-i", "{input:speech}",
+        "-af", "atrim=10:30,asetpts=PTS-STARTPTS,pan=mono|c0=0.5*c0+0.5*c1,aresample=48000",
+        "-c:a", "flac", "-sample_fmt", "s16",
+        "-fflags", "+bitexact", "-flags:a", "+bitexact",
+        "{out}",
+      ],
+    ],
+  },
+  {
+    file: "speech-noisy.flac",
+    note: "The same reading under steady pink noise: what a room with a fan sounds like",
+    steps: [
+      [
+        "-i", "{corpus}/speech-clean.flac",
+        "-f", "lavfi", "-i", "anoisesrc=d=20:c=pink:a=0.08:seed=11:r=48000",
+        "-filter_complex", "[0][1]amix=inputs=2:normalize=0:duration=first",
+        "-c:a", "flac", "-sample_fmt", "s16",
+        "-fflags", "+bitexact", "-flags:a", "+bitexact",
+        "{out}",
+      ],
+    ],
+  },
+  {
     file: "av1-keyframes.mkv",
     note: "AV1 with a keyframe every second",
     steps: [
@@ -300,7 +341,7 @@ title=Closing
 // recipe would not give the same bytes twice (`--verify`).
 
 /** The recipes' own fingerprint: a change to any of them regenerates. */
-const RECIPE_HASH = sha256(JSON.stringify({ RECIPES, CHAPTERS, LOCK }));
+const RECIPE_HASH = sha256(JSON.stringify({ RECIPES, CHAPTERS, LOCK, INPUTS }));
 
 /**
  * Download with retries: GitHub's release CDN answers the occasional 5xx, and
@@ -355,10 +396,33 @@ function run(tool, args) {
   }
 }
 
+/** Every input, fetched once into `target/corpus-inputs/` and checked. */
+async function ensureInputs() {
+  const dir = join(ROOT, "target", "corpus-inputs");
+  mkdirSync(dir, { recursive: true });
+  const paths = {};
+  for (const [name, input] of Object.entries(INPUTS)) {
+    const path = join(
+      dir,
+      `${name}${input.url.slice(input.url.lastIndexOf("."))}`,
+    );
+    if (!existsSync(path) || sha256(readFileSync(path)) !== input.sha256) {
+      console.log(`corpus: fetching ${input.url}`);
+      const bytes = await download(input.url);
+      if (sha256(bytes) !== input.sha256) {
+        throw new Error(`${name}: SHA-256 does not match the recipe`);
+      }
+      writeFileSync(path, bytes);
+    }
+    paths[name] = path;
+  }
+  return paths;
+}
+
 /**
  * Make every recipe's file in `dir`, and return each file's note and SHA-256.
  */
-function generate(tool, dir) {
+function generate(tool, dir, inputs) {
   mkdirSync(dir, { recursive: true });
   const chapters = join(dir, "chapters.ffmetadata");
   writeFileSync(chapters, CHAPTERS);
@@ -377,6 +441,7 @@ function generate(tool, dir) {
             // Inputs made by an earlier recipe come from this run's own
             // directory, so a verification run reads only what it made.
             .replace("{corpus}", dir)
+            .replace(/\{input:(\w+)\}/, (_, name) => inputs[name])
             .replace("{chapters}", chapters),
         ),
       );
@@ -408,9 +473,10 @@ async function verify() {
     throw new Error("the corpus is stale; run `pnpm corpus` first");
   }
   const tool = await ensureTool();
+  const inputs = await ensureInputs();
   const scratch = join(ROOT, "target", "corpus-verify");
   rmSync(scratch, { recursive: true, force: true });
-  const again = generate(tool, scratch);
+  const again = generate(tool, scratch, inputs);
   rmSync(scratch, { recursive: true, force: true });
   const differ = Object.entries(again)
     .filter(([file, entry]) => manifest.files[file]?.sha256 !== entry.sha256)
@@ -438,7 +504,7 @@ async function main() {
   }
 
   const tool = await ensureTool();
-  const files = generate(tool, CORPUS);
+  const files = generate(tool, CORPUS, await ensureInputs());
   writeFileSync(
     manifestPath,
     `${JSON.stringify({ recipeHash: RECIPE_HASH, files }, null, 2)}\n`,

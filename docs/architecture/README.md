@@ -78,7 +78,9 @@ How Blinkify is put together and why the structure holds under change.
 - [`audio-chain.md`](./audio-chain.md) — one FFmpeg chain for a clip's sound
   in the preview and the export, in a fixed order; gain with a two-stage
   true-peak limiter; loudness and true-peak measurement, cached by content;
-  the limiter's effect worked out before export (#46)
+  the limiter's effect worked out before export (#46); RNNoise noise
+  reduction with a bundled model and a blend, and chain changes taken over
+  while playing without a gap (#47)
 
 ## What does not belong here
 
