@@ -9,16 +9,22 @@
 //! Every decoder is started through [`start_decoder`], which is the two-stage
 //! seek of [`crate::seek`] — or, for a source with a proxy, the same decode
 //! of the proxy with each frame mapped back to the source frame it shows.
+//!
+//! A held clip's lane decodes its one frame; a reversed clip's lane runs a
+//! [`ReverseDecoder`], which uses the same start a chunk at a time (#113).
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use super::plan::{PlaybackPlan, Segment, VideoStream, same_segment};
+use super::reverse::ReverseDecoder;
 use crate::decode::{
     DecodeEnd, DecodeError, DecodeRequest, FrameRing, FrameSize, PtsMap, RingStats, VideoDecoder,
+    VideoFrame,
 };
 use crate::orchestrator::Orchestrator;
 use crate::probe::{Rational, VideoInfo};
+use crate::project::evaluate::Motion;
 use crate::proxy::PROXY_HEIGHT;
 use crate::seek;
 use crate::time::{self, Rounding};
@@ -161,12 +167,72 @@ fn proxy_size(video: &VideoInfo, bound: (u32, u32)) -> FrameSize {
     FrameSize::fit(&upright, bound.0, height)
 }
 
+/// What fills a lane's ring.
+#[derive(Debug)]
+enum LaneDecoder {
+    /// Forwards from the start frame — or a held clip's one frame.
+    Forward(VideoDecoder),
+    /// Backwards, a chunk at a time.
+    Reverse(ReverseDecoder),
+}
+
+impl LaneDecoder {
+    fn end(&self) -> Option<DecodeEnd> {
+        match self {
+            Self::Forward(decoder) => decoder.end(),
+            Self::Reverse(decoder) => decoder.end(),
+        }
+    }
+
+    fn pid(&self) -> Option<u32> {
+        match self {
+            Self::Forward(decoder) => decoder.pid(),
+            Self::Reverse(decoder) => decoder.pid(),
+        }
+    }
+
+    fn peak_bytes(&self) -> usize {
+        match self {
+            Self::Forward(_) => 0,
+            Self::Reverse(decoder) => decoder.peak_bytes(),
+        }
+    }
+
+    fn stop(self) {
+        match self {
+            Self::Forward(decoder) => decoder.stop(),
+            Self::Reverse(decoder) => decoder.stop(),
+        }
+    }
+}
+
 pub(crate) struct Lane {
     pub segment: usize,
     pub generation: u64,
     pub ring: Arc<FrameRing>,
-    decoder: Option<VideoDecoder>,
+    decoder: Option<LaneDecoder>,
     last_resync: Option<Instant>,
+    /// The frame this lane put on screen last. A held or reversed segment
+    /// shows it again at each sequence frame until the next one is due, so
+    /// the frame's place on the timeline moves on with the clock.
+    pub shown: Option<Arc<VideoFrame>>,
+}
+
+impl Lane {
+    /// The frame of `segment` due at source tick `pts`, if a new one is:
+    /// the newest at or before it, in the direction the segment plays.
+    pub(crate) fn take_due(&mut self, segment: &Segment, pts: i64) -> Option<Arc<VideoFrame>> {
+        let frame = if segment.motion() == Some(Motion::Reverse) {
+            self.ring.take_due_backwards(pts)
+        } else {
+            self.ring.take_due(pts)
+        }
+        .map(Arc::new);
+        if let Some(frame) = &frame {
+            self.shown = Some(Arc::clone(frame));
+        }
+        frame
+    }
 }
 
 impl std::fmt::Debug for Lane {
@@ -195,6 +261,8 @@ pub(crate) struct Lanes {
     retired: Retired,
     pub resyncs: u32,
     pub error: Option<DecodeError>,
+    /// The most bytes of pictures any reversed lane has held at once.
+    reverse_peak: usize,
 }
 
 impl Lanes {
@@ -206,6 +274,33 @@ impl Lanes {
             retired: Retired::default(),
             resyncs: 0,
             error: None,
+            reverse_peak: 0,
+        }
+    }
+
+    /// Start what fills `ring` for `segment` from the frame on screen at
+    /// `pts`: a forward decode, a held clip's single frame, or a reversed
+    /// clip's decode backwards.
+    fn start(
+        &self,
+        segment: &Segment,
+        pts: i64,
+        ring: &Arc<FrameRing>,
+    ) -> Result<LaneDecoder, DecodeError> {
+        match segment.motion() {
+            Some(Motion::Reverse) => Ok(LaneDecoder::Reverse(ReverseDecoder::start(
+                &self.orchestrator,
+                segment,
+                pts,
+                self.bound,
+                ring,
+            ))),
+            Some(Motion::Hold) => {
+                start_decoder(&self.orchestrator, segment, pts, self.bound, Some(1), ring)
+                    .map(LaneDecoder::Forward)
+            }
+            None => start_decoder(&self.orchestrator, segment, pts, self.bound, None, ring)
+                .map(LaneDecoder::Forward),
         }
     }
 
@@ -230,20 +325,20 @@ impl Lanes {
                 size.bytes(),
                 LANE_BUDGET_BYTES,
             )));
-            let decoder =
-                match start_decoder(&self.orchestrator, segment, pts, self.bound, None, &ring) {
-                    Ok(decoder) => Some(decoder),
-                    Err(error) => {
-                        self.error = Some(error);
-                        None
-                    }
-                };
+            let decoder = match self.start(segment, pts, &ring) {
+                Ok(decoder) => Some(decoder),
+                Err(error) => {
+                    self.error = Some(error);
+                    None
+                }
+            };
             self.live.push(Lane {
                 segment: index,
                 generation,
                 ring,
                 decoder,
                 last_resync: None,
+                shown: None,
             });
         }
         self.live
@@ -299,6 +394,7 @@ impl Lanes {
     fn retire(&mut self, mut lane: Lane) {
         lane.ring.close();
         if let Some(decoder) = lane.decoder.take() {
+            self.reverse_peak = self.reverse_peak.max(decoder.peak_bytes());
             decoder.stop();
         }
         let stats = lane.ring.stats();
@@ -307,8 +403,20 @@ impl Lanes {
         self.retired.presented += stats.presented_frames;
     }
 
+    /// The most bytes of pictures any reversed lane has held at once, live
+    /// or retired.
+    pub(crate) fn reverse_peak_bytes(&self) -> usize {
+        self.live
+            .iter()
+            .filter_map(|lane| lane.decoder.as_ref())
+            .map(LaneDecoder::peak_bytes)
+            .fold(self.reverse_peak, usize::max)
+    }
+
     /// Record a failed decode, and restart a lane ahead of a clock it has
-    /// fallen more than [`RESYNC_AFTER`] behind.
+    /// fallen more than [`RESYNC_AFTER`] behind. A held lane has one frame
+    /// to decode, and a reversed one skips ahead by itself, so only a
+    /// forward lane is restarted.
     pub(crate) fn keep_up(
         &mut self,
         plan: &PlaybackPlan,
@@ -334,11 +442,15 @@ impl Lanes {
             .get(position)
             .and_then(|lane| lane.decoder.as_ref())
         {
-            Some(decoder) => (decoder.end(), decoder.head()),
+            Some(LaneDecoder::Forward(decoder)) => (decoder.end(), decoder.head()),
+            Some(decoder @ LaneDecoder::Reverse(_)) => (decoder.end(), None),
             None => return,
         };
         if let Some(DecodeEnd::Failed(error)) = end {
             self.error = Some(error);
+            return;
+        }
+        if segment.motion().is_some() {
             return;
         }
         let Some(head) = head.filter(|_| end.is_none()) else {
@@ -383,7 +495,7 @@ impl Lanes {
             None,
             &ring,
         ) {
-            Ok(decoder) => Some(decoder),
+            Ok(decoder) => Some(LaneDecoder::Forward(decoder)),
             Err(error) => {
                 self.error = Some(error);
                 None
@@ -400,7 +512,7 @@ impl Lanes {
     pub(crate) fn pids(&self) -> Vec<u32> {
         self.live
             .iter()
-            .filter_map(|lane| lane.decoder.as_ref().and_then(VideoDecoder::pid))
+            .filter_map(|lane| lane.decoder.as_ref().and_then(LaneDecoder::pid))
             .collect()
     }
 

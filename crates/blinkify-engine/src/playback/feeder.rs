@@ -21,6 +21,10 @@
 //!   silence, not a stopped clock; a decoder that failed costs its segment's
 //!   sound, not the playback. A gap in every track is silence, and the clock
 //!   runs through it.
+//! - **A reversed clip is heard backwards** (#113): its lane decodes the
+//!   sound a chunk at a time from the playback position down to the in point
+//!   ([`crate::audio::reverse`]). A held clip is silent: the plan leaves it
+//!   out of the sound tracks, as the export writes silence for it.
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
@@ -31,9 +35,11 @@ use super::clock::{Anchor, PlaybackClock};
 use super::monitor::{AudioInsert, MonitorSettings};
 use super::plan::{PlaybackPlan, ProgramTime, Segment, TrackId, next_boundary, segment_at};
 use crate::audio::denoise::Models;
+use crate::audio::reverse::{self, ReverseRequest};
 use crate::audio::{AudioDecoder, AudioRequest, CHANNELS, OutputBuffer, SampleRing, chain};
 use crate::orchestrator::Orchestrator;
-use crate::project::evaluate::AudioOperation;
+use crate::project::evaluate::{AudioOperation, Motion};
+use crate::time;
 
 /// How far ahead of the speaker the buffer is kept.
 const LEAD: Duration = Duration::from_millis(200);
@@ -151,7 +157,8 @@ struct Lane {
     /// The timeline position of the first sample the decoder produces.
     starts_at: ProgramTime,
     ring: Arc<SampleRing>,
-    _decoder: AudioDecoder,
+    /// Kept for as long as the lane is: dropping it stops the decode.
+    _decoder: Box<dyn Send>,
 }
 
 fn frames_for(duration: Duration, rate: u32) -> u64 {
@@ -187,17 +194,26 @@ fn start_lane(
     at: ProgramTime,
 ) -> Option<Lane> {
     let rate = config.buffer.sample_rate();
-    let request = audio_request(
-        segments.get(segment)?,
-        at,
-        rate,
-        config.speed,
-        config.models.as_ref(),
-    )?;
+    let playing = segments.get(segment)?;
     let ring = Arc::new(SampleRing::new(
         LANE_SECONDS * usize::try_from(rate).unwrap_or(48_000),
     ));
-    let decoder = AudioDecoder::start(&config.orchestrator, &request, Arc::clone(&ring));
+    let decoder: Box<dyn Send> = if playing.motion() == Some(Motion::Reverse) {
+        let request =
+            reverse_audio_request(playing, at, rate, config.speed, config.models.as_ref())?;
+        Box::new(reverse::ReverseDecoder::start(
+            &config.orchestrator,
+            &request,
+            Arc::clone(&ring),
+        ))
+    } else {
+        let request = audio_request(playing, at, rate, config.speed, config.models.as_ref())?;
+        Box::new(AudioDecoder::start(
+            &config.orchestrator,
+            &request,
+            Arc::clone(&ring),
+        ))
+    };
     Some(Lane {
         segment,
         starts_at: at,
@@ -206,8 +222,9 @@ fn start_lane(
     })
 }
 
-/// What the preview decodes to play `segment` from timeline position `at`
-/// at `sample_rate` and transport `speed`: `None` when it has no sound.
+/// What the preview decodes to play `segment` forwards from timeline
+/// position `at` at `sample_rate` and transport `speed`: `None` when it has
+/// no sound, or is held or reversed ([`reverse_audio_request`]).
 #[must_use]
 pub fn audio_request(
     segment: &Segment,
@@ -216,6 +233,9 @@ pub fn audio_request(
     speed: f64,
     models: Option<&Models>,
 ) -> Option<AudioRequest> {
+    if segment.motion().is_some() {
+        return None;
+    }
     let audio = segment.source.audio?;
     Some(AudioRequest {
         source: segment.source.path.clone(),
@@ -226,6 +246,33 @@ pub fn audio_request(
         // The clip's own speed (#30), under the transport's.
         tempo: speed * segment.speed_factor(),
         // The clip's audio chain, exactly as the export builds it.
+        filters: chain::playable(&segment.audio, sample_rate, models),
+    })
+}
+
+/// What the preview decodes to play a reversed `segment` backwards from
+/// timeline position `at`: from the source moment there down to the clip's
+/// in point, through the clip's chain, at its speed under the transport's.
+/// `None` when it has no sound or is not reversed.
+#[must_use]
+pub fn reverse_audio_request(
+    segment: &Segment,
+    at: ProgramTime,
+    sample_rate: u32,
+    speed: f64,
+    models: Option<&Models>,
+) -> Option<ReverseRequest> {
+    if segment.motion() != Some(Motion::Reverse) {
+        return None;
+    }
+    let audio = segment.source.audio?;
+    Some(ReverseRequest {
+        source: segment.source.path.clone(),
+        stream: audio.index,
+        from_seconds: segment.source_seconds_at(at),
+        to_seconds: time::seconds(segment.source_in, segment.time_base()),
+        sample_rate,
+        tempo: speed * segment.speed_factor(),
         filters: chain::playable(&segment.audio, sample_rate, models),
     })
 }

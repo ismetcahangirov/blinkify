@@ -26,9 +26,7 @@ use blinkify_engine::export::plan::{ExportPlan, plan};
 use blinkify_engine::playback::{PlaybackPlan, SourceMedia, chain_rendered};
 use blinkify_engine::project::asset::AssetInfo;
 use blinkify_engine::project::edit::{Document, Edit, EditContext, HistoryView, SettingsImpact};
-use blinkify_engine::project::evaluate::{
-    OperationsAt, Timeline, audio_operation, evaluate, forces_re_encode,
-};
+use blinkify_engine::project::evaluate::{OperationsAt, Timeline, audio_operation, evaluate};
 use blinkify_engine::project::session::Session;
 use blinkify_engine::project::speed::SpeedVerdict;
 use blinkify_engine::project::split::{CutPoint, cut_point};
@@ -684,14 +682,13 @@ impl Diagnostics {
     }
 }
 
-/// Whether the preview renders `operation`: timing always, a hold or a
-/// reverse not yet (#35, #55); of the audio chain, what `chain_rendered` says
-/// — and noise reduction only while its model is installed (#47).
+/// Whether the preview renders `operation`: timing always, a hold and a
+/// reverse too, as the export renders them (#113); of the audio chain, what
+/// `chain_rendered` says — and noise reduction only while its model is
+/// installed (#47).
 fn previewed(operation: &Operation, models: bool) -> bool {
-    forces_re_encode(operation).is_none()
-        && audio_operation(operation).is_none_or(|step| {
-            chain_rendered(&step) && (models || step.stage() != AudioStage::Denoise)
-        })
+    audio_operation(operation)
+        .is_none_or(|step| chain_rendered(&step) && (models || step.stage() != AudioStage::Denoise))
 }
 
 /// What exporting the open project would do (#39): every segment of the
@@ -846,5 +843,23 @@ mod tests {
             LaunchFile::from_args(args(&["blinkify.exe", "clip.mp4"])).0,
             None
         );
+    }
+
+    /// An operation as the project file writes it: the shell never takes
+    /// the graph apart itself (`pnpm evaluator:check`).
+    #[allow(clippy::expect_used)]
+    fn operation(json: &str) -> Operation {
+        serde_json::from_str(json).expect("an operation as the project file writes it")
+    }
+
+    #[test]
+    fn a_hold_and_a_reverse_are_previewed_and_a_missing_model_is_not() {
+        let hold = operation(r#"{"op":"freeze","frames":90}"#);
+        let reverse = operation(r#"{"op":"reverse"}"#);
+        let denoise = operation(r#"{"op":"denoise","strength":0.5,"bypassed":false}"#);
+        assert!(previewed(&hold, false));
+        assert!(previewed(&reverse, false));
+        assert!(!previewed(&denoise, false));
+        assert!(previewed(&denoise, true));
     }
 }
