@@ -244,6 +244,23 @@ jobs:
       - name: That gate still rejects one (deny:test)
         run: pnpm deny:test
 
+      # #73: the notices the installer ships name every crate and renderer
+      # package in the tree. A dependency added without regenerating ships
+      # unattributed and nothing else would notice. Texts come from the
+      # registry sources `cargo metadata` has just unpacked and from
+      # node_modules; the tool makes no request of its own.
+      - name: Third-party notices are current (attribution:check)
+        run: pnpm attribution:check
+
+      - name: That gate still catches a new dependency (attribution:injection)
+        run: pnpm attribution:injection
+
+      - name: The notices are deterministic (attribution:determinism)
+        run: pnpm attribution:determinism
+
+      - name: Every crate is covered, or generation fails (attribution:coverage)
+        run: pnpm attribution:coverage
+
       # ADR-0002's first gate, #21: the bundled binary is asked what it is.
       # No GPL configuration, no software H.264 or HEVC encoder, the committed
       # configure line exactly, every encoder and filter Epics #6 and #7 need,
