@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 311,
-    "tests": 45,
+    "files": 316,
+    "tests": 46,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 116,
-      "tests": 39,
+      "files": 119,
+      "tests": 40,
       "untested": [
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
@@ -41,7 +41,7 @@
       ]
     },
     "packages/types": {
-      "files": 126,
+      "files": 128,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
@@ -109,6 +109,8 @@
         "packages/types/src/generated/KeyframePoint.ts",
         "packages/types/src/generated/LoopRange.ts",
         "packages/types/src/generated/Loudness.ts",
+        "packages/types/src/generated/LoudnessReport.ts",
+        "packages/types/src/generated/LoudnessTarget.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
         "packages/types/src/generated/Media.ts",
         "packages/types/src/generated/MediaInfo.ts",
@@ -328,6 +330,7 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/inspector/DenoiseControl.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.tsx",
         "apps/desktop/src/inspector/editGesture.ts",
         "apps/desktop/src/inspector/gain.ts",
         "apps/desktop/src/inspector/mixedValue.ts",
@@ -410,6 +413,43 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/DenoiseControl.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/inspector/LoudnessControl.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/inspector/LoudnessControl.tsx",
+        "apps/desktop/src/inspector/loudness.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/inspector/LoudnessControl.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/inspector/gain.ts",
+        "apps/desktop/src/inspector/loudness.ts",
+        "apps/desktop/src/inspector/mixedValue.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.test.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/LoudnessControl.test.tsx"
       ],
       "hasNoDependents": false
     },
@@ -556,10 +596,30 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/inspector/AudioInspector.tsx",
-        "apps/desktop/src/inspector/gain.test.ts"
+        "apps/desktop/src/inspector/LoudnessControl.tsx",
+        "apps/desktop/src/inspector/gain.test.ts",
+        "apps/desktop/src/inspector/loudness.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/gain.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/inspector/loudness.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/inspector/gain.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/LoudnessControl.test.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/LoudnessControl.test.tsx"
       ],
       "hasNoDependents": false
     },
@@ -571,6 +631,7 @@
       "dependedOnBy": [
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/inspector/speed.test.ts"
@@ -1245,6 +1306,8 @@
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/DenoiseControl.test.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.test.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.tsx",
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
@@ -1292,6 +1355,7 @@
       "coveredByTests": [
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/DenoiseControl.test.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.test.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
@@ -1871,11 +1935,14 @@
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/DenoiseControl.test.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.test.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/inspector/denoise.ts",
         "apps/desktop/src/inspector/gain.test.ts",
         "apps/desktop/src/inspector/gain.ts",
+        "apps/desktop/src/inspector/loudness.ts",
         "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
@@ -1897,6 +1964,7 @@
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/DenoiseControl.test.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.test.tsx",
         "apps/desktop/src/inspector/gain.test.ts",
         "apps/desktop/src/timeline/assetDrop.test.ts",
         "apps/desktop/src/timeline/draw.test.ts",
@@ -2640,6 +2708,7 @@
         "packages/types/src/generated/AudioStage.ts",
         "packages/types/src/generated/ClipMove.ts",
         "packages/types/src/generated/Edge.ts",
+        "packages/types/src/generated/LoudnessTarget.ts",
         "packages/types/src/generated/Operation.ts",
         "packages/types/src/generated/Rational.ts",
         "packages/types/src/generated/SequenceSettings.ts",
@@ -3087,6 +3156,34 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/GainAdvice.ts",
+        "packages/types/src/generated/LoudnessReport.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/LoudnessReport.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Loudness.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/LoudnessTarget.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/Sequence.ts",
+        "packages/types/src/generated/Timeline.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -3579,6 +3676,7 @@
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
+        "packages/types/src/generated/LoudnessTarget.ts",
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/Track.ts"
       ],
@@ -3765,6 +3863,7 @@
       "isTest": false,
       "dependsOn": [
         "packages/types/src/generated/EvaluatedTrack.ts",
+        "packages/types/src/generated/LoudnessTarget.ts",
         "packages/types/src/generated/Rational.ts"
       ],
       "dependedOnBy": [
@@ -3999,6 +4098,8 @@
         "packages/types/src/generated/KeyframePoint.ts",
         "packages/types/src/generated/LoopRange.ts",
         "packages/types/src/generated/Loudness.ts",
+        "packages/types/src/generated/LoudnessReport.ts",
+        "packages/types/src/generated/LoudnessTarget.ts",
         "packages/types/src/generated/MasteringDisplay.ts",
         "packages/types/src/generated/Media.ts",
         "packages/types/src/generated/MediaInfo.ts",
@@ -4077,6 +4178,8 @@
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.test.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/denoise.ts",
@@ -4084,6 +4187,7 @@
         "apps/desktop/src/inspector/editGesture.ts",
         "apps/desktop/src/inspector/gain.test.ts",
         "apps/desktop/src/inspector/gain.ts",
+        "apps/desktop/src/inspector/loudness.ts",
         "apps/desktop/src/inspector/speed.test.ts",
         "apps/desktop/src/inspector/speed.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
@@ -4134,6 +4238,7 @@
       "coveredByTests": [
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/inspector/LoudnessControl.test.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/inspector/gain.test.ts",
         "apps/desktop/src/inspector/speed.test.ts",
@@ -4694,6 +4799,7 @@
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
+        "apps/desktop/src/inspector/LoudnessControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",

@@ -20,7 +20,7 @@ use super::{ProjectError, SCHEMA_VERSION};
 type Migration = fn(Value) -> Result<Value, ProjectError>;
 
 /// `MIGRATIONS[n]` migrates version `n + 1` to `n + 2`.
-const MIGRATIONS: &[Migration] = &[v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5];
+const MIGRATIONS: &[Migration] = &[v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5, v5_to_v6];
 
 /// Schema 2 (#57): the sequence records whether its settings still wait for
 /// the first clip. A version-1 sequence with no clip had never been given
@@ -173,6 +173,18 @@ fn v4_to_v5(mut value: Value) -> Result<Value, ProjectError> {
         }
     }
     object.insert("schemaVersion".to_owned(), Value::from(5));
+    Ok(value)
+}
+
+/// Schema 6 (#48): a sequence may carry a loudness target. A version-5
+/// sequence has none, and an absent target is written as nothing, so only
+/// the version changes — bumped so a version-5 build refuses a file holding
+/// one as newer, not damaged.
+fn v5_to_v6(mut value: Value) -> Result<Value, ProjectError> {
+    value
+        .as_object_mut()
+        .ok_or_else(|| ProjectError::Corrupt("the project is not an object".to_owned()))?
+        .insert("schemaVersion".to_owned(), Value::from(6));
     Ok(value)
 }
 

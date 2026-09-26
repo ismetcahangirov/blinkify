@@ -44,6 +44,7 @@ eligibility — is [`sequence-settings.md`](./sequence-settings.md) (#57).
 | Version | What changed                                                                                                                                                           |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1       | The first schema (#32).                                                                                                                                                |
+| 6       | `sequence.loudness`, the whole sequence's loudness target (#48); written only when set, so nothing to migrate.                                                         |
 | 5       | `gain` and `normalise` carry `ceilingDbtp`, and `gain`, `denoise` and `normalise` carry `bypassed` (#46). Migrated with the default −1 dBTP and nothing bypassed.      |
 | 4       | Each track has `name`, `muted`, `solo`, `locked` and `collapsed`; a clip may be `detached` and carry a `link` (#36). Migrated with default names and every switch off. |
 | 3       | The `freeze` and `reverse` operations (#35). Nothing to migrate; bumped so that a version-2 build refuses a file holding one as newer, not damaged.                    |

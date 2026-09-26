@@ -11,6 +11,7 @@
 
 pub mod library;
 pub mod lifecycle;
+pub mod loudness;
 pub mod media;
 pub mod project;
 pub mod updater;
@@ -110,6 +111,8 @@ pub fn run() {
             project::operations_at,
             project::plan_export,
             project::gain_advice,
+            loudness::loudness_report,
+            loudness::sequence_loudness_report,
             updater::pending_update,
             updater::install_update
         ])

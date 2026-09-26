@@ -3,4 +3,11 @@
 /**
  * One step of a clip's audio chain.
  */
-export type AudioOperation = { "op": "gain", db: number, ceilingDbtp: number, bypassed: boolean, } | { "op": "denoise", strength: number, bypassed: boolean, } | { "op": "normalise", targetLufs: number, ceilingDbtp: number, bypassed: boolean, };
+export type AudioOperation = { "op": "gain", db: number, ceilingDbtp: number, bypassed: boolean, } | { "op": "denoise", strength: number, bypassed: boolean, } | { "op": "normalise", targetLufs: number, ceilingDbtp: number, bypassed: boolean, 
+/**
+ * The gain two-pass normalisation resolved to: the target less the
+ * loudness measured on the first pass (#48). The evaluator leaves it
+ * `None`; `audio::normalise` fills it in from a measurement, and a
+ * chain with it unmeasured cannot be exported.
+ */
+gainDb?: number, };

@@ -16,7 +16,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use blinkify_engine::audio::chain;
+use blinkify_engine::audio::chain::{self, ChainError};
 use blinkify_engine::export::audio::AudioTarget;
 use blinkify_engine::export::execute::{
     ExportError, ExportInput, ExportOutcome, ExportRequest, export,
@@ -395,7 +395,7 @@ fn an_invalid_container_and_codec_pair_is_refused_before_anything_runs() {
 }
 
 #[test]
-fn a_step_the_chain_does_not_apply_yet_is_refused() {
+fn a_step_the_chain_cannot_build_is_refused_before_anything_runs() {
     let source = source("h264-high-closed-gop.mp4");
     let plan = source.plan(vec![Track::new(
         1,
@@ -411,7 +411,7 @@ fn a_step_the_chain_does_not_apply_yet_is_refused() {
     let target = common::scratch("export-audio-normalise").join("out.mp4");
     assert!(matches!(
         run(&plan, &source, &target, AudioTarget::default()),
-        Err(ExportError::Unsupported(_))
+        Err(ExportError::AudioChain(ChainError::NotMeasured))
     ));
     assert!(!target.exists());
 }

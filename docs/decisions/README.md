@@ -78,3 +78,4 @@ Why it was plausible. Why it lost.
 | [0010](./ADR-0010-export-routes-packets-over-nut-pipes.md)                                   | The export routes packets between sidecar processes over NUT pipes           | Accepted |
 | [0011](./ADR-0011-one-audio-chain-with-an-oversampled-true-peak-limiter.md)                  | One audio chain, in a fixed order, with an oversampled true-peak limiter     | Accepted |
 | [0012](./ADR-0012-noise-reduction-is-a-bundled-rnnoise-speech-model-blended-in-the-graph.md) | Noise reduction is a bundled RNNoise speech model, blended in the graph      | Accepted |
+| [0013](./ADR-0013-loudness-normalisation-is-one-measured-gain-and-a-limiter.md)              | Loudness normalisation is one measured gain and a limiter                    | Accepted |

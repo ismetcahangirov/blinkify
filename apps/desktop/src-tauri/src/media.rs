@@ -109,6 +109,9 @@ pub struct MediaEngine {
     next_preview: AtomicU32,
     /// The bundled noise reduction model (#47), or why it cannot be used.
     models: Result<Models, ModelError>,
+    /// The last sequence normalisation measured (#48): the digest of the
+    /// clips it was measured on, and its gain.
+    sequence_gain: Mutex<Option<(String, f64)>>,
 }
 
 /// A waveform being generated, or ready to draw.
@@ -167,7 +170,31 @@ impl MediaEngine {
             next_preview: AtomicU32::new(1),
             // Installed with the application, never fetched (#47).
             models: Models::in_dir(&resource_dir.unwrap_or_default().join(MODELS_DIR)),
+            sequence_gain: Mutex::new(None),
         }
+    }
+
+    /// The content-keyed cache, if there is a cache directory.
+    pub(crate) fn cache(&self) -> Option<&Cache> {
+        self.cache.as_ref()
+    }
+
+    /// The sequence gain measured for the clips with digest `clips`, if the
+    /// last measurement was of exactly them.
+    pub(crate) fn sequence_gain(&self, clips: &str) -> Option<f64> {
+        self.sequence_gain
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .as_ref()
+            .filter(|(digest, _)| digest == clips)
+            .map(|(_, gain)| *gain)
+    }
+
+    pub(crate) fn remember_sequence_gain(&self, clips: String, gain: f64) {
+        *self
+            .sequence_gain
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner) = Some((clips, gain));
     }
 
     /// The bundled models, if they are installed and intact.

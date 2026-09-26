@@ -245,7 +245,10 @@ fn plan_for(
         }
         sources.insert(id, Arc::new(engine.source_media(source.path())?));
     }
-    PlaybackPlan::from_timeline(timeline, sources).map_err(|error| error.to_string())
+    // Normalisation as measured so far (#48): what is not measured yet is
+    // played unprocessed, never guessed.
+    let timeline = crate::loudness::resolved(engine, project, timeline)?;
+    PlaybackPlan::from_timeline(&timeline, sources).map_err(|error| error.to_string())
 }
 
 /// The project Blinkify was launched with, opened — or `None` when it was
@@ -724,6 +727,9 @@ pub fn plan_export(
             facts.insert(id, engine.export_facts(source.path())?);
         }
     }
+    // A normalised sequence processes every clip's sound (#48): the plan
+    // must know, measured or not.
+    let timeline = crate::loudness::resolved(&engine, &project, &timeline)?;
     plan(&timeline, &project.sequence.settings, &facts).map_err(|error| error.to_string())
 }
 

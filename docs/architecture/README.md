@@ -80,7 +80,8 @@ How Blinkify is put together and why the structure holds under change.
   true-peak limiter; loudness and true-peak measurement, cached by content;
   the limiter's effect worked out before export (#46); RNNoise noise
   reduction with a bundled model and a blend, and chain changes taken over
-  while playing without a gap (#47)
+  while playing without a gap (#47); two-pass loudness normalisation as one
+  measured gain and a limiter, for a clip or the whole mix (#48)
 
 ## What does not belong here
 

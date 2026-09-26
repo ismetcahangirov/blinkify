@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useProjectStore } from "../project/project.store.js";
 import type { Placement } from "../timeline/draw.js";
 import { DenoiseControl } from "./DenoiseControl.js";
+import { LoudnessControl } from "./LoudnessControl.js";
 import { editGesture, type EditGesture } from "./editGesture.js";
 import {
   CEILING_MIN,
@@ -25,7 +26,7 @@ import { shared } from "./mixedValue.js";
 /**
  * The audio section (#46, #47; completed by #49): what the selected clips'
  * sound goes through, in the order the chain runs it — noise reduction,
- * then gain — and a statement that none of it touches the pictures.
+ * gain, loudness — and a statement that none of it touches the pictures.
  *
  * A view of the selection and of the graph, like the video section: every
  * control sends an edit, and a drag is one gesture and one undo entry.
@@ -76,6 +77,16 @@ export function AudioInspector({ clips }: { clips: readonly Placement[] }) {
           Gain
         </h3>
         <GainControl clips={clips} />
+      </section>
+
+      <section
+        className="inspector-section"
+        aria-labelledby="inspector-loudness"
+      >
+        <h3 id="inspector-loudness" className="inspector-section__title">
+          Loudness
+        </h3>
+        <LoudnessControl clips={clips} />
       </section>
     </div>
   );
