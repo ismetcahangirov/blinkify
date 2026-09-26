@@ -321,6 +321,7 @@ fn cancelling_mid_segment_leaves_no_file_and_no_process() {
             target: &target,
             overwrite: false,
             audio: AudioTarget::Opus { kilobits: 128 },
+            models: None,
             cancel,
             on_progress: None,
         },

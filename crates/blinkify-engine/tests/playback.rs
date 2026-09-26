@@ -65,6 +65,7 @@ fn capturing_player(orchestrator: &Orchestrator, plan: PlaybackPlan) -> (Player,
             max_width: 160,
             max_height: 90,
             default_device: DefaultDevice::System,
+            models: None,
         },
     );
     (player, samples)
@@ -689,6 +690,7 @@ fn with_no_audio_output_playback_runs_in_silence() {
             max_width: 160,
             max_height: 90,
             default_device: DefaultDevice::System,
+            models: None,
         },
     );
     let status = player.command(TransportCommand::Play);

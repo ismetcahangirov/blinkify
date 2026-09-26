@@ -316,6 +316,7 @@ fn player_of(
             max_width,
             max_height,
             default_device: DefaultDevice::System,
+            models: None,
         },
     )
 }

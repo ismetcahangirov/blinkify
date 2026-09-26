@@ -164,6 +164,7 @@ impl Source {
                 target,
                 overwrite: false,
                 audio,
+                models: None,
                 cancel: CancelToken::default(),
                 on_progress: None,
             },

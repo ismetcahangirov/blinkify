@@ -649,7 +649,7 @@ pub struct Diagnostics {
 }
 
 impl Diagnostics {
-    fn of(at: &OperationsAt, project: &Project) -> Self {
+    fn of(at: &OperationsAt, project: &Project, models: bool) -> Self {
         let clips = at
             .clips
             .iter()
@@ -669,7 +669,7 @@ impl Diagnostics {
                     .iter()
                     .map(|operation| DiagnosticOperation {
                         operation: *operation,
-                        previewed: previewed(operation),
+                        previewed: previewed(operation, models),
                     })
                     .collect(),
             })
@@ -682,10 +682,13 @@ impl Diagnostics {
 }
 
 /// Whether the preview renders `operation`: timing always, a hold or a
-/// reverse not yet (#35, #55); of the audio chain, what `chain_rendered` says.
-fn previewed(operation: &Operation) -> bool {
+/// reverse not yet (#35, #55); of the audio chain, what `chain_rendered` says
+/// — and noise reduction only while its model is installed (#47).
+fn previewed(operation: &Operation, models: bool) -> bool {
     forces_re_encode(operation).is_none()
-        && audio_operation(operation).is_none_or(|step| chain_rendered(&step))
+        && audio_operation(operation).is_none_or(|step| {
+            chain_rendered(&step) && (models || step.stage() != AudioStage::Denoise)
+        })
 }
 
 /// What exporting the open project would do (#39): every segment of the
@@ -764,7 +767,11 @@ pub fn gain_advice(
         (placement, path)
     };
     let info = engine.info_of(&path)?;
-    let Some(request) = measure_request(&placement, &path, &info, AudioStage::Gain) else {
+    // Measured after noise reduction, as the gain hears it.
+    let Some(request) =
+        measure_request(&placement, &path, &info, AudioStage::Gain, engine.models())
+            .map_err(|error| error.to_string())?
+    else {
         return Ok(None);
     };
     let before = engine.loudness(&request)?;
@@ -803,6 +810,7 @@ pub fn operations_at(
     Ok(Diagnostics::of(
         &timeline.at(position),
         opened.session.document().project(),
+        engine.models().is_some(),
     ))
 }
 

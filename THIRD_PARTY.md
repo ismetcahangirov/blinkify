@@ -19,10 +19,10 @@ installer, with its licence and what obligation that licence places on us.
 
 ## Bundled binaries
 
-| Component                              | Version       | Licence      | Obligation                                                                                         | Status                                                                 |
-| -------------------------------------- | ------------- | ------------ | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| FFmpeg (LGPL build, no `--enable-gpl`) | FFmpeg n8.1.3 | LGPL v2.1+   | Ship the licence text; keep the component replaceable by the user; publish the build configuration | Bundled — [#21](https://github.com/ismetcahangirov/blinkify/issues/21) |
-| RNNoise model weights                  | —             | BSD-3-Clause | Attribution                                                                                        | Planned — [#47](https://github.com/ismetcahangirov/blinkify/issues/47) |
+| Component                              | Version       | Licence    | Obligation                                                                                         | Status                                                                 |
+| -------------------------------------- | ------------- | ---------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| FFmpeg (LGPL build, no `--enable-gpl`) | FFmpeg n8.1.3 | LGPL v2.1+ | Ship the licence text; keep the component replaceable by the user; publish the build configuration | Bundled — [#21](https://github.com/ismetcahangirov/blinkify/issues/21) |
+| RNNoise model `somnolent-hogwash`      | 2018-09-01    | See below  | Attribution                                                                                        | Bundled — [#47](https://github.com/ismetcahangirov/blinkify/issues/47) |
 
 ### The FFmpeg sidecar in detail
 
@@ -87,6 +87,24 @@ match a High-profile seam, and Cisco's royalty undertaking covers only binaries
 Cisco itself distributes — is in
 [ADR-0003](./docs/decisions/ADR-0003-re-encode-encoder-strategy.md). Adding one
 is not a dependency decision; it is an ADR-0003 supersession.
+
+### The noise reduction model in detail
+
+`sh.rnnn` is the `somnolent-hogwash-2018-09-01` model from Gregor Richards'
+[rnnoise-models](https://github.com/GregorR/rnnoise-models), commit
+`3eee541a283f`, trained for speech in a recording environment — fans, air
+conditioning, computers. It is committed at
+`crates/blinkify-engine/models/rnnoise/sh.rnnn`, installed beside the
+application as a resource, and checked against its SHA-256
+(`70bb6685eb0c…`) every time Blinkify starts.
+
+- **The weights.** The repository's README states that, apart from its
+  `tools/` directory, "none of this work is creative and thus none of it is
+  subject to copyright". No licence is claimed over the model file; Blinkify
+  attributes it anyway.
+- **The network that runs them** is RNNoise, by Jean-Marc Valin (Xiph.Org,
+  Mozilla), BSD-3-Clause, compiled into the FFmpeg sidecar as the `arnndn`
+  filter. It is covered by the FFmpeg entry above; it adds no library.
 
 ## Runtime components supplied by the operating system
 

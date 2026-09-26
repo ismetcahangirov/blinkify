@@ -37,6 +37,8 @@ use super::plan::{ExportPlan, Media, Segment, SegmentSource};
 use super::profile::{EncoderChoice, JoinMismatch, validate_join};
 use super::render::{self, RenderJob};
 use super::seam::{self, Piece, Stitch};
+use crate::audio::chain::ChainError;
+use crate::audio::denoise::Models;
 use crate::capability::VideoCodec;
 use crate::orchestrator::{
     CancelToken, Flow, JobError, JobOptions, JobProgress, Orchestrator, Priority, SidecarCommand,
@@ -168,6 +170,9 @@ pub enum ExportError {
     Io(#[from] io::Error),
     #[error("the export was cancelled")]
     Cancelled,
+    /// A clip's audio chain cannot be built: a model it needs is missing.
+    #[error("the sound cannot be processed: {0}")]
+    AudioChain(#[from] ChainError),
 }
 
 /// What an export wrote.
@@ -194,6 +199,10 @@ pub struct ExportRequest<'a> {
     /// What re-encoded sound becomes where none of the output's sound is
     /// copied (#43).
     pub audio: AudioTarget,
+    /// The bundled models noise reduction runs with (#47), if they were
+    /// found. An export that needs one without it is refused before it
+    /// starts.
+    pub models: Option<&'a Models>,
     pub cancel: CancelToken,
     pub on_progress: Option<Box<dyn FnMut(JobProgress) + Send>>,
 }
@@ -462,6 +471,7 @@ struct Context<'a> {
     plan: &'a ExportPlan,
     cancel: &'a CancelToken,
     encoding: Option<&'a AudioEncoding>,
+    models: Option<&'a Models>,
     commands: &'a Mutex<Vec<String>>,
 }
 
@@ -532,7 +542,7 @@ impl Context<'_> {
             reference = Some(stream.extradata);
         }
         for segment in &route.segments {
-            runnable(segment, self.encoding.is_some())?;
+            runnable(segment, self.encoding.is_some(), self.models)?;
             if self.cancel.is_cancelled() {
                 return Err(ExportError::Cancelled);
             }
@@ -654,7 +664,13 @@ impl Context<'_> {
         let encoding = self
             .encoding
             .ok_or_else(|| ExportError::Unsupported("a re-encoded segment".to_owned()))?;
-        let job = audio::encoder_job(segment, self.inputs, encoding, self.plan.time_base)?;
+        let job = audio::encoder_job(
+            segment,
+            self.inputs,
+            encoding,
+            self.plan.time_base,
+            self.models,
+        )?;
         Ok((
             job.command,
             Window::Encoded {
@@ -1151,7 +1167,11 @@ fn chapters(
 /// path can make.
 /// Anything else is refused before any output is written, never copied or
 /// encoded differently from what the plan chose.
-fn runnable(segment: &Segment, encodes_audio: bool) -> Result<(), ExportError> {
+fn runnable(
+    segment: &Segment,
+    encodes_audio: bool,
+    models: Option<&Models>,
+) -> Result<(), ExportError> {
     match (segment.tier, segment.sources.as_slice()) {
         (ExportTier::StreamCopy, [_]) => Ok(()),
         (ExportTier::SmartCut { .. }, [_]) | (ExportTier::FullReEncode { .. }, _)
@@ -1160,7 +1180,7 @@ fn runnable(segment: &Segment, encodes_audio: bool) -> Result<(), ExportError> {
             Ok(())
         }
         (ExportTier::FullReEncode { .. }, _) if segment.media == Media::Audio && encodes_audio => {
-            audio::check(segment)
+            audio::check(segment, models)
         }
         (tier, _) => Err(ExportError::Unsupported(format!(
             "the {:?} segment at frame {} ({tier:?})",
@@ -1182,7 +1202,7 @@ fn preflight(
         )));
     }
     for segment in &request.plan.segments {
-        runnable(segment, encoding.is_some())?;
+        runnable(segment, encoding.is_some(), request.models)?;
         for source in &segment.sources {
             if !request.inputs.contains_key(&source.source) {
                 return Err(ExportError::MissingSource(source.source));
@@ -1258,6 +1278,7 @@ fn run(
         target,
         overwrite,
         audio: _,
+        models,
         cancel,
         on_progress,
     } = request;
@@ -1274,6 +1295,7 @@ fn run(
         plan,
         cancel: &cancel,
         encoding,
+        models,
         commands: &commands,
     };
     let primary = routes.first().map_or(Media::Video, |route| route.media);

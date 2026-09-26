@@ -9,15 +9,15 @@ TypeScript only. The Rust crate boundaries are checked by
 
 ## Totals
 
-- Files: **308**
-- Test files: **44**
+- Files: **311**
+- Test files: **45**
 - Architecture rule violations: **0**
 
 ## Workspaces
 
 | Workspace | Files | Tests | Files with no direct test |
 | --- | ---: | ---: | ---: |
-| `apps/desktop` | 113 | 38 | 24 |
+| `apps/desktop` | 116 | 39 | 24 |
 | `packages/types` | 126 | 0 | 125 |
 | `packages/ui` | 39 | 6 | 18 |
 | `tools` | 30 | 0 | 30 |

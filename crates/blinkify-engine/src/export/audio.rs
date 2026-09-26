@@ -37,10 +37,11 @@ use super::execute::{Container, ExportError, ExportInput};
 use super::plan::{ExportPlan, Media, Segment, SegmentSource};
 use crate::audio::chain;
 use crate::audio::decoder::tempo_stages;
+use crate::audio::denoise::Models;
 use crate::orchestrator::SidecarCommand;
 use crate::probe::{Rational, StreamInfo, StreamKind};
 use crate::project::SourceId;
-use crate::project::evaluate::{AudioOperation, Motion};
+use crate::project::evaluate::Motion;
 use crate::tier::ExportTier;
 
 /// Seconds added to every timestamp the encoder writes, as for readers.
@@ -250,7 +251,7 @@ pub fn encoding_for(
 /// # Errors
 ///
 /// [`ExportError::Unsupported`], naming what cannot be made yet.
-pub fn check(segment: &Segment) -> Result<(), ExportError> {
+pub fn check(segment: &Segment, models: Option<&Models>) -> Result<(), ExportError> {
     if matches!(segment.tier, ExportTier::SmartCut { .. }) {
         return Err(ExportError::Unsupported("a smart-cut of sound".to_owned()));
     }
@@ -261,15 +262,16 @@ pub fn check(segment: &Segment) -> Result<(), ExportError> {
                 "the sound of a reversed clip longer than {REVERSE_LIMIT_SECONDS} seconds"
             )));
         }
+        // The rate does not change what can be built.
+        chain::filters(&source.audio, 48_000, models)?;
     }
     for step in segment.sources.iter().flat_map(|source| &source.audio) {
         if step.bypassed() || chain::applies(step) {
             continue;
         }
-        return Err(ExportError::Unsupported(match step {
-            AudioOperation::Denoise { .. } => "noise reduction, which arrives with #47".to_owned(),
-            _ => "loudness normalisation, which arrives with #48".to_owned(),
-        }));
+        return Err(ExportError::Unsupported(
+            "loudness normalisation, which arrives with #48".to_owned(),
+        ));
     }
     Ok(())
 }
@@ -288,7 +290,8 @@ fn source_chain(
     stream: &StreamInfo,
     encoding: &AudioEncoding,
     preroll: i64,
-) -> (f64, String) {
+    models: Option<&Models>,
+) -> Result<(f64, String), ExportError> {
     let rate = i64::from(encoding.sample_rate);
     let input_rate = audio_shape(stream).map_or(rate, |(r, _)| i64::from(r));
     let speed = speed_of(source);
@@ -310,7 +313,7 @@ fn source_chain(
         let _ = write!(graph, ",adelay=delays={delay}S:all=1");
     }
     let _ = write!(graph, ",aresample={rate}");
-    let filters = chain::filters(&source.audio, encoding.sample_rate);
+    let filters = chain::filters(&source.audio, encoding.sample_rate, models)?;
     if !filters.is_empty() {
         let _ = write!(graph, ",{filters}");
     }
@@ -327,7 +330,7 @@ fn source_chain(
         ",aformat=channel_layouts={layout}[p{i}];",
         layout = encoding.layout()
     );
-    (from - SEEK_MARGIN_SECONDS, graph)
+    Ok((from - SEEK_MARGIN_SECONDS, graph))
 }
 
 /// An encoder process for one audio segment, and where in its output the
@@ -356,8 +359,9 @@ pub fn encoder_job(
     inputs: &BTreeMap<SourceId, ExportInput>,
     encoding: &AudioEncoding,
     sequence: Rational,
+    models: Option<&Models>,
 ) -> Result<EncoderJob, ExportError> {
-    check(segment)?;
+    check(segment, models)?;
     let rate = i64::from(encoding.sample_rate);
     let per_sample = Rational { num: 1, den: rate };
     let samples = crate::time::rescale(
@@ -398,7 +402,7 @@ pub fn encoder_job(
             labels.push(format!("[p{i}]"));
             continue;
         }
-        let (seek, chain) = source_chain(i, source, stream, encoding, preroll);
+        let (seek, chain) = source_chain(i, source, stream, encoding, preroll, models)?;
         if seek > 0.0 {
             command = command.option("-ss", format!("{seek:.6}"));
         }

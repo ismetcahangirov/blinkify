@@ -43,6 +43,42 @@ ceiling defaults to −1 dBTP and can be set from −20 to 0 dBTP. A gain of 0 d
 is no step at all: the edit removes it, so the sound is copied again rather
 than re-encoded for nothing.
 
+## Noise reduction (#47)
+
+`arnndn` with the bundled RNNoise speech model
+([ADR-0012](../decisions/ADR-0012-noise-reduction-is-a-bundled-rnnoise-speech-model-blended-in-the-graph.md)):
+
+```
+aresample=48000, apad=pad_len=480, arnndn=m=<model>:mix=<strength>,
+atrim=start_sample=480, asetpts=PTS-STARTPTS, aresample=<rate>
+```
+
+- **Strength** is `mix`: the denoised signal blended with the original, in
+  the graph. At 0 the output is the input, bit for bit.
+- **The frame of delay** RNNoise adds is taken back — padded at the end,
+  dropped at the start — so the sound stays on its samples.
+- **The model** is `Models`: found in the installation's `rnnoise/`
+  resource directory and checked against its SHA-256 at start-up. The path
+  reaches the graph escaped for both of FFmpeg's parsers, so a quote, a
+  comma or a bracket in an install path is only a path. Without the model,
+  `chain::filters` refuses noise reduction (`ChainError::NoModel`) and the
+  export with it; the preview plays the chain without it
+  (`chain::playable`), and the diagnostics say it is not heard.
+- **Measured**: on the corpus reading under pink noise, full strength raises
+  the scale-invariant signal-to-noise ratio from 8.9 to 12.3 dB.
+
+## Changing the chain while playing
+
+Changing a clip's audio chain changes nothing else in the preview plan, so
+`Player::set_plan` recognises it (`only_chains_differ`) and hands the plan to
+the running feeder instead of restarting playback. The feeder starts a
+decoder with the new chain 300 ms ahead of what it is writing, keeps the old
+one playing until the walk reaches that point, and switches on that sample —
+dropping anything the new decoder made for a stretch already written if it
+was late. The picture and the clock are untouched; there is no gap
+(`tests/audio_denoise.rs` plays a tone, changes its gain mid-playback, and
+finds no silent 10 ms).
+
 ## Measuring: `audio::loudness`
 
 The engine measures loudness itself, in one pass, for any stretch of any
@@ -86,3 +122,9 @@ user applies it. The Tauri command is `gain_advice(clip)`.
   again; silence; an already-limited input turned down; the pictures copied
   packet for packet; the preview and export chains the same; the advice; the
   cache.
+- `audio::denoise` — the model's hash, the path escaped for both parsers,
+  the blend.
+- `tests/audio_denoise.rs` — the SNR gain on a noisy reading, strength 0 bit
+  for bit, the model found under an install path with a quote in it, a
+  missing model refused before anything is written, the pictures copied, and
+  a change of chain while playing with no gap.

@@ -123,7 +123,10 @@ pub fn run() {
             // The engine needs the OS cache directory, which only exists
             // once the app does — hence managed here rather than on the
             // builder.
-            app.manage(MediaEngine::locate(app.path().app_cache_dir().ok()));
+            app.manage(MediaEngine::locate(
+                app.path().app_cache_dir().ok(),
+                app.path().resource_dir().ok(),
+            ));
 
             // ADR-0003 part 1: what this machine can encode is measured, not
             // assumed, and measured before anything needs the answer.

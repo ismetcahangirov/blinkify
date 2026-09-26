@@ -17,7 +17,8 @@ use std::path::Path;
 use serde::Serialize;
 use ts_rs::TS;
 
-use super::chain::{Stage, filters_before};
+use super::chain::{ChainError, Stage, filters_before};
+use super::denoise::Models;
 use super::loudness::{Loudness, MeasureRequest};
 use crate::probe::{MediaInfo, StreamKind};
 use crate::project::TrackKind;
@@ -107,40 +108,50 @@ pub fn advise(before: Loudness, chain: &[AudioOperation]) -> GainAdvice {
 /// its range of its sound stream, through the steps before `stage`. `None`
 /// when the clip has no sound — a silent video clip, or a source without an
 /// audio stream.
-#[must_use]
+///
+/// # Errors
+///
+/// A step before `stage` needs a model that is not there.
 pub fn measure_request(
     placement: &Placement,
     path: &Path,
     info: &MediaInfo,
     stage: Stage,
-) -> Option<MeasureRequest> {
+    models: Option<&Models>,
+) -> Result<Option<MeasureRequest>, ChainError> {
     if placement.silent {
-        return None;
+        return Ok(None);
     }
     let stream = match placement.kind {
         TrackKind::Audio => info
             .streams
             .iter()
-            .find(|stream| stream.index == placement.stream)?,
+            .find(|stream| stream.index == placement.stream),
         TrackKind::Video => {
             let streams: Vec<_> = info.audio().collect();
             let default = streams.iter().position(|(stream, _)| stream.is_default);
-            streams.into_iter().nth(default.unwrap_or(0))?.0
+            streams
+                .into_iter()
+                .nth(default.unwrap_or(0))
+                .map(|(stream, _)| stream)
         }
     };
+    let Some(stream) = stream else {
+        return Ok(None);
+    };
     let StreamKind::Audio(audio) = &stream.kind else {
-        return None;
+        return Ok(None);
     };
     let sample_rate = audio.sample_rate.unwrap_or(48_000);
-    Some(MeasureRequest {
+    Ok(Some(MeasureRequest {
         source: path.to_path_buf(),
         stream: stream.index,
         start_seconds: crate::time::seconds(placement.source_in, placement.time_base),
         end_seconds: crate::time::seconds(placement.source_out, placement.time_base),
         sample_rate,
         channels: if audio.channels == Some(1) { 1 } else { 2 },
-        filters: filters_before(&placement.audio, stage, sample_rate),
-    })
+        filters: filters_before(&placement.audio, stage, sample_rate, models)?,
+    }))
 }
 
 #[cfg(test)]

@@ -112,6 +112,22 @@ impl SampleRing {
         state.samples.len()
     }
 
+    /// How many samples are buffered now.
+    #[must_use]
+    pub fn buffered(&self) -> usize {
+        self.lock().samples.len()
+    }
+
+    /// Drop up to `count` of the oldest samples without reading them: a
+    /// decoder that started ahead catching up with where playback is.
+    pub fn discard(&self, count: usize) {
+        let mut state = self.lock();
+        let count = count.min(state.samples.len());
+        state.samples.drain(..count);
+        drop(state);
+        self.changed.notify_all();
+    }
+
     /// The producer delivered its last sample.
     pub fn finish(&self) {
         self.lock().finished = true;

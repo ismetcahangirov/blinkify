@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 308,
-    "tests": 44,
+    "files": 311,
+    "tests": 45,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 113,
-      "tests": 38,
+      "files": 116,
+      "tests": 39,
       "untested": [
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
@@ -327,6 +327,7 @@
       "layer": "renderer",
       "isTest": false,
       "dependsOn": [
+        "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/editGesture.ts",
         "apps/desktop/src/inspector/gain.ts",
         "apps/desktop/src/inspector/mixedValue.ts",
@@ -374,6 +375,41 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/ClipTimingFields.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/inspector/DenoiseControl.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/inspector/DenoiseControl.tsx",
+        "apps/desktop/src/inspector/denoise.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/inspector/DenoiseControl.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/inspector/denoise.ts",
+        "apps/desktop/src/inspector/editGesture.ts",
+        "apps/desktop/src/inspector/mixedValue.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/inspector/DenoiseControl.test.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/DenoiseControl.test.tsx"
       ],
       "hasNoDependents": false
     },
@@ -448,6 +484,23 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "apps/desktop/src/inspector/denoise.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/DenoiseControl.test.tsx",
+        "apps/desktop/src/inspector/DenoiseControl.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/DenoiseControl.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/inspector/editGesture.test.ts": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -471,6 +524,7 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts"
       ],
@@ -516,6 +570,7 @@
       "dependsOn": [],
       "dependedOnBy": [
         "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/inspector/speed.test.ts"
@@ -1188,6 +1243,8 @@
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/DenoiseControl.test.tsx",
+        "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
@@ -1234,6 +1291,7 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/inspector/DenoiseControl.test.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
@@ -1811,8 +1869,11 @@
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/DenoiseControl.test.tsx",
+        "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
+        "apps/desktop/src/inspector/denoise.ts",
         "apps/desktop/src/inspector/gain.test.ts",
         "apps/desktop/src/inspector/gain.ts",
         "apps/desktop/src/library/libraryMedia.ts",
@@ -1835,6 +1896,7 @@
       "coveredByTests": [
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/inspector/DenoiseControl.test.tsx",
         "apps/desktop/src/inspector/gain.test.ts",
         "apps/desktop/src/timeline/assetDrop.test.ts",
         "apps/desktop/src/timeline/draw.test.ts",
@@ -4017,6 +4079,7 @@
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
+        "apps/desktop/src/inspector/denoise.ts",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/inspector/editGesture.ts",
         "apps/desktop/src/inspector/gain.test.ts",
@@ -4630,6 +4693,7 @@
         "apps/desktop/src/UpdateBanner.tsx",
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",
