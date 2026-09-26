@@ -1059,29 +1059,7 @@ fn snap_to_keyframes(
     if trims.is_empty() {
         return Ok(Compiled::from((Vec::new(), kept)));
     }
-    // The lengths the new trims make, from the evaluator: the one place a
-    // trim becomes frames. Each retimed clip is measured on a track of its
-    // own, since before the shifts a longer clip overlaps the next.
-    let mut measuring = project.clone();
-    let trims_ref = &trims;
-    measuring.sequence.tracks = project
-        .sequence
-        .tracks
-        .iter()
-        .flat_map(|track| {
-            track.clips.iter().filter_map(move |clip| {
-                let &(from, to) = trims_ref.get(&clip.id)?;
-                Some((track, retimed(clip, from, to, clip.start)))
-            })
-        })
-        .zip(1..)
-        .map(|((track, clip), id)| Track {
-            id,
-            clips: vec![clip],
-            ..track.clone()
-        })
-        .collect();
-    let after = timeline_of(&measuring)?;
+    let after = retimed_alone(project, &trims)?;
     // Each snapped clip's old end, and how much longer it became.
     let mut shifts: Vec<(i64, i64)> = Vec::new();
     for snap in snaps {
@@ -1120,6 +1098,35 @@ fn snap_to_keyframes(
         }
     }
     Ok(Compiled::from((changes, kept)))
+}
+
+/// The clips of `trims` with their new trims, each evaluated on a track of
+/// its own: the lengths the trims make, from the evaluator — the one place a
+/// trim becomes frames. Alone, since before the shifts a longer clip
+/// overlaps the next.
+fn retimed_alone(
+    project: &Project,
+    trims: &BTreeMap<ClipId, (i64, i64)>,
+) -> Result<Timeline, EditError> {
+    let mut measuring = project.clone();
+    measuring.sequence.tracks = project
+        .sequence
+        .tracks
+        .iter()
+        .flat_map(|track| {
+            track.clips.iter().filter_map(move |clip| {
+                let &(from, to) = trims.get(&clip.id)?;
+                Some((track, retimed(clip, from, to, clip.start)))
+            })
+        })
+        .zip(1..)
+        .map(|((track, clip), id)| Track {
+            id,
+            clips: vec![clip],
+            ..track.clone()
+        })
+        .collect();
+    timeline_of(&measuring)
 }
 
 fn paste(project: &Project, clips: &[ClipId], at: i64) -> Result<Compiled, EditError> {
