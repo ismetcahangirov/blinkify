@@ -14,6 +14,7 @@ import {
   onWindowResized,
   toggleMaximiseWindow,
 } from "./windowChrome.js";
+import { ExportQueueButton } from "../export/ExportQueue.js";
 import { HistoryControls } from "../project/HistoryControls.js";
 import { SequenceSettingsDialog } from "../project/SequenceSettingsDialog.js";
 import { ShortcutReference } from "../shortcuts/ShortcutReference.js";
@@ -286,6 +287,8 @@ export function AppBar() {
           Export tier: not computed
         </span>
       </Tooltip>
+
+      <ExportQueueButton />
 
       <Button variant="primary" size="sm" disabled>
         Export

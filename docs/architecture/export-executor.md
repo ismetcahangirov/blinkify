@@ -74,8 +74,10 @@ and no overlap, and the output starts at zero.
 
 - Checked before any process starts: the target's container, that every
   copied codec fits it unchanged, that no segment is declined, that every
-  source is present, and that the target does not exist unless replacing it
-  was confirmed (`overwrite`).
+  source is present, that the target is not one of the sources — refused
+  even with replacing confirmed, however the path is spelled
+  (`TargetIsSource`, #51) — and that the target does not exist unless
+  replacing it was confirmed (`overwrite`).
 - Any failure — a reader, the muxer, a full disk, a source that disappears —
   fails the export. The partial file is removed and the target is untouched.
 - The caller's `CancelToken` stops the muxer and every router; a router drops

@@ -152,6 +152,8 @@ pub enum ExportError {
     CodecNotInContainer { codec: String, container: String },
     #[error("{} already exists, and replacing it was not confirmed", .0.display())]
     TargetExists(PathBuf),
+    #[error("{} is one of the export's sources, and a source is never written to", .0.display())]
+    TargetIsSource(PathBuf),
     #[error("the plan declines part of this export: {0}")]
     Declined(String),
     #[error("this export needs a step Blinkify cannot run yet: {0}")]
@@ -1218,10 +1220,32 @@ fn preflight(
             }
         }
     }
+    // Before the overwrite check, so that no confirmation can reach a source:
+    // `CLAUDE.md` section 19 — no operation overwrites a source file.
+    if let Some(input) = request
+        .inputs
+        .values()
+        .find(|input| same_file(input.source.path(), request.target))
+    {
+        return Err(ExportError::TargetIsSource(
+            input.source.path().to_path_buf(),
+        ));
+    }
     if request.target.exists() && !request.overwrite {
         return Err(ExportError::TargetExists(request.target.to_path_buf()));
     }
     Ok((container, encoding))
+}
+
+/// Whether `a` and `b` name one file. Resolved where both exist, so a
+/// relative path, a different case or a `..` cannot hide a source; compared
+/// as written where either does not, since a file that does not exist yet is
+/// not a source.
+fn same_file(a: &Path, b: &Path) -> bool {
+    match (a.canonicalize(), b.canonicalize()) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => a == b,
+    }
 }
 
 /// Each output stream's segments, video first.

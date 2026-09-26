@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 318,
-    "tests": 46,
+    "files": 326,
+    "tests": 48,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 121,
-      "tests": 40,
+      "files": 126,
+      "tests": 42,
       "untested": [
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
@@ -42,7 +42,7 @@
       ]
     },
     "packages/types": {
-      "files": 128,
+      "files": 131,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
@@ -87,7 +87,9 @@
         "packages/types/src/generated/EncodingField.ts",
         "packages/types/src/generated/EncodingSignature.ts",
         "packages/types/src/generated/EvaluatedTrack.ts",
+        "packages/types/src/generated/ExportJob.ts",
         "packages/types/src/generated/ExportPlan.ts",
+        "packages/types/src/generated/ExportState.ts",
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/Filmstrip.ts",
         "packages/types/src/generated/Fingerprint.ts",
@@ -155,6 +157,7 @@
         "packages/types/src/generated/SourceStatus.ts",
         "packages/types/src/generated/SpeedProblem.ts",
         "packages/types/src/generated/SpeedVerdict.ts",
+        "packages/types/src/generated/Stage.ts",
         "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
@@ -255,6 +258,8 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/UpdateBanner.tsx",
+        "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/exportJobs.store.ts",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
         "apps/desktop/src/shell/AppShell.tsx",
@@ -299,6 +304,87 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/UpdateBanner.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/export/ExportQueue.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/exportJobs.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/export/ExportQueue.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/export/exportJobs.store.ts",
+        "apps/desktop/src/export/exportJobs.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/export/ExportQueue.test.tsx",
+        "apps/desktop/src/shell/AppBar.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/export/ExportQueue.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/export/exportJobs.store.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/export/ExportQueue.test.tsx",
+        "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/exportJobs.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/export/ExportQueue.test.tsx",
+        "apps/desktop/src/export/exportJobs.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/export/exportJobs.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/export/exportJobs.store.ts",
+        "apps/desktop/src/export/exportJobs.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/export/exportJobs.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/exportJobs.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/export/exportJobs.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -1429,6 +1515,7 @@
       "layer": "renderer",
       "isTest": false,
       "dependsOn": [
+        "apps/desktop/src/export/ExportQueue.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
@@ -2475,6 +2562,7 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "packages/types/src/generated/ExportJob.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2909,6 +2997,20 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/ExportJob.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/AudioTarget.ts",
+        "packages/types/src/generated/ExportState.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/ExportPlan.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2920,6 +3022,20 @@
         "packages/types/src/generated/SequenceSettings.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/ExportState.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Stage.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/ExportJob.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -3841,6 +3957,18 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Stage.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/ExportState.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/StreamExtent.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -4117,7 +4245,9 @@
         "packages/types/src/generated/EncodingField.ts",
         "packages/types/src/generated/EncodingSignature.ts",
         "packages/types/src/generated/EvaluatedTrack.ts",
+        "packages/types/src/generated/ExportJob.ts",
         "packages/types/src/generated/ExportPlan.ts",
+        "packages/types/src/generated/ExportState.ts",
         "packages/types/src/generated/ExportTier.ts",
         "packages/types/src/generated/Filmstrip.ts",
         "packages/types/src/generated/Fingerprint.ts",
@@ -4185,6 +4315,7 @@
         "packages/types/src/generated/SourceStatus.ts",
         "packages/types/src/generated/SpeedProblem.ts",
         "packages/types/src/generated/SpeedVerdict.ts",
+        "packages/types/src/generated/Stage.ts",
         "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
@@ -4216,6 +4347,11 @@
         "packages/types/src/generated/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/export/ExportQueue.test.tsx",
+        "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/exportJobs.store.ts",
+        "apps/desktop/src/export/exportJobs.test.ts",
+        "apps/desktop/src/export/exportJobs.ts",
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
@@ -4278,6 +4414,8 @@
         "apps/desktop/src/update.store.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/export/ExportQueue.test.tsx",
+        "apps/desktop/src/export/exportJobs.test.ts",
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/LoudnessControl.test.tsx",
@@ -4838,6 +4976,7 @@
       "dependedOnBy": [
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
+        "apps/desktop/src/export/ExportQueue.tsx",
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",

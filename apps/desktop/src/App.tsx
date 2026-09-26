@@ -6,6 +6,9 @@ import { TimelineZone } from "./shell/zones/TimelineZone.js";
 import { ProjectLifecycle } from "./project/ProjectLifecycle.js";
 import { SourcesBanner } from "./project/SourcesBanner.js";
 import { UpdateBanner } from "./UpdateBanner.js";
+import { InterruptedExportsBanner } from "./export/ExportQueue.js";
+import { followExportJobs } from "./export/exportJobs.store.js";
+import { useEffect } from "react";
 import { useShortcuts } from "./shortcuts/useShortcuts.js";
 
 /**
@@ -24,11 +27,16 @@ import { useShortcuts } from "./shortcuts/useShortcuts.js";
 export function App() {
   // Every keyboard shortcut, from one registry and one listener (#38).
   useShortcuts();
+  // The export queue (#51) runs in the engine whatever is on screen; the
+  // renderer follows it from launch, so an export a crash interrupted is
+  // offered at once.
+  useEffect(followExportJobs, []);
   return (
     <>
       <UpdateBanner />
       <ProjectLifecycle />
       <SourcesBanner />
+      <InterruptedExportsBanner />
       <AppShell
         library={<LibraryZone />}
         player={<PlayerZone />}
