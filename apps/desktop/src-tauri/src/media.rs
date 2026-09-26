@@ -16,7 +16,7 @@ use blinkify_engine::audio::MonitorLevels;
 use blinkify_engine::audio::denoise::{ModelError, Models};
 use blinkify_engine::audio::loudness::{Loudness, MeasureRequest, measure_cached};
 use blinkify_engine::cache::Cache;
-use blinkify_engine::capability;
+use blinkify_engine::capability_cache::{self, ProfileKey};
 use blinkify_engine::filmstrip::{self, Filmstrip, Filmstrips};
 use blinkify_engine::keyframes::{self, IndexProgress, KeyframeIndex};
 use blinkify_engine::orchestrator::CancelToken;
@@ -211,16 +211,24 @@ impl MediaEngine {
         self.orchestrator.as_ref().map_err(Clone::clone)
     }
 
-    /// Probe the machine's encoders on a background thread. Every trial runs
-    /// through the orchestrator at background priority; `CLAUDE.md` section 12
-    /// keeps all of it off the UI thread.
+    /// Find the machine's encoders on a background thread: from the cache if
+    /// neither the sidecar nor a display driver changed since they were last
+    /// probed (#83), otherwise by probing again. Every trial runs through the
+    /// orchestrator at background priority; `CLAUDE.md` section 12 keeps all
+    /// of it off the UI thread.
+    ///
+    /// Until the thread finishes the slot stays empty — "checking" — so a
+    /// profile from before a driver update is never reported as current.
     pub fn probe_encoders_in_background(&self) {
         let Ok(orchestrator) = self.orchestrator.clone() else {
             return;
         };
+        let cache = self.cache.clone();
         let slot = Arc::clone(&self.capabilities);
         thread::spawn(move || {
-            let found = capability::probe(&orchestrator);
+            let key = ProfileKey::of_this_machine(orchestrator.sidecar()).ok();
+            let found =
+                capability_cache::cached_or_probe(cache.as_ref(), key.as_ref(), &orchestrator);
             *slot.lock().unwrap_or_else(PoisonError::into_inner) = Some(found);
         });
     }

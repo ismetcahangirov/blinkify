@@ -4,10 +4,15 @@
 
 mod common;
 
+use std::collections::BTreeSet;
 use std::process::Command;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Instant;
 
 use blinkify_engine::VideoCodec;
-use blinkify_engine::capability::{self, EncoderSource};
+use blinkify_engine::cache::Cache;
+use blinkify_engine::capability::{self, EncodeTrial, EncoderSource, Trial};
+use blinkify_engine::capability_cache::{self, ProfileKey};
 use blinkify_engine::orchestrator::{Limits, Orchestrator};
 
 fn version_line(program: &std::path::Path, path_env: Option<&std::ffi::OsStr>) -> String {
@@ -92,4 +97,59 @@ fn the_capability_probe_finds_the_software_encoders_on_any_machine() {
                 .all(|encoder| encoder.source != EncoderSource::Software)
         );
     }
+}
+
+/// The real sidecar, counting every process the probe starts.
+struct Counted {
+    orchestrator: Orchestrator,
+    processes: AtomicUsize,
+}
+
+impl EncodeTrial for Counted {
+    fn advertised(&self) -> BTreeSet<String> {
+        self.processes.fetch_add(1, Ordering::SeqCst);
+        self.orchestrator.advertised()
+    }
+    fn succeeds(&self, trial: &Trial<'_>) -> bool {
+        self.processes.fetch_add(1, Ordering::SeqCst);
+        self.orchestrator.succeeds(trial)
+    }
+}
+
+#[test]
+fn a_second_launch_on_an_unchanged_machine_starts_no_encoder_trial() {
+    // #83, on this machine's real sidecar and real display drivers.
+    let sidecar = common::sidecar();
+    let key = ProfileKey::of_this_machine(&sidecar).expect("key");
+
+    // The key's hash is the binary's, as its provenance records it.
+    let lock: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../tools/ffmpeg-sidecar/sidecar.lock.json"
+    ))
+    .expect("lock");
+    assert_eq!(
+        Some(key.sidecar_sha256.as_str()),
+        lock["binaries"]["ffmpeg.exe"].as_str()
+    );
+
+    let cache = Cache::new(common::scratch("capability-cache"), 1 << 20);
+    let launch = || {
+        let machine = Counted {
+            orchestrator: Orchestrator::new(sidecar.clone(), Limits::for_this_machine()),
+            processes: AtomicUsize::new(0),
+        };
+        let started = Instant::now();
+        let found = capability_cache::cached_or_probe(Some(&cache), Some(&key), &machine);
+        (found, machine.processes.into_inner(), started.elapsed())
+    };
+
+    let (probed, first, probing) = launch();
+    assert!(first > 0, "the first launch probes");
+    let (reported, second, reading) = launch();
+    assert_eq!(second, 0, "the second starts no process at all");
+    assert_eq!(reported, probed);
+    assert!(
+        reading < probing,
+        "reading the cache ({reading:?}) is the point of it, the probe took {probing:?}"
+    );
 }

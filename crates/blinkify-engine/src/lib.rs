@@ -17,7 +17,9 @@
 pub mod audio;
 pub mod cache;
 pub mod capability;
+pub mod capability_cache;
 pub mod decode;
+pub mod display_driver;
 pub mod export;
 pub mod filmstrip;
 pub mod keyframes;
