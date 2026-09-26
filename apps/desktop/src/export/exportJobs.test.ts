@@ -22,6 +22,7 @@ function job(id: number, state: ExportState): ExportJob {
     started: null,
     finished: null,
     state,
+    hasReport: false,
   };
 }
 

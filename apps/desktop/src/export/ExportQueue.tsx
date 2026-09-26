@@ -7,6 +7,7 @@ import {
   isInterrupted,
   statusLine,
 } from "./exportJobs.js";
+import { ExportReportDialog } from "./ExportReportDialog.js";
 import { useExportJobs } from "./exportJobs.store.js";
 
 /**
@@ -22,17 +23,21 @@ export function ExportQueueButton() {
   const active = jobs.filter(isActive).length;
 
   return (
-    <Popover
-      align="end"
-      className="export-queue"
-      trigger={
-        <Button variant="ghost" size="sm" data-testid="export-queue-button">
-          {active > 0 ? `Exports (${active})` : "Exports"}
-        </Button>
-      }
-    >
-      <ExportQueuePanel />
-    </Popover>
+    <>
+      <Popover
+        align="end"
+        className="export-queue"
+        trigger={
+          <Button variant="ghost" size="sm" data-testid="export-queue-button">
+            {active > 0 ? `Exports (${active})` : "Exports"}
+          </Button>
+        }
+      >
+        <ExportQueuePanel />
+      </Popover>
+      {/* Outside the popover, which closes when the dialog takes focus. */}
+      <ExportReportDialog />
+    </>
   );
 }
 
@@ -89,6 +94,7 @@ function JobRow({ job }: { readonly job: ExportJob }) {
   const cancel = useExportJobs((state) => state.cancel);
   const resume = useExportJobs((state) => state.resume);
   const discard = useExportJobs((state) => state.discard);
+  const openReport = useExportJobs((state) => state.openReport);
   const state = job.state;
 
   return (
@@ -101,6 +107,11 @@ function JobRow({ job }: { readonly job: ExportJob }) {
         <span className="export-queue__name" title={job.target}>
           {baseName(job.target)}
         </span>
+        {job.hasReport ? (
+          <Button variant="ghost" size="sm" onClick={() => openReport(job.id)}>
+            Report
+          </Button>
+        ) : null}
         {isActive(job) ? (
           <Button variant="ghost" size="sm" onClick={() => void cancel(job.id)}>
             Cancel
@@ -128,8 +139,8 @@ function JobRow({ job }: { readonly job: ExportJob }) {
       {state.state === "running" ? (
         <progress
           className="export-queue__progress"
-          // Indeterminate while preparing: how long a loudness measurement
-          // takes is not known, and a bar that guesses is a bar that lies.
+          // Indeterminate while preparing and verifying: how long they take
+          // is not known, and a bar that guesses is a bar that lies.
           {...(state.stage === "exporting"
             ? { value: state.fraction, max: 1 }
             : {})}

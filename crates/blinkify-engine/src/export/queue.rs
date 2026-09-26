@@ -39,6 +39,7 @@ use ts_rs::TS;
 
 use super::audio::AudioTarget;
 use super::execute::partial_path;
+use super::report::ExportReport;
 use crate::orchestrator::CancelToken;
 use crate::project::Project;
 
@@ -78,6 +79,9 @@ pub enum Stage {
     Preparing,
     /// Writing the output file, with progress from the muxer.
     Exporting,
+    /// Comparing the output's packets with the sources', for the report
+    /// (#52). Its length is not known in advance either.
+    Verifying,
 }
 
 /// Where a job is.
@@ -144,13 +148,18 @@ pub struct ExportJob {
     #[ts(type = "number | null")]
     pub finished: Option<u64>,
     pub state: ExportState,
+    /// A report of what the export did is kept (#52).
+    #[serde(default)]
+    pub has_report: bool,
 }
 
 /// What a finished export produced.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RunOutcome {
     /// The size of the output file.
     pub bytes: u64,
+    /// What it did, measured on the file (#52), where it could be measured.
+    pub report: Option<ExportReport>,
 }
 
 /// A running export's progress: its stage, and how far through it.
@@ -206,6 +215,9 @@ struct Entry {
     /// copy of the project.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     spec: Option<ExportSpec>,
+    /// Kept with the history, so it survives a restart (#52).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    report: Option<ExportReport>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -348,10 +360,12 @@ impl ExportQueue {
             started: None,
             finished: None,
             state: ExportState::Queued,
+            has_report: false,
         };
         inner.entries.push(Entry {
             job: job.clone(),
             spec: Some(spec),
+            report: None,
         });
         self.shared.persist(&inner);
         drop(inner);
@@ -450,6 +464,17 @@ impl ExportQueue {
             .iter()
             .map(|entry| entry.job.clone())
             .collect()
+    }
+
+    /// The report of job `id`, where one was kept.
+    #[must_use]
+    pub fn report(&self, id: u64) -> Option<ExportReport> {
+        self.shared
+            .lock()
+            .entries
+            .iter()
+            .find(|entry| entry.job.id == id)
+            .and_then(|entry| entry.report.clone())
     }
 
     /// Forget every finished job.
@@ -602,9 +627,13 @@ fn work(shared: &Arc<Shared>) {
         // A file that was completed is reported as completed, however late
         // the request to stop it came.
         entry.job.state = match result {
-            Ok(outcome) => ExportState::Completed {
-                bytes: outcome.bytes,
-            },
+            Ok(outcome) => {
+                entry.job.has_report = outcome.report.is_some();
+                entry.report = outcome.report;
+                ExportState::Completed {
+                    bytes: outcome.bytes,
+                }
+            }
             Err(_) if stopping => ExportState::Interrupted,
             Err(_) if cancelled => ExportState::Cancelled,
             Err(message) => ExportState::Failed { message },

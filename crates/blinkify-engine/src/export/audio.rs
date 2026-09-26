@@ -85,7 +85,7 @@ impl Default for AudioTarget {
 }
 
 /// How the output's encoded sound is made: stated in the export report.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct AudioEncoding {

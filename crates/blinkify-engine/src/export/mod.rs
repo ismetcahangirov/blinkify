@@ -19,6 +19,7 @@ pub mod plan;
 pub mod profile;
 pub mod queue;
 pub mod render;
+pub mod report;
 pub mod seam;
 pub mod sps;
 pub mod verify;

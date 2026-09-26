@@ -19,6 +19,7 @@ use blinkify_engine::export::plan::{PlanError, plan};
 use blinkify_engine::export::queue::{
     ExportJob, ExportQueue, ExportSpec, Report, RunOutcome, Stage,
 };
+use blinkify_engine::export::report::{ExportReport, ReportRequest, build};
 use blinkify_engine::orchestrator::{CancelToken, JobProgress};
 use blinkify_engine::project::evaluate::evaluate;
 use std::path::Path;
@@ -136,7 +137,82 @@ fn run(
     let bytes = std::fs::metadata(&outcome.path)
         .map_err(|error| error.to_string())?
         .len();
-    Ok(RunOutcome { bytes })
+    // The report is measured on the file written, not read back from the
+    // plan (#52). A file that cannot be measured is still exported; its
+    // job says there is no report rather than failing what succeeded.
+    report(Stage::Verifying, 0.0);
+    let measured = build(
+        orchestrator,
+        &ReportRequest {
+            name: &spec.name,
+            plan: &plan,
+            outcome: &outcome,
+            inputs: &inputs,
+            lossless_audio_target: matches!(spec.audio, AudioTarget::Flac | AudioTarget::Pcm),
+            created: now(),
+        },
+    )
+    .ok();
+    Ok(RunOutcome {
+        bytes,
+        report: measured,
+    })
+}
+
+/// Milliseconds since the Unix epoch.
+fn now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |since| {
+            u64::try_from(since.as_millis()).unwrap_or(u64::MAX)
+        })
+}
+
+/// The report of export `id` (#52): what it did, measured on its file.
+///
+/// # Errors
+///
+/// There is no such export, or it kept no report.
+#[tauri::command]
+#[allow(clippy::needless_pass_by_value)]
+pub fn export_report(queue: State<'_, ExportQueue>, id: u64) -> Result<ExportReport, String> {
+    queue
+        .report(id)
+        .ok_or_else(|| format!("export {id} kept no report"))
+}
+
+/// The report of export `id` as plain text, for pasting into an issue:
+/// without folders unless `with_paths`.
+///
+/// # Errors
+///
+/// There is no such export, or it kept no report.
+#[tauri::command]
+#[allow(clippy::needless_pass_by_value)]
+pub fn export_report_text(
+    queue: State<'_, ExportQueue>,
+    id: u64,
+    with_paths: bool,
+) -> Result<String, String> {
+    export_report(queue, id).map(|report| report.to_text(with_paths))
+}
+
+/// Write the report of export `id` as plain text to `path`, chosen by the
+/// user in a save dialog.
+///
+/// # Errors
+///
+/// There is no such report, or the file cannot be written.
+#[tauri::command(async)]
+#[allow(clippy::needless_pass_by_value)]
+pub fn save_export_report(
+    queue: State<'_, ExportQueue>,
+    id: u64,
+    path: PathBuf,
+    with_paths: bool,
+) -> Result<(), String> {
+    let text = export_report_text(queue, id, with_paths)?;
+    std::fs::write(&path, text).map_err(|error| error.to_string())
 }
 
 /// Queue an export of the open project, as it is now, to `target`.

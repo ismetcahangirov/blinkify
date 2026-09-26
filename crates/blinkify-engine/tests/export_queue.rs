@@ -105,7 +105,10 @@ fn jobs_run_one_at_a_time_in_the_order_they_were_asked_for() {
                 lock(&order).push(spec.name.clone());
                 thread::sleep(Duration::from_millis(40));
                 active.fetch_sub(1, Ordering::SeqCst);
-                Ok(RunOutcome { bytes: 7 })
+                Ok(RunOutcome {
+                    bytes: 7,
+                    report: None,
+                })
             },
             |_: &ExportJob| {},
         )
@@ -182,7 +185,10 @@ fn progress_reaches_the_observer_and_never_moves_backwards() {
                 }
                 // A late report of the stage before changes nothing.
                 report(Stage::Preparing, 0.7);
-                Ok(RunOutcome { bytes: 1 })
+                Ok(RunOutcome {
+                    bytes: 1,
+                    report: None,
+                })
             },
             move |job: &ExportJob| lock(&seen).push(job.state.clone()),
         )
@@ -370,7 +376,10 @@ fn a_relaunch_offers_an_interrupted_export_again_or_discards_it() {
                 // is left beside the target.
                 assert!(!partial_path(&spec.target).exists());
                 lock(&ran).push(spec.name.clone());
-                Ok(RunOutcome { bytes: 3 })
+                Ok(RunOutcome {
+                    bytes: 3,
+                    report: None,
+                })
             },
             |_: &ExportJob| {},
         )
@@ -433,7 +442,12 @@ fn an_orderly_shutdown_leaves_the_running_export_to_be_offered_again() {
     drop(queue);
     let relaunched = ExportQueue::open(
         Some(store),
-        |_: &ExportSpec, _: &CancelToken, _: Report| Ok(RunOutcome { bytes: 0 }),
+        |_: &ExportSpec, _: &CancelToken, _: Report| {
+            Ok(RunOutcome {
+                bytes: 0,
+                report: None,
+            })
+        },
         |_: &ExportJob| {},
     );
     assert_eq!(state_of(&relaunched, job.id), ExportState::Interrupted);
@@ -446,7 +460,12 @@ fn an_unreadable_store_is_set_aside_and_the_queue_starts_empty() {
     std::fs::write(&store, b"{ not json").expect("write");
     let queue = ExportQueue::open(
         Some(store.clone()),
-        |_: &ExportSpec, _: &CancelToken, _: Report| Ok(RunOutcome { bytes: 0 }),
+        |_: &ExportSpec, _: &CancelToken, _: Report| {
+            Ok(RunOutcome {
+                bytes: 0,
+                report: None,
+            })
+        },
         |_: &ExportJob| {},
     );
     assert!(queue.jobs().is_empty());
@@ -460,7 +479,12 @@ fn an_unreadable_store_is_set_aside_and_the_queue_starts_empty() {
 fn the_history_is_bounded_and_can_be_cleared() {
     let queue = ExportQueue::open(
         None,
-        |_: &ExportSpec, _: &CancelToken, _: Report| Ok(RunOutcome { bytes: 0 }),
+        |_: &ExportSpec, _: &CancelToken, _: Report| {
+            Ok(RunOutcome {
+                bytes: 0,
+                report: None,
+            })
+        },
         |_: &ExportJob| {},
     );
     let dir = common::scratch("queue-history");
@@ -529,7 +553,10 @@ fn real_runner(
         let bytes = std::fs::metadata(&outcome.path)
             .map_err(|e| e.to_string())?
             .len();
-        Ok(RunOutcome { bytes })
+        Ok(RunOutcome {
+            bytes,
+            report: None,
+        })
     }
 }
 

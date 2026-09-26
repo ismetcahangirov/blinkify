@@ -41,6 +41,7 @@ fill the orchestrator's export slots (#110).
 | ----------- | ----------------------------------------- | ---------------------------- |
 | `preparing` | loudness measured, the plan made          | none: its length is unknown  |
 | `exporting` | the executor writing the output's streams | the muxer's `-progress` time |
+| `verifying` | the output measured for its report (#52)  | none: its length is unknown  |
 
 The fraction never goes back, and a stage never returns to the one before. The
 time left is `elapsed × (1 − fraction) ÷ fraction` from the time measured in
@@ -67,8 +68,9 @@ to a file beside it and renamed over it, before each change is announced.
   and never runs until the user chooses (ADR-0014). Either removes what the
   interrupted export left beside the target.
 - Closing Blinkify during an export stops it and leaves it interrupted.
-- A finished job keeps its outcome, not its project. The history keeps the
-  last 50.
+- A finished job keeps its outcome and its report
+  ([`export-report.md`](./export-report.md)), not its project. The history
+  keeps the last 50.
 - A file that cannot be read is set aside as `exports.json.unreadable` and the
   queue starts empty: losing a history is better than not being able to
   export.

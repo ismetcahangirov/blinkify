@@ -75,6 +75,9 @@ How Blinkify is put together and why the structure holds under change.
   said before it runs: pictures and sound claimed apart, every reason with
   its time, the keyframe snap as an undoable edit, the size and whether it is
   an estimate, and the space for it (#50)
+- [`export-report.md`](./export-report.md) — what an export did, measured
+  on the file it wrote: each segment copied or re-encoded, why, what could
+  have been done instead, and the text form without folders (#52)
 - [`export-queue.md`](./export-queue.md) — exports in the background: a job
   as a project snapshot, one at a time, progress that never goes back,
   cancellation, and the offer to export again after a crash (#51)

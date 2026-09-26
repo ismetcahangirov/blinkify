@@ -20,6 +20,10 @@ interface ExportJobsState {
   jobs: readonly ExportJob[];
   /** Why the last request was refused. */
   error: string | null;
+  /** The export whose report is open (#52), if one is. */
+  reportOf: number | null;
+  openReport: (id: number) => void;
+  closeReport: () => void;
   load: () => Promise<void>;
   /** A job as the engine last described it. */
   receive: (job: ExportJob) => void;
@@ -51,6 +55,9 @@ export const useExportJobs = create<ExportJobsState>((set, get) => {
   return {
     jobs: [],
     error: null,
+    reportOf: null,
+    openReport: (id) => set({ reportOf: id }),
+    closeReport: () => set({ reportOf: null }),
     load: async () => {
       try {
         set({ jobs: await invoke<ExportJob[]>("export_jobs"), error: null });
