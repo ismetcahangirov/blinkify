@@ -426,7 +426,33 @@ pub fn measure_cached(
     request: &MeasureRequest,
     cancel: &CancelToken,
 ) -> Result<Loudness, MeasureError> {
-    let entry = cache.and_then(|cache| {
+    if let Some(loudness) = cached(cache, request) {
+        return Ok(loudness);
+    }
+    let loudness = measure(orchestrator, request, cancel)?;
+    if let Some((cache, path)) = entry(cache, request)
+        && let Ok(bytes) = serde_json::to_vec(&loudness)
+    {
+        let _ = cache.write(&path, &bytes);
+    }
+    Ok(loudness)
+}
+
+/// The measurement of `request` if the cache holds one, without measuring:
+/// what the preview resolves from, since it never decodes a whole clip to
+/// start playing.
+#[must_use]
+pub fn cached(cache: Option<&Cache>, request: &MeasureRequest) -> Option<Loudness> {
+    let (cache, path) = entry(cache, request)?;
+    serde_json::from_slice(&cache.read(&path)?).ok()
+}
+
+/// Where `request`'s measurement is kept in `cache`.
+fn entry<'a>(
+    cache: Option<&'a Cache>,
+    request: &MeasureRequest,
+) -> Option<(&'a Cache, std::path::PathBuf)> {
+    cache.and_then(|cache| {
         let key = ContentKey::of(&request.source).ok()?;
         let mut hasher = Sha256::new();
         hasher.update(
@@ -447,20 +473,7 @@ pub fn measure_cached(
             hex
         });
         Some((cache, cache.path("loudness", &key, &format!("-{hex}.json"))))
-    });
-    if let Some((cache, path)) = &entry
-        && let Some(bytes) = cache.read(path)
-        && let Ok(loudness) = serde_json::from_slice::<Loudness>(&bytes)
-    {
-        return Ok(loudness);
-    }
-    let loudness = measure(orchestrator, request, cancel)?;
-    if let Some((cache, path)) = &entry
-        && let Ok(bytes) = serde_json::to_vec(&loudness)
-    {
-        let _ = cache.write(path, &bytes);
-    }
-    Ok(loudness)
+    })
 }
 
 #[cfg(test)]

@@ -70,6 +70,8 @@ export * from "./KeyframeAlternative";
 export * from "./KeyframePoint";
 export * from "./LoopRange";
 export * from "./Loudness";
+export * from "./LoudnessReport";
+export * from "./LoudnessTarget";
 export * from "./MasteringDisplay";
 export * from "./Media";
 export * from "./MediaInfo";

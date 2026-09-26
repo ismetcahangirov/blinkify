@@ -27,7 +27,8 @@ use thiserror::Error;
 use ts_rs::TS;
 
 use super::{
-    AudioStage, Clip, ClipId, Operation, Project, ProjectError, SourceId, TrackId, TrackKind,
+    AudioStage, Clip, ClipId, LoudnessTarget, Operation, Project, ProjectError, SourceId, TrackId,
+    TrackKind,
 };
 use crate::probe::Rational;
 use crate::tier::ReEncodeReason;
@@ -51,6 +52,13 @@ pub enum AudioOperation {
         target_lufs: f64,
         ceiling_dbtp: f64,
         bypassed: bool,
+        /// The gain two-pass normalisation resolved to: the target less the
+        /// loudness measured on the first pass (#48). The evaluator leaves it
+        /// `None`; `audio::normalise` fills it in from a measurement, and a
+        /// chain with it unmeasured cannot be exported.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        gain_db: Option<f64>,
     },
 }
 
@@ -93,6 +101,7 @@ impl AudioOperation {
                 target_lufs,
                 ceiling_dbtp,
                 bypassed,
+                ..
             } => Operation::Normalise {
                 target_lufs,
                 ceiling_dbtp,
@@ -126,6 +135,7 @@ pub fn audio_operation(operation: &Operation) -> Option<AudioOperation> {
             target_lufs,
             ceiling_dbtp,
             bypassed,
+            gain_db: None,
         }),
         Operation::Trim { .. }
         | Operation::Speed { .. }
@@ -290,6 +300,10 @@ pub struct Timeline {
     pub time_base: Rational,
     pub frame_rate: Rational,
     pub tracks: Vec<EvaluatedTrack>,
+    /// The whole sequence's loudness target, if it is normalised (#48).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub loudness: Option<LoudnessTarget>,
 }
 
 /// What applies at one position: the diagnostic view's content.
@@ -492,6 +506,7 @@ pub fn evaluate(project: &Project) -> Result<Timeline, EvaluateError> {
         time_base: sequence,
         frame_rate: settings.frame_rate,
         tracks,
+        loudness: project.sequence.loudness,
     })
 }
 

@@ -55,7 +55,7 @@ use crate::probe::Rational;
 use crate::proxy::ExportSource;
 
 /// The schema this build writes, and the newest it reads.
-pub const SCHEMA_VERSION: u32 = 5;
+pub const SCHEMA_VERSION: u32 = 6;
 
 /// The project file extension, without the dot.
 pub const EXTENSION: &str = "blinkify";
@@ -95,6 +95,32 @@ pub struct Sequence {
     /// adopted.
     pub match_first_clip: bool,
     pub tracks: Vec<Track>,
+    /// Loudness normalisation of the whole sequence (#48): the mix is
+    /// measured, and every clip moves by the same gain, so the levels the
+    /// user set between clips are kept. Absent when the sequence is not
+    /// normalised; each clip may still normalise itself.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub loudness: Option<LoudnessTarget>,
+}
+
+/// Where loudness normalisation brings the sound: an integrated loudness,
+/// with the true peak held under a ceiling (#48).
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct LoudnessTarget {
+    pub target_lufs: f64,
+    pub ceiling_dbtp: f64,
+}
+
+impl LoudnessTarget {
+    /// Whether the target is one normalisation can reach: a finite loudness
+    /// below full scale, and a ceiling a limiter can hold.
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.target_lufs.is_finite() && self.target_lufs < 0.0 && valid_ceiling(self.ceiling_dbtp)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
@@ -350,6 +376,7 @@ impl Project {
                 settings,
                 match_first_clip: false,
                 tracks: Vec::new(),
+                loudness: None,
             },
         }
     }
@@ -495,6 +522,13 @@ impl Project {
         }
         if let Err(error) = self.sequence.settings.validate() {
             return invalid(error.to_string());
+        }
+        if let Some(loudness) = self.sequence.loudness
+            && !loudness.is_valid()
+        {
+            return invalid(format!(
+                "the sequence loudness is out of range: {loudness:?}"
+            ));
         }
         let mut tracks = BTreeSet::new();
         let mut clips = BTreeSet::new();

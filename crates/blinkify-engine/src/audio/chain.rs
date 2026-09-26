@@ -52,14 +52,15 @@ const ATTACK_MS: f64 = 5.0;
 /// pump on speech; short enough not to duck the syllable after a peak.
 const RELEASE_MS: f64 = 50.0;
 
-/// Whether the chain applies `step` itself. Normalisation arrives with #48;
-/// until then the preview plays it unprocessed — the diagnostics say so —
-/// and the export refuses it.
+/// Whether the chain applies `step` itself: every step of Epic #7 now.
+/// Kept as the one place a new step is declared before it is built.
 #[must_use]
 pub fn applies(step: &AudioOperation) -> bool {
     matches!(
         step,
-        AudioOperation::Gain { .. } | AudioOperation::Denoise { .. }
+        AudioOperation::Gain { .. }
+            | AudioOperation::Denoise { .. }
+            | AudioOperation::Normalise { .. }
     )
 }
 
@@ -69,6 +70,10 @@ pub enum ChainError {
     /// Noise reduction was asked for and its model is not installed.
     #[error("noise reduction needs its model, which is missing from the installation or damaged")]
     NoModel,
+    /// Loudness normalisation was asked for and its first pass — the
+    /// measurement — has not been made.
+    #[error("loudness normalisation has not measured the sound yet")]
+    NotMeasured,
 }
 
 /// The FFmpeg filters that apply `chain` to sound at `sample_rate`, in the
@@ -106,22 +111,20 @@ pub fn filters_before(
     )
 }
 
-/// What the preview plays: [`filters`], or — when a model is missing — the
-/// chain without the steps that need it. The preview keeps playing; the
-/// diagnostics and the inspector say what is not heard, and the export
-/// refuses rather than leave it out.
+/// What the preview plays: [`filters`], leaving out any step that cannot be
+/// built yet — noise reduction without its model, a normalisation not yet
+/// measured. The preview keeps playing; the diagnostics and the inspector say
+/// what is not heard, and the export refuses rather than leave it out.
 #[must_use]
 pub fn playable(chain: &[AudioOperation], sample_rate: u32, models: Option<&Models>) -> String {
-    build(chain.iter(), sample_rate, models).unwrap_or_else(|_| {
-        build(
-            chain
-                .iter()
-                .filter(|step| !matches!(step, AudioOperation::Denoise { .. })),
-            sample_rate,
-            models,
-        )
-        .unwrap_or_default()
-    })
+    build(
+        chain
+            .iter()
+            .filter(|step| build(std::iter::once(*step), sample_rate, models).is_ok()),
+        sample_rate,
+        models,
+    )
+    .unwrap_or_default()
 }
 
 fn build<'a>(
@@ -144,7 +147,18 @@ fn build<'a>(
                 out.push(format!("volume={db}dB"));
                 out.extend(true_peak_limiter(ceiling_dbtp, sample_rate));
             }
-            AudioOperation::Normalise { .. } => {}
+            AudioOperation::Normalise {
+                ceiling_dbtp,
+                gain_db,
+                ..
+            } => {
+                // The second pass: one gain for the whole clip, from its
+                // measured loudness, and a limiter holding the ceiling after
+                // it — never a level that moves with the sound (ADR-0013).
+                let db = gain_db.ok_or(ChainError::NotMeasured)?;
+                out.push(format!("volume={db:.2}dB"));
+                out.extend(true_peak_limiter(ceiling_dbtp, sample_rate));
+            }
         }
     }
     Ok(out.join(","))
@@ -250,8 +264,14 @@ mod tests {
             target_lufs: -16.0,
             ceiling_dbtp: -1.0,
             bypassed: false,
+            gain_db: Some(4.5),
         };
-        let one = filters(&[gain(-3.0, -2.0), denoise], 48_000, Some(&models)).expect("built");
+        let one = filters(
+            &[normalise, gain(-3.0, -2.0), denoise],
+            48_000,
+            Some(&models),
+        )
+        .expect("built");
         let other = filters(
             &[denoise, normalise, gain(-3.0, -2.0)],
             48_000,
@@ -261,9 +281,27 @@ mod tests {
         assert_eq!(one, other);
         let arnndn = one.find("arnndn").expect("denoised");
         let volume = one.find("volume=-3dB").expect("gained");
-        assert!(arnndn < volume, "{one}");
-        assert!(applies(&denoise) && applies(&gain(0.0, -1.0)));
-        assert!(!applies(&normalise));
+        let normalised = one.find("volume=4.50dB").expect("normalised");
+        assert!(arnndn < volume && volume < normalised, "{one}");
+        // The normalisation has its own limiter, at its own ceiling.
+        assert_eq!(one.matches("alimiter").count(), 4, "{one}");
+        assert!(applies(&denoise) && applies(&gain(0.0, -1.0)) && applies(&normalise));
+    }
+
+    #[test]
+    fn an_unmeasured_normalisation_cannot_be_exported_and_is_not_heard_until_it_is() {
+        let unmeasured = AudioOperation::Normalise {
+            target_lufs: -16.0,
+            ceiling_dbtp: -1.0,
+            bypassed: false,
+            gain_db: None,
+        };
+        let chain = [gain(2.0, -1.0), unmeasured];
+        assert_eq!(filters(&chain, 48_000, None), Err(ChainError::NotMeasured));
+        assert_eq!(
+            playable(&chain, 48_000, None),
+            filters(&[gain(2.0, -1.0)], 48_000, None).expect("built")
+        );
     }
 
     #[test]

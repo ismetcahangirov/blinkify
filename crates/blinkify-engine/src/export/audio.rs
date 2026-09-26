@@ -361,6 +361,79 @@ pub fn encoder_job(
     sequence: Rational,
     models: Option<&Models>,
 ) -> Result<EncoderJob, ExportError> {
+    let rate = i64::from(encoding.sample_rate);
+    let (mut command, preroll, samples) =
+        segment_graph(segment, inputs, encoding, sequence, models)?;
+    command = command
+        .option("-c:a", encoding.encoder.clone())
+        .option("-ar", rate.to_string())
+        .option("-ac", encoding.channels.to_string());
+    if let Some(kilobits) = encoding.kilobits {
+        command = command.option("-b:a", format!("{kilobits}k"));
+    }
+    if encoding.codec == "flac" {
+        // Stated, not negotiated: 24 bits in 32-bit samples.
+        command = command.option("-sample_fmt", "s32");
+    }
+    if let [source] = segment.sources.as_slice() {
+        command = command.option("-map_metadata:s:0", format!("0:s:{}", source.stream));
+    }
+    Ok(EncoderJob {
+        command: command
+            .option("-output_ts_offset", ENCODER_OFFSET_SECONDS.to_string())
+            .option("-f", "nut")
+            .output_stdout(),
+        preroll,
+        samples,
+        offset: ENCODER_OFFSET_SECONDS * rate,
+    })
+}
+
+/// The rate and layout a mix is measured at (#48): what the preview plays.
+const MEASURED_RATE: u32 = 48_000;
+
+/// The sound of `segment` exactly as the export makes it — every source
+/// through its chain, mixed — as 48 kHz stereo `f32` on standard output,
+/// with no priming: what a measurement of the whole mix listens to (#48).
+///
+/// # Errors
+///
+/// As [`encoder_job`].
+pub fn render_job(
+    segment: &Segment,
+    inputs: &BTreeMap<SourceId, ExportInput>,
+    sequence: Rational,
+    models: Option<&Models>,
+) -> Result<SidecarCommand, ExportError> {
+    let shape = AudioEncoding {
+        codec: "pcm_f32le".to_owned(),
+        encoder: "pcm_f32le".to_owned(),
+        kilobits: None,
+        sample_rate: MEASURED_RATE,
+        channels: 2,
+        matches_copied: false,
+        lossless: true,
+    };
+    let (command, _, _) = segment_graph(segment, inputs, &shape, sequence, models)?;
+    Ok(command
+        .option("-ar", MEASURED_RATE.to_string())
+        .option("-ac", "2")
+        .option("-f", "f32le")
+        .output_stdout())
+}
+
+/// The inputs and filter graph of `segment` at `encoding`'s rate and layout,
+/// mapped to one output: its sources decoded from just before their ranges,
+/// through their chains and speeds, mixed, padded and trimmed to exactly the
+/// segment's length plus the priming either side. Returns the command, the
+/// priming and the length, in samples.
+fn segment_graph(
+    segment: &Segment,
+    inputs: &BTreeMap<SourceId, ExportInput>,
+    encoding: &AudioEncoding,
+    sequence: Rational,
+    models: Option<&Models>,
+) -> Result<(SidecarCommand, i64, i64), ExportError> {
     check(segment, models)?;
     let rate = i64::from(encoding.sample_rate);
     let per_sample = Rational { num: 1, den: rate };
@@ -425,31 +498,13 @@ pub fn encoder_job(
         graph,
         "{mixed}apad,atrim=end_sample={total},asetpts=N/SR/TB[out]"
     );
-    command = command
-        .option("-filter_complex", graph)
-        .option("-map", "[out]")
-        .option("-c:a", encoding.encoder.clone())
-        .option("-ar", rate.to_string())
-        .option("-ac", encoding.channels.to_string());
-    if let Some(kilobits) = encoding.kilobits {
-        command = command.option("-b:a", format!("{kilobits}k"));
-    }
-    if encoding.codec == "flac" {
-        // Stated, not negotiated: 24 bits in 32-bit samples.
-        command = command.option("-sample_fmt", "s32");
-    }
-    if let [source] = segment.sources.as_slice() {
-        command = command.option("-map_metadata:s:0", format!("0:s:{}", source.stream));
-    }
-    Ok(EncoderJob {
-        command: command
-            .option("-output_ts_offset", ENCODER_OFFSET_SECONDS.to_string())
-            .option("-f", "nut")
-            .output_stdout(),
+    Ok((
+        command
+            .option("-filter_complex", graph)
+            .option("-map", "[out]"),
         preroll,
         samples,
-        offset: ENCODER_OFFSET_SECONDS * rate,
-    })
+    ))
 }
 
 #[cfg(test)]

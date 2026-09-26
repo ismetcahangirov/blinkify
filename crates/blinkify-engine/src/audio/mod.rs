@@ -14,6 +14,7 @@ pub mod denoise;
 pub mod gain;
 pub mod loudness;
 mod meter;
+pub mod normalise;
 pub mod sink;
 
 pub use buffer::OutputBuffer;

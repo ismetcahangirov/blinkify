@@ -39,8 +39,8 @@ use super::settings::{CopyEligibility, SettingsError, StreamGeometry, copy_eligi
 use super::split::halves;
 use super::trim::{Edge, StreamExtent, reach, retimed, trim};
 use super::{
-    AudioStage, Clip, ClipId, Operation, Project, ProjectError, SequenceSettings, SourceId,
-    SourceRef, Track, TrackId, TrackKind,
+    AudioStage, Clip, ClipId, LoudnessTarget, Operation, Project, ProjectError, SequenceSettings,
+    SourceId, SourceRef, Track, TrackId, TrackKind,
 };
 use crate::probe::Rational;
 use crate::time::{Rounding, rescale};
@@ -236,6 +236,11 @@ pub enum Edit {
         clips: Vec<ClipId>,
         stage: Option<AudioStage>,
     },
+    /// Normalise the whole sequence's loudness to `loudness`, or stop with
+    /// `None` (#48).
+    SetSequenceLoudness {
+        loudness: Option<LoudnessTarget>,
+    },
 }
 
 impl Edit {
@@ -300,6 +305,8 @@ impl Edit {
             Self::ResetAudio { clips: ids, .. } => {
                 clips(ids.len(), "Reset audio", "Reset audio of")
             }
+            Self::SetSequenceLoudness { loudness: Some(_) } => "Normalise sequence".to_owned(),
+            Self::SetSequenceLoudness { loudness: None } => "Stop normalising sequence".to_owned(),
         }
     }
 }
@@ -349,6 +356,8 @@ pub(super) enum Change {
     ReplaceClip(Clip),
     /// Set a track's name and switches.
     Header(TrackId, Header),
+    /// Set the sequence's loudness target, or clear it.
+    Loudness(Option<LoudnessTarget>),
 }
 
 /// A track's name and switches: everything of it but its clips.
@@ -427,6 +436,9 @@ impl Change {
             Self::Name(name) => Self::Name(std::mem::replace(&mut project.name, name)),
             Self::Settings(settings) => {
                 Self::Settings(std::mem::replace(&mut project.sequence.settings, settings))
+            }
+            Self::Loudness(loudness) => {
+                Self::Loudness(std::mem::replace(&mut project.sequence.loudness, loudness))
             }
             Self::MatchFirstClip(waits) => Self::MatchFirstClip(std::mem::replace(
                 &mut project.sequence.match_first_clip,
@@ -592,6 +604,9 @@ impl Facts {
 }
 
 /// The primitive changes `edit` makes to `project`, and the selection after.
+// One arm per edit: splitting it would scatter the one place every edit is
+// dispatched.
+#[allow(clippy::too_many_lines)]
 fn compile(
     project: &Project,
     facts: &Facts,
@@ -661,6 +676,21 @@ fn compile(
         Edit::SetReverse { clips, reverse } => (set_reverse(project, clips, *reverse)?, kept),
         Edit::SetAudio { clips, step } => (set_audio(project, clips, *step)?, kept),
         Edit::ResetAudio { clips, stage } => (reset_audio(project, clips, *stage)?, kept),
+        Edit::SetSequenceLoudness { loudness } => {
+            if let Some(target) = loudness
+                && !target.is_valid()
+            {
+                return Err(EditError::Refused(format!(
+                    "{target:?} is not a loudness normalisation can reach"
+                )));
+            }
+            let changes = if *loudness == project.sequence.loudness {
+                Vec::new()
+            } else {
+                vec![Change::Loudness(*loudness)]
+            };
+            (changes, kept)
+        }
         Edit::RemoveTrack { .. }
         | Edit::MoveTrack { .. }
         | Edit::RenameTrack { .. }
@@ -4142,7 +4172,13 @@ mod tests {
         let tracks: Vec<TrackId> = project.sequence.tracks.iter().map(|t| t.id).collect();
         let clip = random.pick(&clips).unwrap_or(1);
         let track = random.pick(&tracks).unwrap_or(1);
-        match random.below(13) {
+        match random.below(14) {
+            13 => Edit::SetSequenceLoudness {
+                loudness: (random.below(3) != 0).then(|| LoudnessTarget {
+                    target_lufs: -(10 + random.int(20)) as f64,
+                    ceiling_dbtp: -1.0,
+                }),
+            },
             11 => Edit::SetAudio {
                 clips: vec![clip],
                 step: match random.below(3) {

@@ -67,6 +67,35 @@ atrim=start_sample=480, asetpts=PTS-STARTPTS, aresample=<rate>
 - **Measured**: on the corpus reading under pink noise, full strength raises
   the scale-invariant signal-to-noise ratio from 8.9 to 12.3 dB.
 
+## Loudness normalisation (#48)
+
+Two passes ([ADR-0013](../decisions/ADR-0013-loudness-normalisation-is-one-measured-gain-and-a-limiter.md)):
+
+1. **Measure** the clip's integrated loudness where normalisation runs —
+   after noise reduction and gain — over its whole range, with
+   `audio::loudness`.
+2. **Apply one gain**, the target less the measurement, then the true-peak
+   limiter at the normalisation's own ceiling:
+   `volume=<gain>dB` and the two-stage limiter above.
+
+Where the limiter takes loudness off, the gain is measured again through the
+whole chain and raised by the shortfall until the output is within 0.1 LU
+(`normalise::converge`); it is still one gain. Sound below R128's −70 LUFS gate
+is left where it is.
+
+- **Resolution.** The evaluator gives each `Normalise` step a `gain_db` of
+  `None`; `audio::normalise::resolve_clips` fills it in. The export resolves
+  by measuring (`export::loudness::Resolver`), and an unresolved step refuses
+  the export (`ChainError::NotMeasured`). The preview resolves from the cache
+  only (`only_cached`) and plays an unmeasured normalisation unprocessed.
+- **The sequence.** `sequence.loudness` normalises the whole mix: every audio
+  segment of the plan is rendered as the export makes it (`render_job`) into
+  one meter, and `apply_sequence` gives every clip with sound the same last
+  step. The levels between clips are kept.
+- **Reports.** `loudness_report(clip)` and `sequence_loudness_report()`
+  measure and return the loudness before and after, in LUFS, with the range
+  and true peak; the inspector shows them.
+
 ## Changing the chain while playing
 
 Changing a clip's audio chain changes nothing else in the preview plan, so
@@ -124,6 +153,13 @@ user applies it. The Tauri command is `gain_advice(clip)`.
   cache.
 - `audio::denoise` — the model's hash, the path escaped for both parsers,
   the blend.
+- `audio::normalise` — the gain arithmetic, convergence, clip and sequence
+  resolution.
+- `tests/audio_normalise.rs` — four references to −14 and −23 LUFS within
+  0.5 LU and under the ceiling, the sequence keeping its levels, no pumping
+  where single-pass `loudnorm` pumps, a measurement taken again when the chain
+  before it changes, near silence left alone, an unmeasured normalisation
+  refused.
 - `tests/audio_denoise.rs` — the SNR gain on a noisy reading, strength 0 bit
   for bit, the model found under an install path with a quote in it, a
   missing model refused before anything is written, the pictures copied, and
