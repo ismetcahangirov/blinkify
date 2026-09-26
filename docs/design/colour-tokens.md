@@ -268,14 +268,53 @@ would silently restore a failure that no colour test would catch.
 See [`../engineering/architecture-gates.md`](../engineering/architecture-gates.md)
 for the rest of the gate set and for what each one does not cover.
 
-## Still outstanding
+## Reviewed against real footage
 
-One testing requirement in #15 is not met by any of the above and is not
-mechanisable: **visual review of the palette against a real video frame**,
-confirming the chrome does not tint perception of the image. It needs a decoded
-frame in the preview zone, which arrives with Epic
-[#3](https://github.com/ismetcahangirov/blinkify/issues/3) and
-[#4](https://github.com/ismetcahangirov/blinkify/issues/4). It is tracked as
-[#74](https://github.com/ismetcahangirov/blinkify/issues/74) rather than ticked
-off here, because a checkbox claiming a review that nobody performed is worse
-than an open issue.
+The one testing requirement in #15 that no gate can meet — **visual review of
+the palette against a real video frame**, confirming the chrome does not tint
+perception of the image — was performed in
+[#74](https://github.com/ismetcahangirov/blinkify/issues/74) on 2026-09-27, once
+the preview rendered decoded frames. **Outcome: no change needed.** The neutral
+ramp keeps its values.
+
+**Footage.** Three real captures, chosen because they differ in colour handling:
+
+| Source                                       | What it is                     | Why it is in the set                                  |
+| -------------------------------------------- | ------------------------------ | ----------------------------------------------------- |
+| iPhone 6, `IMG_4596.MOV`                     | H.264, limited range, VFR 240  | Phone capture — the common case; overcast sky, sea    |
+| Android phone, `VID_20130619_161750_449.mp4` | H.264, untagged colour, VFR    | Phone capture with no colour tags; warm indoor white  |
+| Canon EOS 6D, `mvi_9112.mov`                 | H.264, full range (`yuvj420p`) | Camera capture; sunlit white stone against a blue sky |
+
+All three are public samples from `samples.ffmpeg.org`, fetched for the review
+and not committed (CLAUDE.md section 20, rule 12).
+
+**Method.** Each source was opened in the application, its frame shown in the
+preview zone at a normal window size, and the window captured. Beside each
+capture sat the same capture with every pixel outside the video rectangle
+replaced by its own luminance as neutral grey — the chrome with its blue cast
+removed and nothing else changed; the video pixels are identical in both. The
+question was whether the frame's white point reads differently between the two.
+
+**What was seen.** It does not, in any of the three. The overcast sky in the
+iPhone frame stays the same cool-neutral white; the Canon frame's sunlit facade
+stays the same warm white; the Android frame's indoor wall stays warm and does
+not read warmer against the blue-leaning chrome, which is the direction a
+perceptible cast would push it. The only visible difference between the two
+halves was the accent on the progress bar, which is the brand colour and is
+meant to be seen. Measured, the player zone's background is RGB (19, 22, 27): a
+blue lean of eight code values at a luminance where the eye's colour
+discrimination is weakest, against frames whose highlights sit at 150–240.
+
+**Timeline fills.** At the default zoom a clip's fill (`--timeline-clip-video`,
+`#273358`) shows only until its thumbnails arrive, and it is a muted blue far
+darker than anything the three frames put on screen; once the thumbnails are
+drawn the strip is the footage itself. The fills do not compete with the preview.
+
+**What this review is not.** It was judged on one laptop panel, uncalibrated,
+under ordinary room light — the conditions most users edit in, and not a
+reference monitor. HDR sources were not part of it: an HDR frame shown on an
+SDR preview is a question about how the preview maps it, not about the chrome,
+and v1 only ever copies HDR, never edits its pixels (ADR-0008). If the neutral
+ramp ever changes
+hue or saturation, this review is out of date and should be repeated; a change
+of lightness alone is covered by the contrast test.
