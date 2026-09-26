@@ -25,6 +25,7 @@ use super::lanes::{frame_size, rotation_of, start_decoder};
 use super::plan::{PlanSlot, ProgramTime, Segment};
 use crate::decode::{FrameRing, VideoFrame};
 use crate::orchestrator::Orchestrator;
+use crate::project::evaluate::Motion;
 
 /// The most frames one window decodes.
 const WINDOW_MAX: usize = 48;
@@ -253,13 +254,25 @@ impl Worker {
             return;
         };
         let (budget, frame_bytes) = (lock(&self.cache).budget(), size.bytes().max(1));
-        let fit = budget.div_euclid(frame_bytes).clamp(2, WINDOW_MAX);
-        // Most of the window lies the way the pointer is moving.
+        // A held clip has one frame to show wherever the pointer is.
+        let fit = match segment.motion() {
+            Some(Motion::Hold) => 1,
+            _ => budget.div_euclid(frame_bytes).clamp(2, WINDOW_MAX),
+        };
+        // Backwards through a reversed clip's source is forwards on the
+        // timeline.
+        let direction = match segment.motion() {
+            Some(Motion::Reverse) => -direction,
+            _ => direction,
+        };
+        // Most of the window lies the way the pointer is moving, and the
+        // target is always in it.
         let behind = if direction < 0 {
             fit - fit.div_euclid(4)
         } else {
             fit.div_euclid(4)
-        };
+        }
+        .min(fit - 1);
         let index = &segment.source.index;
         let mut first = frame_pts;
         for _ in 0..behind {

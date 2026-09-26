@@ -113,11 +113,11 @@ describe("describing an operation", () => {
     expect(
       describeOperation({
         operation: { op: "freeze", frames: 90 },
-        previewed: false,
+        previewed: true,
       }),
     ).toBe("Freeze frame: 90 frames (re-encoded)");
     expect(
-      describeOperation({ operation: { op: "reverse" }, previewed: false }),
+      describeOperation({ operation: { op: "reverse" }, previewed: true }),
     ).toBe("Reverse (re-encoded)");
   });
 });

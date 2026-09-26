@@ -65,6 +65,18 @@ tick, and takes the newest frame due. The lane for the next segment is started
 Frames past a segment's out point are never shown, even though the decoder runs
 on beyond it.
 
+A **reversed** clip's lane runs the other way (#113,
+[ADR-0017](../decisions/ADR-0017-reversed-preview-decodes-backwards-a-chunk-at-a-time.md)).
+Its decoder fills the ring a chunk at a time, newest frame first, each frame
+with its own source timestamp, and decodes the next chunk while this one
+plays. The source tick falls as the clock rises, so the presenter uses
+`FrameRing::take_due_backwards`: the due frame is the newest at or before
+the tick, and every _newer_ frame is the late one. The lane holds at most its
+ring and two chunks (`reverse_memory_bound`), whatever the clip's length. A
+**held** clip's lane decodes one frame. Both show their frame again at every
+sequence frame, so the frame on screen always carries the sequence frame's
+place and timecode.
+
 Every `ShownFrame` records `chosen_at`, the clock at the moment it was chosen.
 `chosen_at − position` is the A/V sync, measured where it is decided rather
 than by a test thread that may be descheduled.
@@ -87,6 +99,10 @@ start, to the previous segment's last. A step forward within what the lane has
 already decoded only moves the clock; anything else restarts the lane. The
 tests step through CFR and VFR sources and compare each frame with the
 `ffprobe` frame list and, by pixels, with an independent decode.
+
+Through a held or reversed clip a step moves by **sequence frames**, because
+the export writes one frame per sequence frame there and the source's own
+frame table does not say which it is.
 
 The frame at a paused position is the frame starting there, so the timecode —
 `floor(position × rate)`, formatted non-drop-frame at the nominal rate — names

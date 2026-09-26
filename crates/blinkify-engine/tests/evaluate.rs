@@ -1,7 +1,8 @@
 //! The shared evaluator against the real sidecar (#30): preview and export
 //! agree on every frame of generated graphs, a proxy changes nothing about
-//! the content, a graph change shows at once and writes no file, an
-//! unchanged clip keeps its decoder, and speed and gain are heard and seen.
+//! the content — held and reversed clips included — a graph change shows at
+//! once and writes no file, an unchanged clip keeps its decoder, and speed
+//! and gain are heard and seen.
 
 #![allow(
     clippy::expect_used,
@@ -229,6 +230,20 @@ fn preview_and_export_agree_on_every_frame_of_generated_graphs() {
                 if random.below(2) == 0 {
                     operations.push(Operation::gain(-(random.below(120) as f64) / 10.0));
                 }
+                // Pictures held or played backwards too (#113): the preview
+                // must name the same frame there as well.
+                let mut held = None;
+                if kind == TrackKind::Video {
+                    match random.below(6) {
+                        0 => {
+                            let frames = 1 + random.below(40);
+                            operations.push(Operation::Freeze { frames });
+                            held = Some(frames);
+                        }
+                        1 => operations.push(Operation::Reverse),
+                        _ => {}
+                    }
+                }
                 clips.push(Clip::new(clip_id, source, stream, tb, at, operations));
                 // The next clip after this one, with a gap or none: its
                 // length in frames, rounded up as the evaluator does.
@@ -237,8 +252,9 @@ fn preview_and_export_agree_on_every_frame_of_generated_graphs() {
                     den: tb.den * n,
                 };
                 let sequence = Rational { num: den, den: num };
-                let length =
-                    time::rescale(to - from, played, sequence, Rounding::Up).expect("length");
+                let length = held.unwrap_or_else(|| {
+                    time::rescale(to - from, played, sequence, Rounding::Up).expect("length")
+                });
                 at += length + random.below(3);
             }
             Track {

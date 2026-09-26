@@ -11,9 +11,13 @@
 //! for the frame that is due at the clock's current position, and every older
 //! frame is dropped and counted. A late frame is never shown late — it is
 //! skipped — so video under load drops frames rather than falling behind.
+//!
+//! A reversed clip (#113) is presented the other way: its source position
+//! falls as the clock rises, so the frame due is the newest at or before the
+//! position, and every *newer* frame is the late one ([`FrameRing::take_due_backwards`]).
 
 use std::collections::VecDeque;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::{Condvar, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
@@ -43,6 +47,8 @@ struct State {
     /// The producer has delivered its last frame.
     finished: bool,
     arrivals: VecDeque<Instant>,
+    /// The frame [`FrameRing::take_due_backwards`] took last.
+    backwards_taken: Option<i64>,
 }
 
 /// A snapshot of a ring, for diagnosis.
@@ -68,6 +74,8 @@ pub struct FrameRing {
     decoded: AtomicU64,
     dropped: AtomicU64,
     presented: AtomicU64,
+    /// The position the presenter last asked for, `i64::MIN` before it has.
+    asked: AtomicI64,
 }
 
 impl FrameRing {
@@ -81,6 +89,7 @@ impl FrameRing {
             decoded: AtomicU64::new(0),
             dropped: AtomicU64::new(0),
             presented: AtomicU64::new(0),
+            asked: AtomicI64::new(i64::MIN),
         }
     }
 
@@ -163,6 +172,7 @@ impl FrameRing {
         state.frames.clear();
         state.finished = false;
         state.arrivals.clear();
+        state.backwards_taken = None;
         drop(state);
         self.changed.notify_all();
     }
@@ -170,6 +180,7 @@ impl FrameRing {
     /// The newest frame due at `now` — its timestamp at or before it — with
     /// every older frame dropped and counted. `None` when nothing is due yet.
     pub fn take_due(&self, now: i64) -> Option<VideoFrame> {
+        self.asked.store(now, Ordering::Relaxed);
         let mut state = self.lock();
         let due = state.frames.partition_point(|f| f.pts <= now);
         if due == 0 {
@@ -187,6 +198,45 @@ impl FrameRing {
             self.presented.fetch_add(1, Ordering::Relaxed);
         }
         frame
+    }
+
+    /// For a clip played backwards: the frame due at source position `now`
+    /// — the newest at or before it — with every *newer* frame dropped and
+    /// counted, since the clip has already passed them. Older frames are
+    /// still to come. `None` when nothing is due yet: before the first frame
+    /// arrives, or while the frame taken last is still the one at `now`.
+    pub fn take_due_backwards(&self, now: i64) -> Option<VideoFrame> {
+        self.asked.store(now, Ordering::Relaxed);
+        let mut state = self.lock();
+        let due = state.frames.partition_point(|f| f.pts <= now);
+        let late = state.frames.len() - due;
+        state.frames.truncate(due);
+        // The frame on screen is newer than any left here; while it is still
+        // at or before `now` it is still the right one.
+        let frame = if state.backwards_taken.is_none_or(|taken| now < taken) {
+            state.frames.pop_back()
+        } else {
+            None
+        };
+        if let Some(frame) = &frame {
+            state.backwards_taken = Some(frame.pts);
+        }
+        drop(state);
+        self.changed.notify_all();
+        self.dropped
+            .fetch_add(u64::try_from(late).unwrap_or(u64::MAX), Ordering::Relaxed);
+        if frame.is_some() {
+            self.presented.fetch_add(1, Ordering::Relaxed);
+        }
+        frame
+    }
+
+    /// The source position the presenter last asked for a frame at, if it
+    /// has: how far a producer running behind may skip ahead.
+    #[must_use]
+    pub fn asked(&self) -> Option<i64> {
+        let asked = self.asked.load(Ordering::Relaxed);
+        (asked != i64::MIN).then_some(asked)
     }
 
     /// Take the earliest frame, whatever the clock: for a consumer that keeps
@@ -317,6 +367,37 @@ mod tests {
         assert_eq!(stats.presented_frames, 1);
         assert_eq!(stats.buffered_frames, 1);
         assert_eq!(ring.take_due(30).map(|f| f.pts), Some(30));
+        assert_eq!(ring.stats().dropped_frames, 2);
+    }
+
+    #[test]
+    fn backwards_the_due_frame_is_the_newest_at_or_before_now_and_newer_ones_drop() {
+        let ring = FrameRing::new(8);
+        assert_eq!(ring.asked(), None);
+        // A reversed clip's decoder delivers the newest frame first.
+        for pts in [30, 20, 10, 0] {
+            ring.push(frame(pts), &CancelToken::default());
+        }
+        assert_eq!(ring.take_due_backwards(35).map(|f| f.pts), Some(30));
+        assert_eq!(ring.asked(), Some(35));
+        // Still 30's moment: nothing new is due.
+        assert_eq!(ring.take_due_backwards(30).map(|f| f.pts), None);
+        assert_eq!(ring.take_due_backwards(25).map(|f| f.pts), Some(20));
+        // The clock ran on past 10 into 0's moment: 10 was late.
+        assert_eq!(ring.take_due_backwards(5).map(|f| f.pts), Some(0));
+        let stats = ring.stats();
+        assert_eq!(stats.dropped_frames, 1, "10 was late");
+        assert_eq!(stats.presented_frames, 3);
+        assert_eq!(stats.buffered_frames, 0);
+    }
+
+    #[test]
+    fn backwards_a_frame_already_passed_is_late_not_due() {
+        let ring = FrameRing::new(8);
+        for pts in [30, 20] {
+            ring.push(frame(pts), &CancelToken::default());
+        }
+        assert_eq!(ring.take_due_backwards(12).map(|f| f.pts), None);
         assert_eq!(ring.stats().dropped_frames, 2);
     }
 
