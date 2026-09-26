@@ -230,14 +230,9 @@ export function AppBar() {
   return (
     <header
       className="shell__bar"
-      /* Tauri's drag region: dragging the bar moves the window, and a
-         double-click on it maximises and restores. Both are Tauri's own
-         implementation rather than a hand-rolled `startDragging()`, because a
-         manual drag swallows the double-click and then neither works. Its
-         restore behaviour on Windows has an open upstream bug
-         (tauri-apps/tauri#11945), which is why double-click is called out by
-         name in the manual verification list rather than assumed. */
-      data-tauri-drag-region
+      /* The bar is the window's caption through CSS `app-region` (shell.css),
+         not a drag script: Windows then drags, snaps, maximises on
+         double-click and shows the system menu itself (#80). */
       data-testid="app-bar"
     >
       <nav className="shell__menus" aria-label="Main menu">

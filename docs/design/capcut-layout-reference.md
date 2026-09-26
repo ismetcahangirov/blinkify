@@ -166,34 +166,58 @@ Full width, 48px, fixed. Left to right:
 6. **Export** — the primary action, at the far right, carrying the brand
    treatment. It is the only brand-gradient surface in the shell.
 7. **Window controls** — minimise, maximise, close. Custom chrome means these
-   are ours to draw, and double-click-to-maximise and snap behaviour are ours to
-   implement rather than to inherit (#19).
+   are ours to draw (#19); the caption behaviour around them is Windows' own
+   (#80), below.
 
-### What the custom chrome costs
+### What the custom chrome costs, and what it no longer does (#80)
 
-Blinkify draws its own window controls, which means `decorations: false`, which
-means **Windows 11 Snap Layouts do not work** — neither the flyout when the
-pointer rests on the maximise button nor dragging the window to a screen edge.
+Blinkify draws its own window controls (`decorations: false`), and the bar is
+the window's caption through CSS `app-region: drag`. WebView2's non-client
+region support — which wry switches on — hands that rectangle to Windows as a
+real caption, so Windows does what a caption does:
 
-That is upstream rather than ours: `tauri-apps/tauri#4531` has been open since
-2022 and is labelled `status: upstream`. It was checked rather than assumed,
-because #19 asks for snapping by name.
+| Gesture                                      | Works | Measured on Windows 11, 2026-09-27                     |
+| -------------------------------------------- | ----- | ------------------------------------------------------ |
+| Drag the bar, including the project name     | yes   | window moved by the drag distance                      |
+| Drag to the left or right edge               | yes   | window snapped to the half, Snap Assist opened         |
+| Drag to the top edge / down out of maximised | yes   | maximised; dragged back out at its restored size       |
+| Double-click the bar                         | yes   | maximised, and a second double-click restored          |
+| Right-click the bar                          | yes   | the system menu (Restore, Move, Size, … Close)         |
+| Minimise, maximise, restore, close buttons   | yes   | unchanged; they stay controls (`app-region: no-drag`)  |
+| Win+Z, Win+arrows                            | yes   | Win+Z opens the Snap Layouts flyout at the window      |
+| Pointer resting on the maximise button       | no    | no flyout — the one Snap Layouts gesture still missing |
 
-It is a real loss. People put an editor beside a browser, and snapping is how
-they do it. The three ways out, in the order they should be considered:
+Every control on the bar is `no-drag`, and so is the dialog scrim, because a
+modal covers the caption too and a caption under a scrim would take the click
+for the window.
 
-1. **Accept it.** Maximise, restore and the keyboard all still work; only the
-   snap gestures are gone.
-2. **Native decorations.** One line of `tauri.conf.json`. Windows 11 honours the
-   dark theme, so the title bar is dark — but it sits above the application bar,
-   repeating the project name, and the top 32 pixels stop being Blinkify's.
-3. **Subclass the window procedure.** Handling `WM_NCHITTEST` and
-   `WM_NCCALCSIZE` restores Snap Layouts under custom chrome. It is how the
-   editors that have both do it, and it is a block of `unsafe` Win32 plus a new
-   crate.
+**Before #80 the bar was barely a handle at all.** It used Tauri's
+`data-tauri-drag-region`, which moves the window from a script and reads the
+attribute from the event's target only. The project name takes the bar's slack
+and did not carry the attribute, so almost no part of the bar could be dragged;
+double-click went through a second script needing a permission the capability
+file did not grant, so it did nothing either. Neither was a matter of Windows
+Snap: nothing was reaching Windows.
 
-The first is what ships today, and the decision is recorded here rather than
-discovered by somebody wondering why snapping stopped working.
+**The flyout on hover is the one thing left, and it is left deliberately.**
+Windows opens it when its hit test of the top-level window answers
+`HTMAXBUTTON`. The button Blinkify draws is in the webview, and the pointer over
+it belongs to WebView2's own window (`Chrome_RenderWidgetHostHWND`), not to the
+window Tauri owns — measured with `WindowFromPoint`. So the option #80 listed
+third, subclassing the window procedure of Tauri's window to answer
+`WM_NCHITTEST`, would never see the pointer there; making it work means a native
+transparent child window laid over the button, forwarding hover state back to
+the renderer, all in `unsafe` Win32, which the workspace forbids
+(`unsafe_code = "forbid"`). `app-region` has only `drag` and `no-drag` in
+Chromium; there is no "this is the maximise button" value to give WebView2
+(tried). Win+Z opens the same flyout, and that is where it stays until WebView2
+or Tauri offers a caption-button region.
+
+**The options considered.** Accepting the loss (the state before) left dragging
+and double-click broken, not just snapping. Native decorations would give the
+flyout, at the cost of a second bar above the application bar repeating the
+project name and the top 32 pixels no longer being Blinkify's — every other
+gesture above is now had without that cost. Subclassing is the paragraph above.
 
 ## Zone 1 — library
 
