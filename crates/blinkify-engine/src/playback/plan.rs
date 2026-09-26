@@ -13,6 +13,11 @@
 //! opposite directions — a frame's place on the timeline up, a timeline
 //! position's source tick down — so that a frame survives the round trip (see
 //! `crate::time`).
+//!
+//! A held or reversed clip (#113) keeps the evaluator's [`Placement`], and
+//! the frame it shows at a position is the one [`Placement::source_at`]
+//! names for the sequence frame there — one frame per sequence frame, as the
+//! export renders it — rather than a second derivation of the same motion.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -22,7 +27,7 @@ use thiserror::Error;
 
 use crate::keyframes::KeyframeIndex;
 use crate::probe::{MediaInfo, Rational, StreamInfo, VideoInfo};
-use crate::project::evaluate::{AudioOperation, Placement, Timeline};
+use crate::project::evaluate::{AudioOperation, Motion, Placement, Timeline};
 use crate::project::{ClipId, SourceId, TrackKind};
 use crate::proxy::Proxy;
 use crate::time::{self, MICROSECONDS, Rounding};
@@ -39,6 +44,7 @@ pub(crate) fn same_segment(a: &Segment, b: &Segment) -> bool {
         && a.source_out == b.source_out
         && a.timeline_start == b.timeline_start
         && a.speed == b.speed
+        && a.placement == b.placement
 }
 
 /// Whether `new` is `old` with only its segments' audio chains changed: the
@@ -238,6 +244,10 @@ pub struct Segment {
     pub audio: Vec<AudioOperation>,
     /// The clip the segment plays, when it came from the edit graph.
     pub clip: Option<ClipId>,
+    /// A held or reversed clip's placement, as the evaluator made it: what
+    /// names the frame at each of its sequence frames. `None` for a clip
+    /// that plays forwards.
+    pub placement: Option<Arc<Placement>>,
 }
 
 impl Segment {
@@ -257,7 +267,93 @@ impl Segment {
             speed: NORMAL,
             audio: Vec::new(),
             clip: None,
+            placement: None,
         }
+    }
+
+    /// Backwards or held; `None` forwards.
+    #[must_use]
+    pub fn motion(&self) -> Option<Motion> {
+        self.placement
+            .as_ref()
+            .and_then(|placement| placement.motion)
+    }
+
+    /// The sequence frame of a held or reversed segment at timeline
+    /// position `t`: the last one starting at or before it, within the
+    /// segment. A frame starts at its sequence position rounded down to the
+    /// microsecond, so a seek rounded either way lands on the frame it
+    /// asked for.
+    fn sequence_frame_at(placement: &Placement, t: ProgramTime) -> i64 {
+        let frame = time::rescale(
+            t.saturating_add(1),
+            MICROSECONDS,
+            placement.sequence_time_base,
+            Rounding::Up,
+        )
+        .map_or(placement.start, |n| n - 1);
+        frame.clamp(placement.start, placement.end().saturating_sub(1))
+    }
+
+    /// Where sequence frame `frame` starts on the timeline, rounded down as
+    /// a segment's start and end are.
+    fn sequence_frame_start(placement: &Placement, frame: i64) -> ProgramTime {
+        time::rescale(
+            frame,
+            placement.sequence_time_base,
+            MICROSECONDS,
+            Rounding::Down,
+        )
+        .unwrap_or(0)
+    }
+
+    /// Where sequence frame `frame` is shown from: its start rounded up, as
+    /// [`Segment::program_at`] rounds, so the frame's timecode is its own.
+    fn sequence_frame_place(placement: &Placement, frame: i64) -> ProgramTime {
+        time::rescale(
+            frame,
+            placement.sequence_time_base,
+            MICROSECONDS,
+            Rounding::Up,
+        )
+        .unwrap_or(0)
+    }
+
+    /// Where the frame on screen at `t` starts: for a forward segment where
+    /// source frame `pts` starts, and for a held or reversed one — which
+    /// shows one frame per sequence frame, as the export writes it — where
+    /// the sequence frame at `t` starts.
+    #[must_use]
+    pub fn shown_at(&self, t: ProgramTime, pts: i64) -> ProgramTime {
+        match &self.placement {
+            Some(placement) => {
+                Self::sequence_frame_place(placement, Self::sequence_frame_at(placement, t))
+                    .max(self.timeline_start)
+            }
+            None => self.program_at(pts),
+        }
+    }
+
+    /// For a held or reversed segment, the start of the sequence frame
+    /// after (or before) the one at `t`: `None` past either end, and for a
+    /// forward segment, which steps by source frames instead.
+    #[must_use]
+    pub fn sequence_step(&self, t: ProgramTime, forwards: bool) -> Option<ProgramTime> {
+        let placement = self.placement.as_ref()?;
+        let frame = Self::sequence_frame_at(placement, t);
+        let next = if forwards { frame + 1 } else { frame - 1 };
+        (placement.start <= next && next < placement.end())
+            .then(|| Self::sequence_frame_place(placement, next).max(self.timeline_start))
+    }
+
+    /// Where the last sequence frame of a held or reversed segment starts.
+    #[must_use]
+    pub fn last_sequence_frame(&self) -> Option<ProgramTime> {
+        let placement = self.placement.as_ref()?;
+        Some(
+            Self::sequence_frame_place(placement, placement.end().saturating_sub(1))
+                .max(self.timeline_start),
+        )
     }
 
     #[must_use]
@@ -285,9 +381,15 @@ impl Segment {
             .unwrap_or(1.0)
     }
 
-    /// The segment's length on the timeline.
+    /// The segment's length on the timeline. A held or reversed segment
+    /// ends where its sequence frames do, rounded as its start is.
     #[must_use]
     pub fn duration(&self) -> ProgramTime {
+        if let Some(placement) = &self.placement {
+            return Self::sequence_frame_start(placement, placement.end())
+                .saturating_sub(self.timeline_start)
+                .max(0);
+        }
         time::rescale(
             self.source_out.saturating_sub(self.source_in),
             self.played_time_base(),
@@ -303,9 +405,21 @@ impl Segment {
     }
 
     /// The source tick shown at timeline position `t`, rounded down: the
-    /// frame on screen is the newest one at or before it.
+    /// frame on screen is the newest one at or before it. For a held or
+    /// reversed segment it is the tick [`Placement::source_at`] names for
+    /// the sequence frame at `t`.
     #[must_use]
     pub fn source_at(&self, t: ProgramTime) -> i64 {
+        if let Some(placement) = &self.placement {
+            let last = self.source_out.saturating_sub(1).max(self.source_in);
+            return placement
+                .source_at(Self::sequence_frame_at(placement, t))
+                .and_then(|tick| {
+                    time::rescale(tick, placement.time_base, self.time_base(), Rounding::Down)
+                })
+                .unwrap_or(self.source_in)
+                .clamp(self.source_in, last);
+        }
         let offset = t.saturating_sub(self.timeline_start);
         self.source_in.saturating_add(
             time::rescale(
@@ -321,20 +435,65 @@ impl Segment {
     /// Where the frame at source tick `pts` starts on the timeline, rounded
     /// up, so that [`Segment::source_at`] of the result is `pts` again. A
     /// frame that began before the segment's in point starts at the segment.
+    /// A held frame starts with its segment; a reversed frame where the
+    /// clip, running backwards, first comes down to it.
     #[must_use]
     pub fn program_at(&self, pts: i64) -> ProgramTime {
+        match self.motion() {
+            Some(Motion::Hold) => return self.timeline_start,
+            Some(Motion::Reverse) => return self.program_at_backwards(pts),
+            None => {}
+        }
         let offset = pts.saturating_sub(self.source_in).max(0);
         self.timeline_start.saturating_add(
             time::rescale(offset, self.played_time_base(), MICROSECONDS, Rounding::Up).unwrap_or(0),
         )
     }
 
-    /// Source seconds at timeline position `t`, for the audio decoder.
+    /// A reversed segment's [`Segment::program_at`]: the first sequence
+    /// frame whose named tick is before the frame after `pts`.
+    fn program_at_backwards(&self, pts: i64) -> ProgramTime {
+        let Some(placement) = &self.placement else {
+            return self.timeline_start;
+        };
+        let next = self.source.video.as_ref().and_then(|video| {
+            self.source
+                .index
+                .frame_after(video.index, pts)
+                .ok()
+                .flatten()
+        });
+        let passed = next
+            .filter(|next| *next < self.source_out)
+            .map_or(0, |next| self.source_out - next);
+        let frames = time::rescale(
+            passed.max(0),
+            placement.played_time_base(),
+            placement.sequence_time_base,
+            Rounding::Up,
+        )
+        .unwrap_or(0);
+        let frame = placement
+            .start
+            .saturating_add(frames)
+            .min(placement.end().saturating_sub(1));
+        Self::sequence_frame_place(placement, frame).max(self.timeline_start)
+    }
+
+    /// Source seconds at timeline position `t`, for the audio decoder. A
+    /// reversed segment's sound runs down from its out point.
     #[must_use]
     pub fn source_seconds_at(&self, t: ProgramTime) -> f64 {
         #[allow(clippy::cast_precision_loss)]
         let offset = t.saturating_sub(self.timeline_start) as f64 / 1_000_000.0;
-        time::seconds(self.source_in, self.time_base()) + offset * self.speed_factor()
+        let time_base = self.time_base();
+        match self.motion() {
+            Some(Motion::Reverse) => {
+                time::seconds(self.source_out, time_base) - offset * self.speed_factor()
+            }
+            Some(Motion::Hold) => time::seconds(self.source_in, time_base),
+            None => time::seconds(self.source_in, time_base) + offset * self.speed_factor(),
+        }
     }
 
     #[must_use]
@@ -428,7 +587,9 @@ impl PlaybackPlan {
     /// less its detached clips, whose sound is on an audio track of its own.
     /// A muted track is neither seen nor heard, as in the export. A clip
     /// whose source is not in `sources` (offline, #32) leaves a gap: black
-    /// and silence.
+    /// and silence. A held clip (#113) shows its frame for its length and is
+    /// silent, and a reversed one plays backwards, pictures and sound — as
+    /// the export renders them (#55).
     ///
     /// `sources` decides the preview's *quality* — a source may carry a
     /// proxy. The *content* is the timeline's, which is what the export
@@ -450,11 +611,6 @@ impl PlaybackPlan {
         let segments_of = |placements: &[Placement]| -> Result<Vec<Segment>, PlanError> {
             placements
                 .iter()
-                // A held or reversed clip (#35) is rendered only by the
-                // export's full re-encode executor (#55); the preview shows
-                // it as a gap rather than pretend, and the diagnostic view
-                // says it is not previewed.
-                .filter(|placement| placement.motion.is_none())
                 .filter_map(|placement| {
                     let source = sources.get(&placement.source)?;
                     Some(segment_of(placement, source, timeline.time_base))
@@ -473,7 +629,9 @@ impl PlaybackPlan {
             let sounding: Vec<Placement> = track
                 .placements
                 .iter()
-                .filter(|placement| !placement.silent)
+                // A held picture's moment does not move: its sound is a gap,
+                // silence, as the export writes it.
+                .filter(|placement| !placement.silent && placement.motion != Some(Motion::Hold))
                 .cloned()
                 .collect();
             if sounding.is_empty() && track.kind == TrackKind::Video {
@@ -593,6 +751,10 @@ fn segment_of(
         speed: placement.speed,
         audio: placement.audio.clone(),
         clip: Some(placement.clip),
+        placement: placement
+            .motion
+            .is_some()
+            .then(|| Arc::new(placement.clone())),
     })
 }
 

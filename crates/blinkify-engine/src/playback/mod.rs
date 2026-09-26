@@ -24,6 +24,7 @@ mod feeder;
 mod lanes;
 mod monitor;
 pub mod plan;
+mod reverse;
 mod scrub;
 pub mod timecode;
 
@@ -35,12 +36,13 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-pub use feeder::{audio_request, chain_rendered};
+pub use feeder::{audio_request, chain_rendered, reverse_audio_request};
 pub use monitor::{AudioInsert, MonitorCommand, MonitorStatus, MonitorVolume, PassThrough};
 pub use plan::{
     AudioStream, AudioTrack, MAIN_TRACK, PlanError, PlaybackPlan, ProgramTime, Segment,
     SourceMedia, TrackId, VideoStream,
 };
+pub use reverse::memory_bound as reverse_memory_bound;
 
 use crate::audio::denoise::Models;
 use crate::audio::sink::SilentSink;
@@ -547,6 +549,14 @@ impl Player {
         self.inner.scrub.counts()
     }
 
+    /// The most bytes of decoded pictures a reversed clip's lane has held at
+    /// once, over the player's life: bounded by [`reverse_memory_bound`]
+    /// whatever the clip's length (#113).
+    #[must_use]
+    pub fn reverse_peak_bytes(&self) -> usize {
+        lock(&self.inner.lanes).reverse_peak_bytes()
+    }
+
     /// Bytes held by the scrub cache, and its bound.
     #[must_use]
     pub fn scrub_cache_bytes(&self) -> (usize, usize) {
@@ -756,6 +766,9 @@ impl Inner {
         let Some((_, segment)) = plan.segment_at(end.saturating_sub(1)) else {
             return end.saturating_sub(1).max(0);
         };
+        if let Some(last) = segment.last_sequence_frame() {
+            return last;
+        }
         let Some(video) = segment.source.video.as_ref() else {
             return end.saturating_sub(1).max(0);
         };
@@ -899,18 +912,26 @@ impl Inner {
                 None => break,
             }
         }
-        let (segment, pts) = at;
-        let Some(target) = plan.segment(segment).map(|s| s.program_at(pts)) else {
+        let (segment, place) = at;
+        let Some(stepped) = plan.segment(segment) else {
             return;
         };
-        // A frame the lane already holds: just move the clock to it.
-        let reusable = {
+        let forwards = stepped.motion().is_none();
+        let target = if forwards {
+            stepped.program_at(place)
+        } else {
+            place
+        };
+        // A frame the lane already holds: just move the clock to it. A held
+        // or reversed lane's frames are handed over as the clock reaches
+        // them, so a step there is a seek.
+        let reusable = forwards && {
             let mut lanes = lock(&self.lanes);
             lanes
-                .lane(&plan, segment, generation, pts)
+                .lane(&plan, segment, generation, place)
                 .is_some_and(|lane| {
-                    lane.ring.earliest_pts().is_some_and(|first| first <= pts)
-                        && lane.ring.latest_pts().is_some_and(|last| last >= pts)
+                    lane.ring.earliest_pts().is_some_and(|first| first <= place)
+                        && lane.ring.latest_pts().is_some_and(|last| last >= place)
                 })
         };
         if reusable {
@@ -921,11 +942,18 @@ impl Inner {
         }
     }
 
-    /// The segment and source timestamp of the frame due at `t` — from the
-    /// clock, not from what the renderer last fetched, which can lag a step.
+    /// Where a frame step stands at `t`: the segment, and the source
+    /// timestamp of its frame due there — from the clock, not from what the
+    /// renderer last fetched, which can lag a step. A held or reversed
+    /// segment shows one frame per sequence frame, as the export writes it,
+    /// so a step there moves by sequence frames, and its place is where the
+    /// sequence frame starts on the timeline.
     fn frame_at(&self, t: ProgramTime) -> Option<(usize, i64)> {
         let plan = self.plan();
         let (i, segment) = plan.segment_at(t).or_else(|| plan.next_segment_after(t))?;
+        if segment.motion().is_some() {
+            return Some((i, segment.shown_at(t.max(segment.timeline_start), 0)));
+        }
         let video = segment.source.video.as_ref()?;
         let pts = segment
             .source
@@ -939,10 +967,14 @@ impl Inner {
         Some((i, pts))
     }
 
-    /// The first frame of segment `i`: the one on screen at its in point.
+    /// The first frame of segment `i`: the one on screen at its in point —
+    /// for a held or reversed segment, its first sequence frame's start.
     fn first_frame(&self, i: usize) -> Option<i64> {
         let plan = self.plan();
         let segment = plan.segment(i)?;
+        if segment.motion().is_some() {
+            return Some(segment.shown_at(segment.timeline_start, 0));
+        }
         let video = segment.source.video.as_ref()?;
         let index = &segment.source.index;
         index
@@ -960,11 +992,17 @@ impl Inner {
     fn frame_after(&self, (i, pts): (usize, i64)) -> Option<(usize, i64)> {
         let plan = self.plan();
         let segment = plan.segment(i)?;
-        let video = segment.source.video.as_ref()?;
-        if let Ok(Some(next)) = segment.source.index.frame_after(video.index, pts)
-            && next < segment.source_out
-        {
-            return Some((i, next));
+        if segment.motion().is_some() {
+            if let Some(next) = segment.sequence_step(pts, true) {
+                return Some((i, next));
+            }
+        } else {
+            let video = segment.source.video.as_ref()?;
+            if let Ok(Some(next)) = segment.source.index.frame_after(video.index, pts)
+                && next < segment.source_out
+            {
+                return Some((i, next));
+            }
         }
         // The first frame of the next segment that has pictures.
         (i + 1..plan.segments().len()).find_map(|k| self.first_frame(k).map(|pts| (k, pts)))
@@ -973,16 +1011,25 @@ impl Inner {
     fn frame_before(&self, (i, pts): (usize, i64)) -> Option<(usize, i64)> {
         let plan = self.plan();
         let segment = plan.segment(i)?;
-        let video = segment.source.video.as_ref()?;
-        let first = self.first_frame(i)?;
-        if pts > first
-            && let Ok(Some(previous)) = segment.source.index.frame_before(video.index, pts)
-        {
-            return Some((i, previous.max(first)));
+        if segment.motion().is_some() {
+            if let Some(previous) = segment.sequence_step(pts, false) {
+                return Some((i, previous));
+            }
+        } else {
+            let video = segment.source.video.as_ref()?;
+            let first = self.first_frame(i)?;
+            if pts > first
+                && let Ok(Some(previous)) = segment.source.index.frame_before(video.index, pts)
+            {
+                return Some((i, previous.max(first)));
+            }
         }
         // The last frame of the previous segment that has pictures.
         (0..i).rev().find_map(|k| {
             let segment = plan.segment(k)?;
+            if let Some(last) = segment.last_sequence_frame() {
+                return Some((k, last));
+            }
             let video = segment.source.video.as_ref()?;
             let last = segment
                 .source
@@ -1044,14 +1091,17 @@ impl Inner {
             .min(segment.source_out.saturating_sub(1));
         let mut lanes = lock(&self.lanes);
         lanes.keep_up(&plan, i, generation, pts);
-        let frame = lanes
+        let (frame, repeat) = lanes
             .lane(&plan, i, generation, pts)
-            .and_then(|lane| lane.ring.take_due(pts));
+            .map_or((None, None), |lane| {
+                let frame = lane.take_due(segment, pts);
+                (frame, lane.shown.clone())
+            });
         // What plays next: the following segment, and the far side of a loop.
         if segment.timeline_end() - t < PREFETCH
             && let Some((k, next)) = plan.segment_at(segment.timeline_end())
         {
-            let _ = lanes.lane(&plan, k, generation, next.source_in);
+            let _ = lanes.lane(&plan, k, generation, next.source_at(next.timeline_start));
         }
         if let Some((start, end)) = *lock(&self.loop_range)
             && end - t < PREFETCH
@@ -1064,10 +1114,22 @@ impl Inner {
         drop(lanes);
 
         if let Some(frame) = frame {
-            self.show_picture(i, Arc::new(frame), lanes::rotation_of(segment), t);
+            self.show_picture(i, frame, lanes::rotation_of(segment), t);
             // Any frame a lane presents answers the seek that started it.
             self.resolve(None);
+        } else if let Some(frame) = repeat
+            && segment.motion().is_some()
+            && self.shown_position() != Some(segment.shown_at(t, frame.pts))
+        {
+            // A held or reversed segment shows a frame per sequence frame:
+            // the same picture again, at the frame the clock has reached.
+            self.show_picture(i, frame, lanes::rotation_of(segment), t);
         }
+    }
+
+    /// Where the frame on screen starts on the timeline.
+    fn shown_position(&self) -> Option<ProgramTime> {
+        lock(&self.shown).frame.as_ref().map(|frame| frame.position)
     }
 
     /// Put `frame` of segment `i` on screen, chosen at clock position `t`.
@@ -1076,7 +1138,7 @@ impl Inner {
         let Some(segment) = plan.segment(i) else {
             return;
         };
-        let position = segment.program_at(frame.pts);
+        let position = segment.shown_at(t, frame.pts);
         let mut shown = lock(&self.shown);
         shown.seq += 1;
         shown.frame = Some(Arc::new(ShownFrame {

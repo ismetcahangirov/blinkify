@@ -82,13 +82,46 @@ track is a sound-only track with the project's track id; track 0 is reserved
 for the main track. Further video tracks are not previewed, because Blinkify
 does not composite. A clip whose source is offline is a gap.
 
+## Held and reversed clips
+
+From [#113](https://github.com/ismetcahangirov/blinkify/issues/113). A held
+or reversed clip is rendered whole by the export (#55): one frame per
+sequence frame, the held frame repeated or the clip backwards. The preview
+shows the same thing by asking the same question. Its segment keeps the
+evaluator's `Placement`, and at timeline position `t` it takes the sequence
+frame there and asks `Placement::source_at` for the source tick — the
+evaluator's answer, not a second derivation of the motion. The agreement test
+generates held and reversed clips too.
+
+- **A hold** is its in-point frame, decoded once and shown again at every
+  sequence frame of its length, so the timecode moves on while the picture
+  does not. Its sound is silence: the plan leaves it out of the sound tracks,
+  as the export writes silence for it.
+- **A reverse** decodes backwards a chunk at a time, prefetching the next
+  chunk while this one plays, in bounded memory; its sound is decoded
+  backwards in chunks too. How and why is
+  [ADR-0017](../decisions/ADR-0017-reversed-preview-decodes-backwards-a-chunk-at-a-time.md);
+  the ring's side of it is in [`playback.md`](./playback.md).
+- **Stepping** through either moves by sequence frames, since the export
+  writes one frame per sequence frame there.
+
+The test exports the same graph and compares, frame by frame, the preview's
+picture with the source frame the evaluator names (bit for bit) and with the
+export's frame at the same sequence frame (it is the best match among all of
+them). On a source whose timestamps are rounded to milliseconds the
+evaluator's tick can fall a rounding error before a frame, forwards and
+backwards; that is
+[#134](https://github.com/ismetcahangirov/blinkify/issues/134), and the test
+uses MP4, whose time base holds every frame exactly.
+
 A clip's speed changes its segment's time base: frames map through
 `source tb × speed`, and the audio decoder's `atempo` is the clip's speed
 times the transport's. The gain is exact arithmetic in the feeder, before
 Epic #7's insert and the meter. Denoise (#47) and normalise (#48) are
 evaluated and exported, but the preview does not render them yet. The
 diagnostic view says so for each one, rather than letting the sound suggest
-the export will skip them.
+the export will skip them. Hold and reverse are previewed (#113) and are not
+marked.
 
 ## A graph change
 
