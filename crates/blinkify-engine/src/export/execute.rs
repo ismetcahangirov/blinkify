@@ -20,7 +20,7 @@
 //!   leaves nothing at the target and no partial file beside it.
 //! - **Cancellation is real**: one token stops every process of the export.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -1524,9 +1524,56 @@ fn first_error(
         .unwrap_or_else(|| ExportError::Mismatch(fallback.to_owned()))
 }
 
+/// The attachments — fonts, cover art — a Matroska output carries, as each
+/// source file that has any and the indexes of its attachment streams.
+///
+/// NUT has no stream for them, so the muxer reads them from the sources
+/// themselves (#107). Every source the plan reads counts, in the plan's
+/// order; an attachment is written once per file name, the first source's.
+/// No other container the executor writes can hold one, and a nameless
+/// attachment is one Matroska cannot store.
+fn attachments<'a>(
+    plan: &ExportPlan,
+    inputs: &'a BTreeMap<SourceId, ExportInput>,
+    container: Container,
+) -> Vec<(&'a Path, Vec<u32>)> {
+    if container != Container::Matroska {
+        return Vec::new();
+    }
+    let mut sources = BTreeSet::new();
+    let mut names = BTreeSet::new();
+    let mut found = Vec::new();
+    for source in plan.segments.iter().flat_map(|segment| &segment.sources) {
+        if !sources.insert(source.source) {
+            continue;
+        }
+        let Some(input) = inputs.get(&source.source) else {
+            continue;
+        };
+        let streams: Vec<u32> = input
+            .info
+            .streams
+            .iter()
+            .filter_map(|stream| match &stream.kind {
+                StreamKind::Attachment {
+                    filename: Some(name),
+                    ..
+                } if names.insert(name.as_str()) => Some(stream.index),
+                _ => None,
+            })
+            .collect();
+        if !streams.is_empty() {
+            found.push((input.source.path(), streams));
+        }
+    }
+    found
+}
+
 /// The muxer: NUT on its standard input, every stream copied into the
-/// container, the metadata and chapters the router wrote carried over, and
-/// the rotation NUT cannot carry set again.
+/// container, the metadata and chapters the router wrote carried over, the
+/// rotation NUT cannot carry set again, and the sources' attachments read
+/// from the sources — their attachment streams only, so no packet of theirs
+/// is demuxed.
 fn muxer_command(
     plan: &ExportPlan,
     inputs: &BTreeMap<SourceId, ExportInput>,
@@ -1542,10 +1589,18 @@ fn muxer_command(
         command = command.option("-display_rotation:v:0", angle.to_string());
     }
     let total = Duration::from_secs_f64(seconds(plan.length, plan.time_base).max(0.0));
-    let mut command = command
-        .stdin_input()
-        .option("-map", "0")
-        .option("-c", "copy");
+    let mut command = command.stdin_input();
+    let attached = attachments(plan, inputs, container);
+    for (path, _) in &attached {
+        command = command.input(path);
+    }
+    command = command.option("-map", "0");
+    for (input, (_, streams)) in (1..).zip(&attached) {
+        for stream in streams {
+            command = command.option("-map", format!("{input}:{stream}"));
+        }
+    }
+    let mut command = command.option("-c", "copy");
     if let Some(tag) = in_band_tag(plan, inputs, container) {
         command = command.option("-tag:v", tag);
     }

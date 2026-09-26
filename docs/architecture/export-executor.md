@@ -59,16 +59,36 @@ and no overlap, and the output starts at zero.
 
 ## What is preserved
 
-| Property            | How                                                                      |
-| ------------------- | ------------------------------------------------------------------------ |
-| Packet payloads     | copied byte for byte (asserted by payload hash)                          |
-| Codec configuration | NUT stream header extradata, unchanged                                   |
-| Colour metadata     | in the bitstream; read back by the muxer                                 |
-| Rotation            | `-display_rotation` on the muxer input (NUT cannot carry it)             |
-| Stream metadata     | NUT stream info packets (language, handler)                              |
-| File metadata       | NUT global info (creation time), less the pipe's `encoder`               |
-| Chapters            | moved onto the output timeline, as NUT chapter info packets              |
-| Attachments         | not yet — [#107](https://github.com/ismetcahangirov/blinkify/issues/107) |
+| Property            | How                                                                  |
+| ------------------- | -------------------------------------------------------------------- |
+| Packet payloads     | copied byte for byte (asserted by payload hash)                      |
+| Codec configuration | NUT stream header extradata, unchanged                               |
+| Colour metadata     | in the bitstream; read back by the muxer                             |
+| Rotation            | `-display_rotation` on the muxer input (NUT cannot carry it)         |
+| Stream metadata     | NUT stream info packets (language, handler)                          |
+| File metadata       | NUT global info (creation time), less the pipe's `encoder`           |
+| Chapters            | moved onto the output timeline, as NUT chapter info packets          |
+| Attachments         | Matroska only: read by the muxer from the sources themselves (below) |
+
+### Attachments
+
+NUT has no stream for an attachment, so a font or a cover image cannot travel
+through the pipe with the packets. Where the output is Matroska, the muxer
+opens each source that has attachments as a further input and maps its
+attachment streams alone (`-map 1:3`): their bytes are the stream's
+configuration, read from the header, and no packet of that input is demuxed.
+Nothing but the output is written — the one-pass rule holds (ADR-0010, #107).
+
+- Every source the plan reads counts, whatever its segments' tier: an
+  attachment is not pixels, and a subtitle font is needed whether the
+  pictures were copied or rendered.
+- One attachment per file name, the first source's in plan order — pictures
+  before sound. Several clips of one film, or two files that embed the same
+  font, do not attach it twice.
+- MP4, MOV and WebM get none: none of them holds attachments (FFmpeg's MP4
+  muxer refuses the export outright when one is mapped to it).
+- Stream metadata of the attachment — file name, MIME type — comes with it;
+  file metadata and chapters are still input 0's alone.
 
 ## Failure and cancellation
 
