@@ -21,9 +21,9 @@ use blinkify_engine::export::execute::{
     ExportError, ExportInput, ExportRequest, export, partial_path,
 };
 use blinkify_engine::export::facts::source_facts;
-use blinkify_engine::export::plan::{ExportPlan, SourceFacts, plan};
+use blinkify_engine::export::plan::{ExportPlan, Media, SourceFacts, plan};
 use blinkify_engine::keyframes::KeyframeIndex;
-use blinkify_engine::orchestrator::{CancelToken, Limits, Orchestrator};
+use blinkify_engine::orchestrator::{CancelToken, Limits, Orchestrator, Priority, SidecarCommand};
 use blinkify_engine::probe::{MediaInfo, Prober, StreamKind};
 use blinkify_engine::project::evaluate::evaluate;
 use blinkify_engine::project::{
@@ -42,7 +42,10 @@ struct Source {
 }
 
 fn source(name: &str) -> Source {
-    let path = common::corpus(name);
+    source_at(common::corpus(name))
+}
+
+fn source_at(path: PathBuf) -> Source {
     let orchestrator = orchestrator();
     let info = Prober::new(orchestrator.clone())
         .probe(&path)
@@ -265,6 +268,158 @@ fn a_matroska_source_copies_with_its_chapters_and_language() {
     assert_eq!(
         titles,
         vec![Some("Opening".to_owned()), Some("Closing".to_owned())]
+    );
+}
+
+/// `multi-audio.mkv` with `fonts` attached, each a file name and its bytes,
+/// in a scratch directory of its own.
+fn with_fonts(name: &str, fonts: &[(&str, &[u8])]) -> PathBuf {
+    // `-attach` names an attachment by the path it was given; the name a
+    // font is looked up by is its bare file name.
+    const NAMES: [&str; 2] = ["-metadata:s:t:0", "-metadata:s:t:1"];
+    let dir = common::scratch(&format!("export-copy-fonts-{name}"));
+    let mut command = SidecarCommand::ffmpeg()
+        .option("-v", "error")
+        .input(&common::corpus("multi-audio.mkv"))
+        .option("-map", "0")
+        .option("-c", "copy");
+    for (file, bytes) in fonts {
+        let font = dir.join(file);
+        std::fs::write(&font, bytes).expect("write the font");
+        command = command.option("-attach", font.into_os_string());
+    }
+    for (name, (file, _)) in NAMES.into_iter().zip(fonts) {
+        command = command.option(name, format!("filename={file}"));
+    }
+    let path = dir.join("source.mkv");
+    orchestrator()
+        .run_to_end(
+            command
+                .option("-metadata:s:t", "mimetype=font/ttf")
+                .output_file(&path),
+            Priority::Foreground,
+        )
+        .expect("attaches");
+    path
+}
+
+/// Bytes no two fonts of a test share, standing in for a font file.
+fn font_bytes(seed: u8) -> Vec<u8> {
+    (0..4096_u32)
+        .map(|i| u8::try_from((i * 31 + u32::from(seed) * 7) % 251).expect("below 251"))
+        .collect()
+}
+
+fn sha256(bytes: &[u8]) -> String {
+    use sha2::Digest;
+    use std::fmt::Write;
+    let mut hex = String::from("SHA256:");
+    for byte in sha2::Sha256::digest(bytes) {
+        let _ = write!(hex, "{byte:02x}");
+    }
+    hex
+}
+
+/// The attachments of the file at `path`: file name, MIME type and the
+/// SHA-256 of the bytes, as the prober reads them.
+fn attachments_of(path: &Path) -> Vec<(String, String, String)> {
+    let info = Prober::new(orchestrator()).probe(path).expect("probe");
+    info.streams
+        .iter()
+        .filter_map(|stream| match &stream.kind {
+            StreamKind::Attachment { filename, mimetype } => Some((
+                filename.clone().unwrap_or_default(),
+                mimetype.clone().unwrap_or_default(),
+                stream.extradata_hash.clone().unwrap_or_default(),
+            )),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn a_matroska_source_exports_to_matroska_with_its_attached_font_byte_for_byte() {
+    let font = font_bytes(1);
+    let source = source_at(with_fonts("one", &[("subtitles.ttf", &font)]));
+    let plan = source.plan(&[(source.keyframe(0).max(0), source.end())]);
+    assert!(plan.summary.lossless, "{:#?}", plan.segments);
+    let target = common::scratch("export-copy-attachment").join("copy.mkv");
+    run(&plan, &source, &target).expect("exports");
+
+    assert_eq!(
+        attachments_of(&target),
+        vec![(
+            "subtitles.ttf".to_owned(),
+            "font/ttf".to_owned(),
+            sha256(&font)
+        )]
+    );
+    assert_eq!(
+        common::md5s(&common::packet_hashes(&target, "v:0")),
+        common::md5s(&common::packet_hashes(&source.path, "v:0"))
+    );
+}
+
+#[test]
+fn nothing_is_attached_to_a_container_that_cannot_hold_it() {
+    let source = source_at(with_fonts("mp4", &[("subtitles.ttf", &font_bytes(2))]));
+    let plan = source.plan(&[(source.keyframe(0).max(0), source.end())]);
+    let target = common::scratch("export-copy-attachment-mp4").join("copy.mp4");
+    run(&plan, &source, &target).expect("exports");
+    assert_eq!(attachments_of(&target), Vec::new());
+}
+
+#[test]
+fn attachments_of_several_sources_are_carried_once_per_file_name() {
+    // The pictures come from one file and the sound from another; both
+    // attach a font of the same name, and the second also one of its own.
+    let first = font_bytes(3);
+    let video = source_at(with_fonts("first", &[("subtitles.ttf", &first)]));
+    let own = font_bytes(5);
+    let audio = with_fonts(
+        "second",
+        &[("subtitles.ttf", &font_bytes(4)), ("title.ttf", &own)],
+    );
+    let mut plan = video.plan(&[(video.keyframe(0).max(0), video.end())]);
+    for segment in plan.segments.iter_mut().filter(|s| s.media == Media::Audio) {
+        for source in &mut segment.sources {
+            source.source = 2;
+        }
+    }
+    let mut inputs = video.inputs();
+    inputs.insert(
+        2,
+        ExportInput {
+            source: MediaAsset::new(audio.clone()).export_source(),
+            info: Prober::new(orchestrator()).probe(&audio).expect("probe"),
+        },
+    );
+    let target = common::scratch("export-copy-attachments").join("copy.mkv");
+    export(
+        &orchestrator(),
+        ExportRequest {
+            plan: &plan,
+            inputs: &inputs,
+            target: &target,
+            overwrite: false,
+            audio: AudioTarget::default(),
+            models: None,
+            cancel: CancelToken::default(),
+            on_progress: None,
+        },
+    )
+    .expect("exports");
+
+    assert_eq!(
+        attachments_of(&target),
+        vec![
+            (
+                "subtitles.ttf".to_owned(),
+                "font/ttf".to_owned(),
+                sha256(&first)
+            ),
+            ("title.ttf".to_owned(), "font/ttf".to_owned(), sha256(&own)),
+        ]
     );
 }
 
