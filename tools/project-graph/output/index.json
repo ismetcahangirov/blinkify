@@ -5,13 +5,13 @@
     "tools"
   ],
   "totals": {
-    "files": 316,
+    "files": 318,
     "tests": 46,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 119,
+      "files": 121,
       "tests": 40,
       "untested": [
         "apps/desktop/src/inspector/SequenceSummary.tsx",
@@ -23,6 +23,7 @@
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
+        "apps/desktop/src/player/metering.ts",
         "apps/desktop/src/player/transportGlyphs.tsx",
         "apps/desktop/src/shell.store.ts",
         "apps/desktop/src/shell/AppBar.tsx",
@@ -316,6 +317,7 @@
       "isTest": true,
       "dependsOn": [
         "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/timeline/draw.ts",
         "packages/types/src/index.ts"
@@ -334,6 +336,8 @@
         "apps/desktop/src/inspector/editGesture.ts",
         "apps/desktop/src/inspector/gain.ts",
         "apps/desktop/src/inspector/mixedValue.ts",
+        "apps/desktop/src/player/LevelMeter.tsx",
+        "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/timeline/draw.ts",
         "packages/types/src/index.ts",
@@ -832,11 +836,31 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "apps/desktop/src/player/LevelMeter.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/player/metering.ts",
+        "apps/desktop/src/player/preview.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/player/MonitorControls.test.tsx",
+        "apps/desktop/src/player/MonitorControls.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/player/MonitorControls.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/player/MonitorControls.test.tsx": {
       "workspace": "apps/desktop",
       "layer": "renderer",
       "isTest": true,
       "dependsOn": [
+        "apps/desktop/src/player/LevelMeter.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/preview.store.ts",
         "packages/types/src/index.ts",
@@ -851,8 +875,8 @@
       "layer": "renderer",
       "isTest": false,
       "dependsOn": [
+        "apps/desktop/src/player/LevelMeter.tsx",
         "apps/desktop/src/player/preview.store.ts",
-        "packages/types/src/index.ts",
         "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
@@ -1028,6 +1052,19 @@
       ],
       "hasNoDependents": false
     },
+    "apps/desktop/src/player/metering.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/player/preview.store.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/player/LevelMeter.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/player/orientation.test.ts": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -1074,7 +1111,10 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
+        "apps/desktop/src/player/LevelMeter.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
@@ -1082,6 +1122,7 @@
         "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/player/metering.ts",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
@@ -1093,6 +1134,7 @@
         "apps/desktop/src/timeline/mountTimeline.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
@@ -4194,8 +4236,8 @@
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/library/assets.ts",
         "apps/desktop/src/library/library.store.ts",
+        "apps/desktop/src/player/LevelMeter.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
-        "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/OperationsPanel.test.tsx",
         "apps/desktop/src/player/OperationsPanel.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",

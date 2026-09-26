@@ -98,13 +98,23 @@ is left where it is.
 
 ## Changing the chain while playing
 
+Bypass is part of each step's settings, so it is heard and exported the same
+way; `Edit::BypassAudio` switches every step of the selected clips at once and
+keeps their settings, so switching back restores exactly what was there. A
+chain bypassed whole is no chain: the sound is copied, packet for packet
+(`tests/audio_inspector.rs`).
+
 Changing a clip's audio chain changes nothing else in the preview plan, so
 `Player::set_plan` recognises it (`only_chains_differ`) and hands the plan to
 the running feeder instead of restarting playback. The feeder starts a
 decoder with the new chain 300 ms ahead of what it is writing, keeps the old
 one playing until the walk reaches that point, and switches on that sample —
 dropping anything the new decoder made for a stretch already written if it
-was late. The picture and the clock are untouched; there is no gap
+was late. One change is taken in at a time: while a new decoder is on its way
+in, later changes wait and only the newest is kept, so a slider being dragged
+is heard in steps of about a third of a second rather than not at all until it
+stops; a decoder not ready a second after its start is started again. The
+picture and the clock are untouched; there is no gap
 (`tests/audio_denoise.rs` plays a tone, changes its gain mid-playback, and
 finds no silent 10 ms).
 
@@ -160,6 +170,10 @@ user applies it. The Tauri command is `gain_advice(clip)`.
   where single-pass `loudnorm` pumps, a measurement taken again when the chain
   before it changes, near silence left alone, an unmeasured normalisation
   refused.
+- `tests/audio_inspector.rs` — a gain swept during playback with no silent
+  10 ms and the drag heard, the meter reading the processed signal, a chain
+  bypassed whole copied bit for bit, and one chain of all three steps in the
+  preview and the export commands.
 - `tests/audio_denoise.rs` — the SNR gain on a noisy reading, strength 0 bit
   for bit, the model found under an install path with a quote in it, a
   missing model refused before anything is written, the pictures copied, and

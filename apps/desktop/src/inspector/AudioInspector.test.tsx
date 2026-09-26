@@ -2,6 +2,7 @@ import type { GainAdvice } from "@blinkify/types";
 import { invoke } from "@tauri-apps/api/core";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { usePreviewStore } from "../player/preview.store.js";
 import { useProjectStore } from "../project/project.store.js";
 import type { Placement } from "../timeline/draw.js";
 import { AudioInspector } from "./AudioInspector.js";
@@ -38,7 +39,11 @@ beforeEach(() => {
   invoked.mockImplementation((command: string) =>
     Promise.resolve(command === "gain_advice" ? ADVICE : undefined),
   );
-  useProjectStore.setState({ edit });
+  useProjectStore.setState({
+    edit,
+    view: { project: { sequence: {} } } as never,
+  });
+  usePreviewStore.setState({ session: null });
 });
 
 describe("the audio section", () => {
@@ -104,5 +109,70 @@ describe("the audio section", () => {
       clips: [1, 2],
       stage: null,
     });
+  });
+
+  it("bypasses the whole chain of every selected clip as one edit", () => {
+    render(
+      <AudioInspector
+        clips={[
+          clip(1, [{ op: "gain", db: 3, ceilingDbtp: -1, bypassed: false }]),
+          clip(2, [{ op: "denoise", strength: 0.5, bypassed: true }]),
+        ]}
+      />,
+    );
+    const whole = screen.getByRole("switch", {
+      name: "Bypass the whole chain",
+    });
+    expect(whole.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(whole);
+    expect(edit).toHaveBeenCalledWith({
+      edit: "bypass-audio",
+      clips: [1, 2],
+      bypassed: true,
+    });
+  });
+
+  it("shows the whole chain bypassed only when every step is", () => {
+    render(
+      <AudioInspector
+        clips={[
+          clip(1, [{ op: "gain", db: 3, ceilingDbtp: -1, bypassed: true }]),
+          clip(2, [{ op: "denoise", strength: 0.5, bypassed: true }]),
+        ]}
+      />,
+    );
+    expect(
+      screen
+        .getByRole("switch", { name: "Bypass the whole chain" })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+  });
+
+  it("shows differing noise reductions as mixed, and sets one for all", async () => {
+    render(
+      <AudioInspector
+        clips={[
+          clip(1, [{ op: "denoise", strength: 0.5, bypassed: false }]),
+          clip(2, [{ op: "denoise", strength: 0.9, bypassed: false }]),
+        ]}
+      />,
+    );
+    expect(screen.getAllByText("Mixed").length).toBeGreaterThan(0);
+    const strength = screen.getByRole("slider", { name: "Strength" });
+    fireEvent.keyDown(strength, { key: "End" });
+    await waitFor(() => {
+      expect(edit).toHaveBeenCalledWith({
+        edit: "set-audio",
+        clips: [1, 2],
+        step: { op: "denoise", strength: 1, bypassed: false },
+      });
+    });
+  });
+
+  it("shows the level after the chain while a preview is open", () => {
+    usePreviewStore.setState({ session: 3 });
+    render(<AudioInspector clips={[clip(1, [])]} />);
+    expect(screen.getByText("Output, after the chain")).toBeTruthy();
+    expect(screen.getByTestId("level-meter")).toBeTruthy();
   });
 });

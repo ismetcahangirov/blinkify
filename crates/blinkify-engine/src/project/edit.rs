@@ -241,6 +241,13 @@ pub enum Edit {
     SetSequenceLoudness {
         loudness: Option<LoudnessTarget>,
     },
+    /// Bypass every step of the clips' audio chains, or none (#49): the
+    /// sound plays as recorded while every setting is kept, so switching back
+    /// restores exactly what was there.
+    BypassAudio {
+        clips: Vec<ClipId>,
+        bypassed: bool,
+    },
 }
 
 impl Edit {
@@ -305,6 +312,14 @@ impl Edit {
             Self::ResetAudio { clips: ids, .. } => {
                 clips(ids.len(), "Reset audio", "Reset audio of")
             }
+            Self::BypassAudio {
+                clips: ids,
+                bypassed: true,
+            } => clips(ids.len(), "Bypass audio", "Bypass audio of"),
+            Self::BypassAudio {
+                clips: ids,
+                bypassed: false,
+            } => clips(ids.len(), "Restore audio", "Restore audio of"),
             Self::SetSequenceLoudness { loudness: Some(_) } => "Normalise sequence".to_owned(),
             Self::SetSequenceLoudness { loudness: None } => "Stop normalising sequence".to_owned(),
         }
@@ -676,6 +691,7 @@ fn compile(
         Edit::SetReverse { clips, reverse } => (set_reverse(project, clips, *reverse)?, kept),
         Edit::SetAudio { clips, step } => (set_audio(project, clips, *step)?, kept),
         Edit::ResetAudio { clips, stage } => (reset_audio(project, clips, *stage)?, kept),
+        Edit::BypassAudio { clips, bypassed } => (bypass_audio(project, clips, *bypassed)?, kept),
         Edit::SetSequenceLoudness { loudness } => {
             if let Some(target) = loudness
                 && !target.is_valid()
@@ -1196,6 +1212,29 @@ fn set_audio(
         if !no_op(&step) {
             operations.push(step);
         }
+        if operations != clip.operations {
+            changes.push(Change::ReplaceClip(Clip {
+                operations,
+                ..clip.clone()
+            }));
+        }
+    }
+    Ok(changes)
+}
+
+fn bypass_audio(
+    project: &Project,
+    clips: &[ClipId],
+    bypassed: bool,
+) -> Result<Vec<Change>, EditError> {
+    let mut changes = Vec::new();
+    for &id in &clips.iter().copied().collect::<BTreeSet<_>>() {
+        let (_, clip) = find(project, id)?;
+        let operations: Vec<Operation> = clip
+            .operations
+            .iter()
+            .map(|operation| operation.with_bypass(bypassed))
+            .collect();
         if operations != clip.operations {
             changes.push(Change::ReplaceClip(Clip {
                 operations,
@@ -3766,6 +3805,61 @@ mod tests {
     }
 
     #[test]
+    fn bypassing_the_chain_keeps_every_setting_and_restoring_brings_it_back() {
+        let mut document = document();
+        let steps = [
+            Operation::gain(3.0),
+            Operation::denoise(0.4),
+            Operation::normalise(-16.0),
+        ];
+        for step in steps {
+            document
+                .apply(
+                    &Edit::SetAudio {
+                        clips: vec![1],
+                        step,
+                    },
+                    &EditContext::default(),
+                )
+                .expect("set");
+        }
+        let original = audio_of(&document, 1);
+        document
+            .apply(
+                &Edit::BypassAudio {
+                    clips: vec![1, 2],
+                    bypassed: true,
+                },
+                &EditContext::default(),
+            )
+            .expect("bypass");
+        let bypassed = audio_of(&document, 1);
+        assert_eq!(bypassed.len(), 3);
+        assert!(bypassed.iter().all(|step| step.with_bypass(true) == *step));
+        assert_eq!(
+            bypassed
+                .iter()
+                .map(|step| step.with_bypass(false))
+                .collect::<Vec<_>>(),
+            original
+        );
+        // A clip with no audio steps is untouched: nothing to bypass.
+        assert!(audio_of(&document, 2).is_empty());
+        // The trim is not audio, and is untouched too.
+        assert_eq!(clip_of(&document, 1).operations.len(), 4);
+        document
+            .apply(
+                &Edit::BypassAudio {
+                    clips: vec![1],
+                    bypassed: false,
+                },
+                &EditContext::default(),
+            )
+            .expect("restore");
+        assert_eq!(audio_of(&document, 1), original);
+    }
+
+    #[test]
     fn a_detached_video_clip_takes_no_audio_step() {
         let mut document = with_sound();
         document
@@ -4172,7 +4266,11 @@ mod tests {
         let tracks: Vec<TrackId> = project.sequence.tracks.iter().map(|t| t.id).collect();
         let clip = random.pick(&clips).unwrap_or(1);
         let track = random.pick(&tracks).unwrap_or(1);
-        match random.below(14) {
+        match random.below(15) {
+            14 => Edit::BypassAudio {
+                clips: vec![clip],
+                bypassed: random.below(2) == 0,
+            },
             13 => Edit::SetSequenceLoudness {
                 loudness: (random.below(3) != 0).then(|| LoudnessTarget {
                     target_lufs: -(10 + random.int(20)) as f64,

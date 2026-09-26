@@ -57,6 +57,10 @@ const LANE_SECONDS: usize = 2;
 /// it to produce its first samples before they are needed.
 const RETUNE_AHEAD: Duration = Duration::from_millis(300);
 
+/// How long past its start a retuned decoder may still be taking over before
+/// it is started again, in timeline microseconds.
+const RETUNE_PATIENCE: ProgramTime = 1_000_000;
+
 /// A loop over part of the timeline, `[start, end)`.
 pub(crate) type LoopRange = Option<(ProgramTime, ProgramTime)>;
 
@@ -287,11 +291,20 @@ fn run(config: &FeederConfig, stop: &AtomicBool) {
             config.buffer.wait_below(lead, Duration::from_millis(20));
             continue;
         }
-        let retuned = config
-            .retune
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner)
-            .take();
+        // One change of chain at a time: while a decoder with a new chain
+        // is on its way in, later ones wait in the slot — only the newest is
+        // kept — so a slider being dragged is heard in steps rather than
+        // not at all until it stops.
+        let retuning = walk.tracks.iter().any(|track| track.retuned.is_some());
+        let retuned = (!retuning)
+            .then(|| {
+                config
+                    .retune
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner)
+                    .take()
+            })
+            .flatten();
         if let Some(plan) = retuned {
             retune(config, &mut walk, &plan, t);
         }
@@ -440,6 +453,16 @@ fn write_chunk(
             };
         }
         take_retuned(track, i, t, count, rate, config.speed);
+        // A decoder that never became ready is replaced, so a change is
+        // never lost to one slow start.
+        if track
+            .retuned
+            .as_ref()
+            .is_some_and(|lane| t - lane.starts_at > RETUNE_PATIENCE)
+        {
+            let ahead = micros(frames_for(RETUNE_AHEAD, rate), rate, config.speed);
+            track.retuned = start_lane(config, &track.segments, i, t.saturating_add(ahead));
+        }
         samples.clear();
         samples.resize(count, 0.0);
         if let Some(lane) = &track.current {

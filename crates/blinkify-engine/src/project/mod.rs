@@ -295,6 +295,32 @@ impl Operation {
         }
     }
 
+    /// This operation with its bypass switch set to `bypassed`, if it is an
+    /// audio step; any other operation unchanged.
+    #[must_use]
+    pub fn with_bypass(self, bypassed: bool) -> Self {
+        match self {
+            Self::Gain {
+                db, ceiling_dbtp, ..
+            } => Self::Gain {
+                db,
+                ceiling_dbtp,
+                bypassed,
+            },
+            Self::Denoise { strength, .. } => Self::Denoise { strength, bypassed },
+            Self::Normalise {
+                target_lufs,
+                ceiling_dbtp,
+                ..
+            } => Self::Normalise {
+                target_lufs,
+                ceiling_dbtp,
+                bypassed,
+            },
+            other => other,
+        }
+    }
+
     /// The audio-chain stage this is a step of, if it is one.
     #[must_use]
     pub fn audio_stage(&self) -> Option<AudioStage> {
