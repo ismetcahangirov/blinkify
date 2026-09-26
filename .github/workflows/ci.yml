@@ -305,6 +305,18 @@ jobs:
             Write-Output "$name installed and runs: $version"
           }
 
+      # #73: the notices the application shows under Help are a file the
+      # installer put beside it — and exactly the committed one.
+      - name: The installed third-party notices are the committed ones
+        shell: pwsh
+        run: |
+          $installed = Join-Path $env:LOCALAPPDATA 'Blinkify/THIRD-PARTY-NOTICES.txt'
+          if (-not (Test-Path $installed)) { throw "$installed was not installed" }
+          $expected = (Get-FileHash apps/desktop/src-tauri/THIRD-PARTY-NOTICES.txt).Hash
+          $actual = (Get-FileHash $installed).Hash
+          if ($actual -ne $expected) { throw "installed notices differ from the committed document" }
+          Write-Output "THIRD-PARTY-NOTICES.txt installed, $((Get-Item $installed).Length) bytes, matches the committed document"
+
       # Uploaded on every run so a reviewer can install the pull request rather
       # than take a green tick on faith. The installer is unsigned — see #14 and
       # the SmartScreen gap recorded in Epic #1.

@@ -36,7 +36,7 @@ without opening a log.
 | **Project graph**           | `graph:validate`, `graph:injection`, `graph:determinism`, `graph:check`                                                                                                                                         |
 | **Rust**                    | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test --workspace`                                                                                                                                       |
 | **Boundaries and licences** | `boundaries:rust`, `boundaries:rust:test`, `deny:licenses`, `deny:test`, `attribution:check`, `attribution:injection`, `attribution:determinism`, `attribution:coverage`, `sidecar:check`, `sidecar:check:test` |
-| **Installer**               | `pnpm tauri build`, installs it silently and runs the installed sidecar, and uploads the `.exe`                                                                                                                 |
+| **Installer**               | `pnpm tauri build`, installs it silently, runs the installed sidecar, checks the installed third-party notices are the committed ones, and uploads the `.exe`                                                   |
 
 `cargo fmt`, `clippy` and `cargo test` share one job on purpose. Each compiles
 the whole Tauri dependency tree; three jobs would compile it three times, and
