@@ -99,10 +99,12 @@ guesses.
 ### HDR
 
 Per ADR-0008, an HDR source copied as recorded is lossless, and any part of it
-that would have to be rendered is **declined**, not tone-mapped. A declined
-smart-cut carries a `KeyframeAlternative`: the nearest keyframe-aligned cut,
-which the dialog offers instead (ADR-0003 part 4). `summary.exportable` is
-false while any segment is declined.
+that would have to be rendered is **declined**, not tone-mapped. Every
+smart-cut — declined or not — carries a `KeyframeAlternative`: the nearest
+keyframe-aligned cut, which the export dialog offers as the snap (ADR-0003
+part 4, #50; [`export-overview.md`](./export-overview.md)). For a declined one
+it is the way to export at all. `summary.exportable` is false while any
+segment is declined.
 
 ## Summary
 

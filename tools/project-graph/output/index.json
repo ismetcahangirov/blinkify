@@ -5,15 +5,16 @@
     "tools"
   ],
   "totals": {
-    "files": 326,
-    "tests": 48,
+    "files": 339,
+    "tests": 50,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 126,
-      "tests": 42,
+      "files": 131,
+      "tests": 44,
       "untested": [
+        "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
@@ -42,7 +43,7 @@
       ]
     },
     "packages/types": {
-      "files": 131,
+      "files": 139,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
@@ -74,6 +75,7 @@
         "packages/types/src/generated/DiagnosticClip.ts",
         "packages/types/src/generated/DiagnosticOperation.ts",
         "packages/types/src/generated/Diagnostics.ts",
+        "packages/types/src/generated/DiskSpace.ts",
         "packages/types/src/generated/Edge.ts",
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/EditContext.ts",
@@ -88,6 +90,7 @@
         "packages/types/src/generated/EncodingSignature.ts",
         "packages/types/src/generated/EvaluatedTrack.ts",
         "packages/types/src/generated/ExportJob.ts",
+        "packages/types/src/generated/ExportOverview.ts",
         "packages/types/src/generated/ExportPlan.ts",
         "packages/types/src/generated/ExportState.ts",
         "packages/types/src/generated/ExportTier.ts",
@@ -110,6 +113,7 @@
         "packages/types/src/generated/Keyframe.ts",
         "packages/types/src/generated/KeyframeAlternative.ts",
         "packages/types/src/generated/KeyframePoint.ts",
+        "packages/types/src/generated/KeyframeSnap.ts",
         "packages/types/src/generated/LoopRange.ts",
         "packages/types/src/generated/Loudness.ts",
         "packages/types/src/generated/LoudnessReport.ts",
@@ -141,6 +145,7 @@
         "packages/types/src/generated/ProxySegment.ts",
         "packages/types/src/generated/Rational.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
+        "packages/types/src/generated/Reason.ts",
         "packages/types/src/generated/RecentProject.ts",
         "packages/types/src/generated/RecoveryOffer.ts",
         "packages/types/src/generated/Refusal.ts",
@@ -152,12 +157,16 @@
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/SettingsImpact.ts",
         "packages/types/src/generated/SheetReady.ts",
+        "packages/types/src/generated/SizeEstimate.ts",
+        "packages/types/src/generated/SnapOffer.ts",
+        "packages/types/src/generated/SnappedCut.ts",
         "packages/types/src/generated/SourceProfile.ts",
         "packages/types/src/generated/SourceRef.ts",
         "packages/types/src/generated/SourceStatus.ts",
         "packages/types/src/generated/SpeedProblem.ts",
         "packages/types/src/generated/SpeedVerdict.ts",
         "packages/types/src/generated/Stage.ts",
+        "packages/types/src/generated/StreamClaim.ts",
         "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
@@ -307,6 +316,41 @@
       ],
       "hasNoDependents": false
     },
+    "apps/desktop/src/export/ExportDialog.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/export/ExportDialog.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/export/ExportDialog.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/export/exportChoices.ts",
+        "apps/desktop/src/export/exportJobs.store.ts",
+        "apps/desktop/src/export/exportJobs.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/export/ExportDialog.test.tsx",
+        "apps/desktop/src/shell/AppBar.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/export/ExportDialog.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/export/ExportQueue.test.tsx": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -340,6 +384,53 @@
       ],
       "hasNoDependents": false
     },
+    "apps/desktop/src/export/LosslessIndicator.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/export/exportChoices.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shell/AppBar.tsx"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/export/exportChoices.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/export/exportChoices.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/export/exportChoices.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/export/exportJobs.ts",
+        "apps/desktop/src/player/timecode.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/export/ExportDialog.tsx",
+        "apps/desktop/src/export/LosslessIndicator.tsx",
+        "apps/desktop/src/export/exportChoices.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/export/exportChoices.test.ts"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/export/exportJobs.store.ts": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -349,6 +440,7 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/App.tsx",
+        "apps/desktop/src/export/ExportDialog.tsx",
         "apps/desktop/src/export/ExportQueue.test.tsx",
         "apps/desktop/src/export/ExportQueue.tsx",
         "apps/desktop/src/export/exportJobs.test.ts"
@@ -380,7 +472,9 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/export/ExportDialog.tsx",
         "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/exportChoices.ts",
         "apps/desktop/src/export/exportJobs.test.ts"
       ],
       "coveredByTests": [
@@ -1250,6 +1344,7 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/export/exportChoices.ts",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
@@ -1429,6 +1524,9 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/export/ExportDialog.test.tsx",
+        "apps/desktop/src/export/ExportDialog.tsx",
+        "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
@@ -1481,6 +1579,7 @@
         "apps/desktop/src/timeline/timelineCommands.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/export/ExportDialog.test.tsx",
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/DenoiseControl.test.tsx",
         "apps/desktop/src/inspector/LoudnessControl.test.tsx",
@@ -1515,7 +1614,9 @@
       "layer": "renderer",
       "isTest": false,
       "dependsOn": [
+        "apps/desktop/src/export/ExportDialog.tsx",
         "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
@@ -2490,6 +2591,7 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "packages/types/src/generated/ExportOverview.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -2818,6 +2920,18 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/DiskSpace.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/ExportOverview.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/Edge.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2838,6 +2952,7 @@
         "packages/types/src/generated/AudioStage.ts",
         "packages/types/src/generated/ClipMove.ts",
         "packages/types/src/generated/Edge.ts",
+        "packages/types/src/generated/KeyframeSnap.ts",
         "packages/types/src/generated/LoudnessTarget.ts",
         "packages/types/src/generated/Operation.ts",
         "packages/types/src/generated/Rational.ts",
@@ -2845,6 +2960,7 @@
         "packages/types/src/generated/TrackKind.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/SnapOffer.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -3011,6 +3127,24 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/ExportOverview.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/AudioEncoding.ts",
+        "packages/types/src/generated/DiskSpace.ts",
+        "packages/types/src/generated/Reason.ts",
+        "packages/types/src/generated/SizeEstimate.ts",
+        "packages/types/src/generated/SnapOffer.ts",
+        "packages/types/src/generated/StreamClaim.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/ExportPlan.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -3050,6 +3184,7 @@
         "packages/types/src/generated/SeamReason.ts"
       ],
       "dependedOnBy": [
+        "packages/types/src/generated/Reason.ts",
         "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/SpeedVerdict.ts",
         "packages/types/src/generated/index.ts"
@@ -3294,6 +3429,18 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/KeyframeSnap.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/LoopRange.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -3365,6 +3512,7 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "packages/types/src/generated/Reason.ts",
         "packages/types/src/generated/Segment.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -3734,6 +3882,21 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Reason.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/ExportTier.ts",
+        "packages/types/src/generated/Media.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/ExportOverview.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/RecentProject.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -3885,6 +4048,45 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/SizeEstimate.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/ExportOverview.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/SnapOffer.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/SnappedCut.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/ExportOverview.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/SnappedCut.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/SnapOffer.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/SourceProfile.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -3964,6 +4166,18 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/ExportState.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/StreamClaim.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/ExportOverview.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -4232,6 +4446,7 @@
         "packages/types/src/generated/DiagnosticClip.ts",
         "packages/types/src/generated/DiagnosticOperation.ts",
         "packages/types/src/generated/Diagnostics.ts",
+        "packages/types/src/generated/DiskSpace.ts",
         "packages/types/src/generated/Edge.ts",
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/EditContext.ts",
@@ -4246,6 +4461,7 @@
         "packages/types/src/generated/EncodingSignature.ts",
         "packages/types/src/generated/EvaluatedTrack.ts",
         "packages/types/src/generated/ExportJob.ts",
+        "packages/types/src/generated/ExportOverview.ts",
         "packages/types/src/generated/ExportPlan.ts",
         "packages/types/src/generated/ExportState.ts",
         "packages/types/src/generated/ExportTier.ts",
@@ -4268,6 +4484,7 @@
         "packages/types/src/generated/Keyframe.ts",
         "packages/types/src/generated/KeyframeAlternative.ts",
         "packages/types/src/generated/KeyframePoint.ts",
+        "packages/types/src/generated/KeyframeSnap.ts",
         "packages/types/src/generated/LoopRange.ts",
         "packages/types/src/generated/Loudness.ts",
         "packages/types/src/generated/LoudnessReport.ts",
@@ -4299,6 +4516,7 @@
         "packages/types/src/generated/ProxySegment.ts",
         "packages/types/src/generated/Rational.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
+        "packages/types/src/generated/Reason.ts",
         "packages/types/src/generated/RecentProject.ts",
         "packages/types/src/generated/RecoveryOffer.ts",
         "packages/types/src/generated/Refusal.ts",
@@ -4310,12 +4528,16 @@
         "packages/types/src/generated/SequenceSettings.ts",
         "packages/types/src/generated/SettingsImpact.ts",
         "packages/types/src/generated/SheetReady.ts",
+        "packages/types/src/generated/SizeEstimate.ts",
+        "packages/types/src/generated/SnapOffer.ts",
+        "packages/types/src/generated/SnappedCut.ts",
         "packages/types/src/generated/SourceProfile.ts",
         "packages/types/src/generated/SourceRef.ts",
         "packages/types/src/generated/SourceStatus.ts",
         "packages/types/src/generated/SpeedProblem.ts",
         "packages/types/src/generated/SpeedVerdict.ts",
         "packages/types/src/generated/Stage.ts",
+        "packages/types/src/generated/StreamClaim.ts",
         "packages/types/src/generated/StreamExtent.ts",
         "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/StreamInfo.ts",
@@ -4347,8 +4569,13 @@
         "packages/types/src/generated/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/export/ExportDialog.test.tsx",
+        "apps/desktop/src/export/ExportDialog.tsx",
         "apps/desktop/src/export/ExportQueue.test.tsx",
         "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/LosslessIndicator.tsx",
+        "apps/desktop/src/export/exportChoices.test.ts",
+        "apps/desktop/src/export/exportChoices.ts",
         "apps/desktop/src/export/exportJobs.store.ts",
         "apps/desktop/src/export/exportJobs.test.ts",
         "apps/desktop/src/export/exportJobs.ts",
@@ -4414,7 +4641,9 @@
         "apps/desktop/src/update.store.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/export/ExportDialog.test.tsx",
         "apps/desktop/src/export/ExportQueue.test.tsx",
+        "apps/desktop/src/export/exportChoices.test.ts",
         "apps/desktop/src/export/exportJobs.test.ts",
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
@@ -4976,7 +5205,10 @@
       "dependedOnBy": [
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/UpdateBanner.tsx",
+        "apps/desktop/src/export/ExportDialog.test.tsx",
+        "apps/desktop/src/export/ExportDialog.tsx",
         "apps/desktop/src/export/ExportQueue.tsx",
+        "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
@@ -5011,6 +5243,7 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/App.test.tsx",
+        "apps/desktop/src/export/ExportDialog.test.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",

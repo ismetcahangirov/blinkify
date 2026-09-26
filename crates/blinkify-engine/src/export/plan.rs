@@ -431,8 +431,10 @@ pub enum Decline {
     NoEncoder { unmatched: Unmatched },
 }
 
-/// The lossless alternative to a declined smart-cut: move the cut points to
-/// the nearest place a copy can start and end (ADR-0003 part 4).
+/// The lossless alternative to a smart-cut: move the cut points to the
+/// nearest place a copy can start and end (ADR-0003 part 4). For a declined
+/// smart-cut it is the way to export at all; for any other, the way to export
+/// with nothing re-encoded (#50).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -905,7 +907,7 @@ fn share_encoding(
 /// a clip in another shape, black in a gap — joins the rest of the output, so
 /// it matches the output's reference source (#55). Where there is such an
 /// encoder the segment names it; where there is none, the segment is declined
-/// (ADR-0003), and a declined smart-cut offers the keyframe-aligned cut. HDR
+/// (ADR-0003). A smart-cut offers the keyframe-aligned cut either way. HDR
 /// is declined whatever the encoders: v1 renders only SDR, and never
 /// tone-maps (ADR-0008).
 fn decline_unencodable(
@@ -943,9 +945,10 @@ fn decline_unencodable(
     let (Some(first), Some(video)) = (segment.sources.first(), rendered) else {
         return;
     };
-    if segment.decline.is_some()
-        && let ExportTier::SmartCut { .. } = segment.tier
-    {
+    // Every smart-cut offers its keyframe-aligned cut: where the smart-cut
+    // is declined it is the way to export at all, and otherwise it is the
+    // way to export without re-encoding anything (#50).
+    if let ExportTier::SmartCut { .. } = segment.tier {
         let in_ = rescale(
             first.source_in,
             first.time_base,

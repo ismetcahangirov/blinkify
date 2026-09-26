@@ -788,6 +788,14 @@ fn a_seam_no_encoder_here_can_make_is_declined_with_the_keyframe_cut_offered() {
     let video = of(&plan, Media::Video);
     assert_eq!(video[0].decline, None);
     assert_eq!(video[0].encoder, Some(nvenc()));
+    // A smart-cut that can be made still offers the cut that copies (#50).
+    assert_eq!(
+        video[0].alternative,
+        Some(KeyframeAlternative {
+            source_in: 2 * SECOND,
+            source_out: 6 * SECOND
+        })
+    );
     // A copy names no encoder.
     let copy = project_with(video_clip(1, 1, 0, 2 * SECOND, 6 * SECOND));
     assert_eq!(

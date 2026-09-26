@@ -182,7 +182,7 @@ it is MPL-2.0, a file-level copyleft that is neither of the two licences
 ## Rust crates that ship in the binary
 
 Direct dependencies of the two crates that compile into the executable. The
-transitive set is **496 packages** and is gated by `cargo deny check licenses`,
+transitive set is **497 packages** and is gated by `cargo deny check licenses`,
 which rejects GPL and AGPL outright and fails on any licence not explicitly
 allowed in `deny.toml`.
 
@@ -197,6 +197,7 @@ allowed in `deny.toml`.
 | `ts-rs`                | 12.0.1  | MIT               | Generates the TypeScript side of the IPC contract.                                                                            |
 | `win32job`             | 2.0.3   | MIT OR Apache-2.0 | The kill-on-close job object that stops any `ffmpeg.exe` outliving Blinkify (#22).                                            |
 | `cpal`                 | 0.18.2  | Apache-2.0        | Preview audio output through WASAPI; audio is the playback clock (#28).                                                       |
+| `fs4`                  | 1.1.0   | MIT OR Apache-2.0 | Free space on the export target's drive, checked before an export starts (#50).                                               |
 
 One entry is worth reading twice. `tauri-plugin-updater` pulls in `reqwest` and,
 under it, `webpki-root-certs` — Mozilla's root CA bundle, licensed

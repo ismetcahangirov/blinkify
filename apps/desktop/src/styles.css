@@ -649,3 +649,108 @@ body {
   flex: 1;
   min-width: 0;
 }
+
+/* The export dialog (#50): settings on the left, the engine's verdict on
+   the right. */
+.export-dialog {
+  width: min(880px, calc(100vw - 2 * var(--space-4)));
+}
+
+.export-dialog__body {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(320px, 1.4fr);
+  gap: var(--space-4);
+  max-height: min(560px, 70vh);
+  overflow-y: auto;
+}
+
+.export-dialog__settings,
+.export-dialog__verdict {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.export-dialog__note {
+  margin: 0;
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  color: var(--text-secondary);
+}
+
+.export-dialog__destination {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.export-dialog__path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.export-dialog__badge {
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--warning);
+  border-radius: var(--radius-sm);
+  color: var(--warning);
+  font-weight: var(--type-title-weight);
+}
+
+.export-dialog__badge[data-state="lossless"] {
+  border-color: var(--lossless);
+  color: var(--lossless);
+}
+
+.export-dialog__claims,
+.export-dialog__reasons,
+.export-dialog__snap ul {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.export-dialog__reasons li[data-declined="true"] {
+  color: var(--danger);
+}
+
+.export-dialog__timecode {
+  font-family: var(--type-family-mono);
+}
+
+.export-dialog__snap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--lossless);
+  border-radius: var(--radius-sm);
+}
+
+.export-dialog__snap p {
+  margin: 0;
+}
+
+.export-dialog__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+}
+
+.export-dialog__facts dd {
+  margin: 0;
+}
+
+.export-dialog__problem {
+  margin: 0;
+  color: var(--danger);
+}
