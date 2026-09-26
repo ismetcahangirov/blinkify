@@ -149,6 +149,9 @@ pub struct AudioRequest {
     pub sample_rate: u32,
     /// Preview speed: 1.0 is normal, 0.5 half, 2.0 double.
     pub tempo: f64,
+    /// The clip's audio chain, as [`chain::filters`](super::chain::filters)
+    /// built it for `sample_rate`: the same filters the export runs.
+    pub filters: String,
 }
 
 impl AudioRequest {
@@ -164,10 +167,15 @@ impl AudioRequest {
             command = command.option("-ss", format!("{seek:.6}"));
         }
         let mut graph = format!(
-            "atrim=start={start:.6},aresample={rate},aformat=sample_fmts=flt:channel_layouts=stereo",
+            "atrim=start={start:.6},aresample={rate},",
             start = self.start_seconds.max(0.0),
             rate = self.sample_rate,
         );
+        if !self.filters.is_empty() {
+            graph.push_str(&self.filters);
+            graph.push(',');
+        }
+        graph.push_str("aformat=sample_fmts=flt:channel_layouts=stereo");
         for factor in tempo_stages(self.tempo) {
             let _ = write!(graph, ",atempo={factor}");
         }
@@ -344,6 +352,7 @@ mod tests {
             stream_start_seconds: 0.021,
             sample_rate: 48_000,
             tempo: 1.0,
+            filters: String::new(),
         };
         assert_eq!(request.lead_in_frames(), 1008);
         assert_eq!(
@@ -368,11 +377,12 @@ mod tests {
             stream_start_seconds: 0.0,
             sample_rate: 44_100,
             tempo: 0.25,
+            filters: "volume=2dB".to_owned(),
         };
         let command = request.command().to_string();
         assert!(command.contains("-ss 9.500000"), "{command}");
         assert!(
-            command.contains("atrim=start=10.000000,aresample=44100"),
+            command.contains("atrim=start=10.000000,aresample=44100,volume=2dB,aformat="),
             "{command}"
         );
         assert!(command.contains("atempo=0.5,atempo=0.5"), "{command}");

@@ -226,9 +226,7 @@ fn preview_and_export_agree_on_every_frame_of_generated_graphs() {
                     });
                 }
                 if random.below(2) == 0 {
-                    operations.push(Operation::Gain {
-                        db: -(random.below(120) as f64) / 10.0,
-                    });
+                    operations.push(Operation::gain(-(random.below(120) as f64) / 10.0));
                 }
                 clips.push(Clip::new(clip_id, source, stream, tb, at, operations));
                 // The next clip after this one, with a gap or none: its
@@ -385,7 +383,7 @@ fn two_clips(path: &Path, second: Vec<Operation>, first_gain: Option<f64>) -> Pr
     let tb = Rational { num: 1, den: 1000 };
     let mut first = vec![Operation::Trim { from: 0, to: 2000 }];
     if let Some(db) = first_gain {
-        first.push(Operation::Gain { db });
+        first.push(Operation::gain(db));
     }
     project_with(
         path,
@@ -584,7 +582,7 @@ fn a_clips_speed_is_seen_and_its_gain_is_heard() {
         heard.iter().fold(0.0_f32, |max, s| max.max(s.abs()))
     };
     let unity = peak(vec![trim]);
-    let halved = peak(vec![trim, Operation::Gain { db: -6.020_6 }]);
+    let halved = peak(vec![trim, Operation::gain(-6.020_6)]);
     assert!(unity > 0.2, "{unity}");
     assert!(
         (halved - unity / 2.0).abs() < 0.002,

@@ -64,15 +64,16 @@ Why it was plausible. Why it lost.
 
 ## Index
 
-| ADR                                                                       | Title                                                                        | Status   |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- |
-| [0001](./ADR-0001-tauri-over-electron.md)                                 | Tauri 2 over Electron for the application shell                              | Accepted |
-| [0002](./ADR-0002-lgpl-ffmpeg-sidecar.md)                                 | Bundle an LGPL FFmpeg build as a sidecar process                             | Accepted |
-| [0003](./ADR-0003-re-encode-encoder-strategy.md)                          | Probe encoders at runtime and decline rather than degrade                    | Accepted |
-| [0004](./ADR-0004-build-the-ffmpeg-sidecar-ourselves.md)                  | Build the FFmpeg sidecar from a committed configure line                     | Accepted |
-| [0005](./ADR-0005-preview-frames-over-a-custom-scheme.md)                 | Preview frames cross into the renderer over a custom URI scheme              | Accepted |
-| [0006](./ADR-0006-project-file-format.md)                                 | The project file is versioned, deterministic JSON over integer time          | Accepted |
-| [0007](./ADR-0007-edits-are-invertible-changes-in-the-engine.md)          | Edits are invertible changes, applied by the engine                          | Accepted |
-| [0008](./ADR-0008-sequence-settings-and-copy-eligibility.md)              | Sequences match their first clip, and one predicate decides copy eligibility | Accepted |
-| [0009](./ADR-0009-constant-speed-is-a-copy-within-a-frame-rate-window.md) | A constant speed is a copy while its frame rate is one a file can carry      | Accepted |
-| [0010](./ADR-0010-export-routes-packets-over-nut-pipes.md)                | The export routes packets between sidecar processes over NUT pipes           | Accepted |
+| ADR                                                                         | Title                                                                        | Status   |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- |
+| [0001](./ADR-0001-tauri-over-electron.md)                                   | Tauri 2 over Electron for the application shell                              | Accepted |
+| [0002](./ADR-0002-lgpl-ffmpeg-sidecar.md)                                   | Bundle an LGPL FFmpeg build as a sidecar process                             | Accepted |
+| [0003](./ADR-0003-re-encode-encoder-strategy.md)                            | Probe encoders at runtime and decline rather than degrade                    | Accepted |
+| [0004](./ADR-0004-build-the-ffmpeg-sidecar-ourselves.md)                    | Build the FFmpeg sidecar from a committed configure line                     | Accepted |
+| [0005](./ADR-0005-preview-frames-over-a-custom-scheme.md)                   | Preview frames cross into the renderer over a custom URI scheme              | Accepted |
+| [0006](./ADR-0006-project-file-format.md)                                   | The project file is versioned, deterministic JSON over integer time          | Accepted |
+| [0007](./ADR-0007-edits-are-invertible-changes-in-the-engine.md)            | Edits are invertible changes, applied by the engine                          | Accepted |
+| [0008](./ADR-0008-sequence-settings-and-copy-eligibility.md)                | Sequences match their first clip, and one predicate decides copy eligibility | Accepted |
+| [0009](./ADR-0009-constant-speed-is-a-copy-within-a-frame-rate-window.md)   | A constant speed is a copy while its frame rate is one a file can carry      | Accepted |
+| [0010](./ADR-0010-export-routes-packets-over-nut-pipes.md)                  | The export routes packets between sidecar processes over NUT pipes           | Accepted |
+| [0011](./ADR-0011-one-audio-chain-with-an-oversampled-true-peak-limiter.md) | One audio chain, in a fixed order, with an oversampled true-peak limiter     | Accepted |

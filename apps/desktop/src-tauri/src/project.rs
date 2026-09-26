@@ -21,6 +21,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 
+use blinkify_engine::audio::gain::{GainAdvice, advise, measure_request};
 use blinkify_engine::export::plan::{ExportPlan, plan};
 use blinkify_engine::playback::{PlaybackPlan, SourceMedia, chain_rendered};
 use blinkify_engine::project::asset::AssetInfo;
@@ -33,7 +34,8 @@ use blinkify_engine::project::speed::SpeedVerdict;
 use blinkify_engine::project::split::{CutPoint, cut_point};
 use blinkify_engine::project::trim::StreamExtent;
 use blinkify_engine::project::{
-    self, ClipId, CopyEligibility, Operation, Project, SequenceSettings, SourceId, SourceStatus,
+    self, AudioStage, ClipId, CopyEligibility, Operation, Project, SequenceSettings, SourceId,
+    SourceStatus,
 };
 use blinkify_engine::proxy::MediaAsset;
 use blinkify_engine::time::{self, MICROSECONDS, Rounding};
@@ -720,6 +722,53 @@ pub fn plan_export(
         }
     }
     plan(&timeline, &project.sequence.settings, &facts).map_err(|error| error.to_string())
+}
+
+/// What clip `clip`'s gain does (#46): how loud it is before the gain, how
+/// far the limiter turns its loudest peak down at the gain it has, and a
+/// gain to suggest. `None` for a clip with no sound. The first call for a
+/// stretch decodes it; later ones are answered from the cache.
+///
+/// # Errors
+///
+/// No project is open, no such clip, or its source cannot be read.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn gain_advice(
+    engine: State<'_, MediaEngine>,
+    state: State<'_, OpenProject>,
+    clip: ClipId,
+) -> Result<Option<GainAdvice>, String> {
+    // Copied out, so the decode happens outside the lock.
+    let (placement, path) = {
+        let guard = state.lock()?;
+        let opened = guard.as_ref().ok_or("no project is open")?;
+        let project = opened.session.document().project();
+        let timeline = match &opened.timeline {
+            Some(timeline) => timeline.clone(),
+            None => evaluate(project).map_err(|error| error.to_string())?,
+        };
+        let placement = timeline
+            .placements()
+            .find(|placement| placement.clip == clip)
+            .cloned()
+            .ok_or_else(|| format!("no clip {clip}"))?;
+        let path = project
+            .sources
+            .get(&placement.source)
+            .ok_or_else(|| format!("no source {}", placement.source))?
+            .path()
+            .to_path_buf();
+        (placement, path)
+    };
+    let info = engine.info_of(&path)?;
+    let Some(request) = measure_request(&placement, &path, &info, AudioStage::Gain) else {
+        return Ok(None);
+    };
+    let before = engine.loudness(&request)?;
+    Ok(Some(advise(before, &placement.audio)))
 }
 
 /// What applies under the playhead of the project's preview `session`.

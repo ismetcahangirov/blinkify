@@ -55,7 +55,7 @@ use crate::probe::Rational;
 use crate::proxy::ExportSource;
 
 /// The schema this build writes, and the newest it reads.
-pub const SCHEMA_VERSION: u32 = 4;
+pub const SCHEMA_VERSION: u32 = 5;
 
 /// The project file extension, without the dot.
 pub const EXTENSION: &str = "blinkify";
@@ -202,12 +202,23 @@ pub enum Operation {
     },
     /// Play at `ratio` times normal speed: 2/1 is double, 1/2 half.
     Speed { ratio: Rational },
-    /// Change the level by `db` decibels.
-    Gain { db: f64 },
+    /// Change the level by `db` decibels, with a true-peak limiter after it
+    /// holding the sound at or below `ceiling_dbtp` (#46). `bypassed` keeps
+    /// the settings and plays the sound as if the step were absent (#49).
+    Gain {
+        db: f64,
+        ceiling_dbtp: f64,
+        bypassed: bool,
+    },
     /// Reduce noise, from 0 (off) to 1 (strongest).
-    Denoise { strength: f64 },
-    /// Bring the clip to an integrated loudness, in LUFS.
-    Normalise { target_lufs: f64 },
+    Denoise { strength: f64, bypassed: bool },
+    /// Bring the clip to an integrated loudness, in LUFS, with its true peak
+    /// at or below `ceiling_dbtp`.
+    Normalise {
+        target_lufs: f64,
+        ceiling_dbtp: f64,
+        bypassed: bool,
+    },
     /// Hold the first frame of the trim for `frames` sequence frames (#35).
     /// The picture is one the source never showed for that long, so the
     /// clip is re-encoded at export.
@@ -218,6 +229,70 @@ pub enum Operation {
     /// Play the trim backwards (#35). Re-encoded at export: packets cannot
     /// be copied in reverse order.
     Reverse,
+}
+
+/// A step of a clip's audio chain, by kind, in the fixed order the chain
+/// runs them (Epic #7): noise reduction, gain, normalisation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, TS)]
+#[serde(rename_all = "kebab-case")]
+#[ts(export)]
+pub enum AudioStage {
+    Denoise,
+    Gain,
+    Normalise,
+}
+
+/// The true-peak ceiling a limiter holds to unless the user chose another:
+/// the headroom a lossy encode and a phone's playback path need (#46).
+pub const DEFAULT_CEILING_DBTP: f64 = -1.0;
+
+/// The lowest ceiling a limiter can hold, in dBTP.
+pub const MIN_CEILING_DBTP: f64 = -20.0;
+
+impl Operation {
+    /// A gain of `db`, limited at the default ceiling.
+    #[must_use]
+    pub fn gain(db: f64) -> Self {
+        Self::Gain {
+            db,
+            ceiling_dbtp: DEFAULT_CEILING_DBTP,
+            bypassed: false,
+        }
+    }
+
+    /// Noise reduction at `strength`.
+    #[must_use]
+    pub fn denoise(strength: f64) -> Self {
+        Self::Denoise {
+            strength,
+            bypassed: false,
+        }
+    }
+
+    /// The audio-chain stage this is a step of, if it is one.
+    #[must_use]
+    pub fn audio_stage(&self) -> Option<AudioStage> {
+        match self {
+            Self::Denoise { .. } => Some(AudioStage::Denoise),
+            Self::Gain { .. } => Some(AudioStage::Gain),
+            Self::Normalise { .. } => Some(AudioStage::Normalise),
+            Self::Trim { .. } | Self::Speed { .. } | Self::Freeze { .. } | Self::Reverse => None,
+        }
+    }
+
+    /// Normalisation to `target_lufs`, at the default ceiling.
+    #[must_use]
+    pub fn normalise(target_lufs: f64) -> Self {
+        Self::Normalise {
+            target_lufs,
+            ceiling_dbtp: DEFAULT_CEILING_DBTP,
+            bypassed: false,
+        }
+    }
+}
+
+fn valid_ceiling(ceiling_dbtp: f64) -> bool {
+    (MIN_CEILING_DBTP..=0.0).contains(&ceiling_dbtp)
 }
 
 impl Clip {
@@ -450,13 +525,19 @@ impl Project {
     }
 }
 
-fn check_operation(clip: ClipId, operation: &Operation) -> Result<(), ProjectError> {
+pub(crate) fn check_operation(clip: ClipId, operation: &Operation) -> Result<(), ProjectError> {
     let valid = match *operation {
         Operation::Trim { from, to } => from < to,
         Operation::Speed { ratio } => ratio.num > 0 && ratio.den > 0,
-        Operation::Gain { db } => db.is_finite(),
-        Operation::Denoise { strength } => (0.0..=1.0).contains(&strength),
-        Operation::Normalise { target_lufs } => target_lufs.is_finite() && target_lufs < 0.0,
+        Operation::Gain {
+            db, ceiling_dbtp, ..
+        } => db.is_finite() && valid_ceiling(ceiling_dbtp),
+        Operation::Denoise { strength, .. } => (0.0..=1.0).contains(&strength),
+        Operation::Normalise {
+            target_lufs,
+            ceiling_dbtp,
+            ..
+        } => target_lufs.is_finite() && target_lufs < 0.0 && valid_ceiling(ceiling_dbtp),
         Operation::Freeze { frames } => frames >= 1,
         Operation::Reverse => true,
     };
@@ -504,7 +585,7 @@ mod tests {
                     Operation::Speed {
                         ratio: Rational { num: 2, den: 1 },
                     },
-                    Operation::Gain { db: -3.5 },
+                    Operation::gain(-3.5),
                 ],
                 detached: false,
                 link: None,
@@ -604,12 +685,17 @@ mod tests {
                         },
                         2 => Operation::Gain {
                             db: (random.float() - 0.5) * 96.0,
+                            ceiling_dbtp: -random.float() * 20.0,
+                            bypassed: random.below(2) == 0,
                         },
                         3 => Operation::Denoise {
                             strength: random.float(),
+                            bypassed: random.below(2) == 0,
                         },
                         _ => Operation::Normalise {
                             target_lufs: -1.0 - random.float() * 40.0,
+                            ceiling_dbtp: -random.float() * 20.0,
+                            bypassed: random.below(2) == 0,
                         },
                     });
                 }

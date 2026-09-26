@@ -35,7 +35,7 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-pub use feeder::chain_rendered;
+pub use feeder::{audio_request, chain_rendered};
 pub use monitor::{AudioInsert, MonitorCommand, MonitorStatus, MonitorVolume, PassThrough};
 pub use plan::{
     AudioStream, AudioTrack, MAIN_TRACK, PlanError, PlaybackPlan, ProgramTime, Segment,

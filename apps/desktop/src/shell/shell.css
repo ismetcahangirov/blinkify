@@ -411,10 +411,26 @@
   min-height: 0;
 }
 
-.video-inspector {
+.inspector__sections,
+.video-inspector,
+.audio-inspector {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.gain-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.gain-control__fields,
+.gain-control__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
 }
 
 .inspector-section {

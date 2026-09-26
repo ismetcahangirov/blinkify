@@ -4,10 +4,14 @@
 //! Everything here is interleaved stereo `f32`. A source with more channels is
 //! downmixed by FFmpeg as it is decoded; a device with more channels gets the
 //! stereo pair on its first two. This path is for monitoring: nothing in it
-//! reaches an export.
+//! reaches an export — except [`chain`], the one audio filter chain, which
+//! the export runs too so that what is heard is what is written (Epic #7).
 
 mod buffer;
+pub mod chain;
 pub mod decoder;
+pub mod gain;
+pub mod loudness;
 mod meter;
 pub mod sink;
 

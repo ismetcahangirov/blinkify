@@ -86,16 +86,20 @@ export function describe({ operation }: DiagnosticOperation): string {
     case "speed":
       return `Speed ×${formatRatio(operation.ratio.num, operation.ratio.den)}`;
     case "gain":
-      return `Gain ${signed(operation.db)} dB`;
+      return `Gain ${signed(operation.db)} dB, limited at ${minus(operation.ceilingDbtp)} dBTP${bypassed(operation.bypassed)}`;
     case "denoise":
-      return `Denoise ${String(Math.round(operation.strength * 100))} %`;
+      return `Denoise ${String(Math.round(operation.strength * 100))} %${bypassed(operation.bypassed)}`;
     case "normalise":
-      return `Normalise to ${minus(operation.targetLufs)} LUFS`;
+      return `Normalise to ${minus(operation.targetLufs)} LUFS${bypassed(operation.bypassed)}`;
     case "freeze":
       return `Freeze frame: ${String(operation.frames)} frames (re-encoded)`;
     case "reverse":
       return "Reverse (re-encoded)";
   }
+}
+
+function bypassed(on: boolean): string {
+  return on ? " (bypassed)" : "";
 }
 
 function formatRatio(num: number, den: number): string {

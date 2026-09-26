@@ -30,13 +30,21 @@ const AT: Diagnostics = {
           operation: { op: "speed", ratio: { num: 3, den: 2 } },
           previewed: true,
         },
-        { operation: { op: "gain", db: -3 }, previewed: true },
         {
-          operation: { op: "denoise", strength: 0.25 },
+          operation: { op: "gain", db: -3, ceilingDbtp: -1, bypassed: false },
+          previewed: true,
+        },
+        {
+          operation: { op: "denoise", strength: 0.25, bypassed: true },
           previewed: false,
         },
         {
-          operation: { op: "normalise", targetLufs: -16 },
+          operation: {
+            op: "normalise",
+            targetLufs: -16,
+            ceilingDbtp: -1,
+            bypassed: false,
+          },
           previewed: false,
         },
       ],
@@ -57,8 +65,8 @@ describe("the operations panel", () => {
     expect(items.map((item) => item.textContent)).toEqual([
       "Trim: source 90000 to 180000",
       "Speed ×1.500",
-      "Gain −3.0 dB",
-      "Denoise 25 % — applied on export, not heard in preview yet",
+      "Gain −3.0 dB, limited at −1.0 dBTP",
+      "Denoise 25 % (bypassed) — applied on export, not heard in preview yet",
       "Normalise to −16.0 LUFS — applied on export, not heard in preview yet",
     ]);
     expect(screen.getByTestId("operations-clip")).toHaveTextContent(
@@ -93,10 +101,10 @@ describe("the operations panel", () => {
     ).toBe("Speed ×2");
     expect(
       describeOperation({
-        operation: { op: "gain", db: 2.5 },
+        operation: { op: "gain", db: 2.5, ceilingDbtp: -2, bypassed: false },
         previewed: true,
       }),
-    ).toBe("Gain +2.5 dB");
+    ).toBe("Gain +2.5 dB, limited at −2.0 dBTP");
   });
 });
 

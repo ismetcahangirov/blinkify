@@ -1,5 +1,6 @@
 import { ScrollArea } from "@blinkify/ui";
 import { memo, useMemo } from "react";
+import { AudioInspector } from "../../inspector/AudioInspector.js";
 import { SequenceSummary } from "../../inspector/SequenceSummary.js";
 import { VideoInspector } from "../../inspector/VideoInspector.js";
 import { useProjectStore } from "../../project/project.store.js";
@@ -37,6 +38,9 @@ export const InspectorZone = memo(function InspectorZone() {
     return placements;
   }, [view, selection]);
   const video = selected.filter((p) => p.kind === "video");
+  // A video clip whose sound was detached plays none: its audio clip is
+  // the one to change.
+  const sounding = selected.filter((p) => !p.silent);
 
   return (
     <div className="zone">
@@ -44,14 +48,15 @@ export const InspectorZone = memo(function InspectorZone() {
       <ScrollArea className="inspector">
         {selection.length === 0 ? (
           <SequenceSummary />
-        ) : video.length > 0 ? (
-          <VideoInspector clips={video} />
-        ) : (
+        ) : selected.length === 0 ? (
           <p className="zone__placeholder">
-            {selected.length === 0
-              ? "The selected clips are no longer on the timeline."
-              : "Audio clip settings are not available yet."}
+            The selected clips are no longer on the timeline.
           </p>
+        ) : (
+          <div className="inspector__sections">
+            {video.length > 0 ? <VideoInspector clips={video} /> : null}
+            {sounding.length > 0 ? <AudioInspector clips={sounding} /> : null}
+          </div>
         )}
       </ScrollArea>
     </div>

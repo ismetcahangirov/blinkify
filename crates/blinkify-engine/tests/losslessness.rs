@@ -272,7 +272,7 @@ fn changing_the_sound_or_the_speed_leaves_every_picture_packet() {
     )
     .expect("range");
     let cases: [(&str, Vec<Operation>); 3] = [
-        ("Volume change (+6 dB)", vec![Operation::Gain { db: 6.0 }]),
+        ("Volume change (+6 dB)", vec![Operation::gain(6.0)]),
         ("Constant speed 2×", vec![speed(2, 1)]),
         ("Constant speed 0.5×", vec![speed(1, 2)]),
     ];
