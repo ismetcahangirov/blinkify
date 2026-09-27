@@ -24,6 +24,8 @@ use blinkify_engine::export::audio::AudioTarget;
 use blinkify_engine::export::execute::ExportError;
 use blinkify_engine::export::plan::{Cause, Decline, ExportPlan, Media, Segment};
 use blinkify_engine::export::profile::Unmatched;
+use blinkify_engine::orchestrator::{Priority, SidecarCommand};
+use blinkify_engine::probe::{Prober, StreamKind};
 
 use blinkify_engine::tier::ExportTier;
 use common::fixture::{Source, encoders};
@@ -287,4 +289,96 @@ fn a_cut_ending_on_an_open_keyframe_recodes_only_its_leading_pictures() {
         .expect("start");
     assert!(start > source.keyframe(1), "{seam}");
     assert!(start < to);
+}
+
+/// The coded size of every picture `path` decodes to, in decode order:
+/// ffprobe reports frames as coded, before any display matrix turns them.
+fn coded_sizes(path: &Path) -> Vec<(u32, u32)> {
+    let output = common::orchestrator()
+        .run_to_end(
+            SidecarCommand::ffprobe()
+                .option("-v", "error")
+                .option("-select_streams", "v:0")
+                .option("-show_entries", "frame=width,height")
+                .option("-of", "csv=p=0")
+                .input(path),
+            Priority::Foreground,
+        )
+        .expect("ffprobe");
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| {
+            let mut values = line.trim().trim_end_matches(',').split(',');
+            Some((values.next()?.parse().ok()?, values.next()?.parse().ok()?))
+        })
+        .collect()
+}
+
+/// Smart-cut `source`, coded `coded` and turned 90° by its display matrix,
+/// from `from` to `to`, and check the seam pictures stay as coded.
+fn seamed_as_coded(source: &Source, name: &str, (from, to): (i64, i64), coded: (u32, u32)) {
+    let plan = source.plan_clips(vec![source.clip(1, 0, from, to, &[])]);
+    let segment = video(&plan);
+    assert!(
+        matches!(segment.tier, ExportTier::SmartCut { .. }),
+        "{name}: {:?}",
+        segment.tier
+    );
+    if segment.decline.is_some() {
+        // No encoder here makes this stream: the decline is covered above.
+        return;
+    }
+    let target = common::scratch(&format!("smartcut-{name}-out")).join("cut.mp4");
+    source
+        .export(&plan, &target, AudioTarget::default())
+        .expect("exports");
+
+    let sizes = coded_sizes(&target);
+    assert_eq!(sizes.len(), shown(source, from, to), "{name}");
+    assert!(sizes.iter().all(|size| *size == coded), "{name}: {sizes:?}");
+    let info = Prober::new(common::orchestrator())
+        .probe(&target)
+        .expect("probe");
+    let video = info
+        .streams
+        .iter()
+        .find_map(|s| match &s.kind {
+            StreamKind::Video(video) => Some((**video).clone()),
+            _ => None,
+        })
+        .expect("video");
+    assert_eq!(video.rotation % 180, 90, "{name}");
+    assert_eq!(
+        (video.display_width, video.display_height),
+        (coded.1, coded.0)
+    );
+    assert_eq!(
+        common::decode_errors(&target),
+        Vec::<String>::new(),
+        "{name}"
+    );
+    // Both sides are turned upright by their own matrix before comparing.
+    let psnr = common::fixture::min_psnr(&target, &source.path, from, to);
+    assert!(psnr > 30.0, "{name}: minimum PSNR {psnr}");
+}
+
+#[test]
+fn a_rotated_source_is_seamed_in_its_coded_orientation() {
+    // #142: a phone's portrait clip is coded landscape and turned by a
+    // display matrix, which the muxer writes again for the whole output. A
+    // seam decoded with autorotation is turned twice and plays sideways.
+    let source = common::fixture::turned("smartcut-portrait", (640, 360), 90);
+    // A frame is 512 ticks of 1/15360.
+    let cut = (source.keyframe(1) + 3 * 512, source.keyframe(3) + 4 * 512);
+    seamed_as_coded(&source, "portrait-vp9", cut, (640, 360));
+}
+
+#[test]
+fn a_portrait_phone_clip_is_seamed_in_its_coded_orientation_or_declined() {
+    // The issue's own file: H.264 with one keyframe, cut from its tenth
+    // frame, where this machine has an H.264 encoder.
+    let source = Source::with_encoders("portrait-phone.mp4");
+    let frame = source.video().time_base.den / 30;
+    let cut = (source.keyframe(0) + 10 * frame, source.end());
+    seamed_as_coded(&source, "portrait-h264", cut, (1280, 720));
 }
