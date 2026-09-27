@@ -29,14 +29,16 @@ describe("App", () => {
     }
   });
 
-  it("reports the engine as not connected until something connects it", () => {
+  it("reports the engine as ready only when the engine says so", async () => {
     // The shell must never imply a capability it does not have. An engine
     // status that defaults to "ready" is the same class of lie as an export
-    // that reports lossless without checking.
+    // that reports lossless without checking. Here there is no engine at all
+    // (no Tauri), so the answer is that it is unavailable (#151).
     mount();
-    expect(screen.getByTestId("engine-status")).toHaveTextContent(
-      "Engine: not-connected",
+    expect(screen.getByTestId("engine-status")).not.toHaveTextContent(
+      "Engine: ready",
     );
+    expect(await screen.findByText(/^Engine: unavailable/)).toBeInTheDocument();
   });
 
   it("does not claim an export tier before anything has computed one", () => {

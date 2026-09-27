@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 376,
-    "tests": 58,
+    "files": 377,
+    "tests": 59,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 148,
-      "tests": 52,
+      "files": 149,
+      "tests": 53,
       "untested": [
         "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/inspector/SequenceSummary.tsx",
@@ -25,7 +25,6 @@
         "apps/desktop/src/player/PreviewCanvas.tsx",
         "apps/desktop/src/player/metering.ts",
         "apps/desktop/src/player/transportGlyphs.tsx",
-        "apps/desktop/src/shell.store.ts",
         "apps/desktop/src/shell/Splitter.tsx",
         "apps/desktop/src/shell/windowChrome.ts",
         "apps/desktop/src/shell/zones/LibraryZone.tsx",
@@ -289,6 +288,7 @@
         "apps/desktop/src/export/exportJobs.store.ts",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
+        "apps/desktop/src/shell.store.ts",
         "apps/desktop/src/shell/AppShell.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/shell/zones/LibraryZone.tsx",
@@ -1918,15 +1918,30 @@
       ],
       "hasNoDependents": false
     },
+    "apps/desktop/src/shell.store.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/shell.store.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
     "apps/desktop/src/shell.store.ts": {
       "workspace": "apps/desktop",
       "layer": "renderer",
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/shell.store.test.ts",
         "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
-      "coveredByTests": [],
+      "coveredByTests": [
+        "apps/desktop/src/shell.store.test.ts"
+      ],
       "hasNoDependents": false
     },
     "apps/desktop/src/shell/AppBar.tsx": {

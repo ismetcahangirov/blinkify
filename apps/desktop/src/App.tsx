@@ -8,6 +8,7 @@ import { SourcesBanner } from "./project/SourcesBanner.js";
 import { UpdateBanner } from "./UpdateBanner.js";
 import { InterruptedExportsBanner } from "./export/ExportQueue.js";
 import { followExportJobs } from "./export/exportJobs.store.js";
+import { followEngine } from "./shell.store.js";
 import { useEffect } from "react";
 import { useShortcuts } from "./shortcuts/useShortcuts.js";
 
@@ -31,6 +32,8 @@ export function App() {
   // renderer follows it from launch, so an export a crash interrupted is
   // offered at once.
   useEffect(followExportJobs, []);
+  // What the engine can do is its own answer, asked for at launch (#151).
+  useEffect(followEngine, []);
   return (
     <>
       <UpdateBanner />
