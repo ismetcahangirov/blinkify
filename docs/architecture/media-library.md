@@ -105,7 +105,14 @@ priority (#22), and the card says _Preparing…_ until both are ready. A thumbna
 is the answer to its request. A waveform is not: `generate_waveform` answers
 `pending` at once, and `ready` comes later as the engine's waveform event. So
 the library's `TimelineMedia` listens for that event, as the timeline's does
-(#150). A waveform that fails is not reported yet (#152).
+(#150).
+
+A waveform that cannot be made ends in a `failed` event with the engine's
+reason (#152). The card then stops saying _Preparing…_ and says _No waveform_,
+with the reason as its tooltip. Nothing asks again on its own: redrawing a
+failed waveform would fail the same way, once per repaint. The engine forgets a
+failure, so a later ask (the next session, or a timeline mounted afresh)
+retries.
 
 ## Eligibility at the point of import
 

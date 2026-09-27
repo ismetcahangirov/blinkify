@@ -44,8 +44,8 @@ function shared(): TimelineMedia {
     },
     () => listeners.forEach((listener) => listener()),
   );
-  // `generate_waveform` answers `pending` at once; `ready` arrives only as
-  // this event (#150). The library lives as long as the window, so the
+  // `generate_waveform` answers `pending` at once; `ready` and `failed`
+  // arrive only as this event (#150, #152). The library lives as long as the window, so the
   // subscription does too.
   void listen<WaveformUpdate>(WAVEFORM_EVENT, (event) =>
     made.waveformUpdate(event.payload),
@@ -72,4 +72,12 @@ export function cardTile(source: number, seconds: number): Tile | null {
 /** Whether `source`'s waveform is ready; asking starts it. */
 export function waveformReady(source: number, stream: number): boolean {
   return shared().peaks(source, stream, 0, 1, CARD_PIXELS_PER_SECOND) !== null;
+}
+
+/**
+ * Why `source`'s waveform will not arrive, once the engine has given up on
+ * it (#152), or `null` while it is ready or still coming.
+ */
+export function waveformFailure(source: number, stream: number): string | null {
+  return shared().waveformFailure(source, stream);
 }

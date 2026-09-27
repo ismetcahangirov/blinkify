@@ -4,4 +4,4 @@
  * Where a waveform stands, for the timeline to draw a placeholder until it
  * is ready.
  */
-export type WaveformStatus = { "state": "pending", fraction: number, } | { "state": "ready" };
+export type WaveformStatus = { "state": "pending", fraction: number, } | { "state": "ready" } | { "state": "failed", reason: string, };

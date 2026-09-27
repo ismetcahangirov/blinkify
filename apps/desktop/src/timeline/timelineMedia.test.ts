@@ -102,6 +102,72 @@ describe("the timeline's media", () => {
     ).toHaveLength(2);
   });
 
+  it("stops waiting for a waveform the engine gave up on, and does not ask again (#152)", async () => {
+    const api = backend();
+    api.calls.mockImplementation((command: string) =>
+      command === "generate_waveform"
+        ? Promise.resolve({ state: "pending", fraction: 0 })
+        : Promise.reject(new Error(command)),
+    );
+    const changed = vi.fn();
+    const media = new TimelineMedia(api, changed);
+    media.setSources(new Map([[1, "C:\\a.mp4"]]));
+    expect(media.peaks(1, 1, 0, 100, 10)).toBeNull();
+    await flush();
+    expect(media.waveformFailure(1, 1)).toBeNull();
+
+    media.waveformUpdate({
+      path: "C:\\a.mp4",
+      stream: 1,
+      status: { state: "failed", reason: "could not decode the audio" },
+    });
+    expect(changed).toHaveBeenCalled();
+    expect(media.waveformFailure(1, 1)).toBe("could not decode the audio");
+    // Every repaint asks again for what it draws; none of them restarts
+    // the work.
+    expect(media.peaks(1, 1, 0, 100, 10)).toBeNull();
+    expect(media.peaks(1, 1, 0, 100, 10)).toBeNull();
+    await flush();
+    expect(
+      api.calls.mock.calls.filter(
+        ([command]) => command === "generate_waveform",
+      ),
+    ).toHaveLength(1);
+  });
+
+  it("counts a waveform the engine refused to start as failed, not pending (#152)", async () => {
+    const api = backend();
+    api.calls.mockImplementation(() =>
+      Promise.reject(new Error("the file could not be probed")),
+    );
+    const changed = vi.fn();
+    const media = new TimelineMedia(api, changed);
+    media.setSources(new Map([[1, "C:\\a.mp4"]]));
+    expect(media.peaks(1, 1, 0, 100, 10)).toBeNull();
+    await flush();
+    expect(changed).toHaveBeenCalled();
+    expect(media.waveformFailure(1, 1)).toContain("could not be probed");
+  });
+
+  it("keeps a failure that arrived before the command's own `pending` answer (#152)", async () => {
+    const api = backend();
+    let answer: (status: unknown) => void = () => undefined;
+    api.calls.mockImplementation(
+      () => new Promise((resolve) => (answer = resolve)),
+    );
+    const media = new TimelineMedia(api, () => undefined);
+    media.setSources(new Map([[1, "C:\\a.mp4"]]));
+    media.peaks(1, 1, 0, 100, 10);
+    media.waveformUpdate({
+      path: "C:\\a.mp4",
+      stream: 1,
+      status: { state: "failed", reason: "could not decode the audio" },
+    });
+    answer({ state: "pending", fraction: 0 });
+    await flush();
+    expect(media.waveformFailure(1, 1)).toBe("could not decode the audio");
+  });
+
   it("does nothing more once disposed", async () => {
     const api = backend();
     const changed = vi.fn();

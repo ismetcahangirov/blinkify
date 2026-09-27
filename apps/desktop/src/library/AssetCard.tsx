@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { codecBadge, duration, resolution, type Asset } from "./assets.js";
-import { cardTile, onLibraryMedia, waveformReady } from "./libraryMedia.js";
+import {
+  cardTile,
+  onLibraryMedia,
+  waveformFailure,
+  waveformReady,
+} from "./libraryMedia.js";
 
 /**
  * One asset in the library (#53): its picture, name, duration, resolution
@@ -8,7 +13,9 @@ import { cardTile, onLibraryMedia, waveformReady } from "./libraryMedia.js";
  *
  * A source that has moved is shown as missing, with the relink from #32; a
  * source whose pictures cannot be copied into the sequence says so (#57),
- * because the drop would otherwise be the first the user hears of it.
+ * because the drop would otherwise be the first the user hears of it. A
+ * waveform the engine gave up on stops the card preparing and says so
+ * (#152), rather than preparing forever.
  */
 export interface AssetCardProps {
   readonly asset: Asset;
@@ -23,6 +30,7 @@ export interface AssetCardProps {
 function Thumbnail({ asset }: { asset: Asset }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
+  const [noWaveform, setNoWaveform] = useState<string | null>(null);
   const offline = asset.status !== null;
 
   useEffect(() => {
@@ -30,7 +38,13 @@ function Thumbnail({ asset }: { asset: Asset }) {
     const seconds = Math.min(1, (asset.info?.durationSeconds ?? 0) / 2);
     const draw = () => {
       const audio = asset.info?.audio?.stream;
-      const sound = audio === undefined || waveformReady(asset.id, audio);
+      const failure =
+        audio === undefined ? null : waveformFailure(asset.id, audio);
+      setNoWaveform(failure);
+      const sound =
+        audio === undefined ||
+        failure !== null ||
+        waveformReady(asset.id, audio);
       if (!asset.info?.video) {
         setReady(sound);
         return;
@@ -74,6 +88,15 @@ function Thumbnail({ asset }: { asset: Asset }) {
       {!offline && !ready && (
         <span className="asset__preparing" data-testid="asset-preparing">
           Preparing…
+        </span>
+      )}
+      {!offline && ready && noWaveform !== null && (
+        <span
+          className="asset__preparing"
+          data-testid="asset-no-waveform"
+          title={noWaveform}
+        >
+          No waveform
         </span>
       )}
       <span className="asset__duration">

@@ -3339,6 +3339,66 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/library/AssetCard.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./AssetCard.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/AssetCard.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./assets.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/assets.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./libraryMedia.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/libraryMedia.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/library/AssetCard.tsx",
       "dependencies": [
         {
@@ -3377,6 +3437,7 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/library/AssetCard.test.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx"
       ],
       "orphan": false,
@@ -3734,6 +3795,7 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/library/AssetCard.test.tsx",
         "apps/desktop/src/library/AssetCard.tsx",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",
@@ -3924,6 +3986,7 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/library/AssetCard.test.tsx",
         "apps/desktop/src/library/AssetCard.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/library/libraryMedia.test.ts"
@@ -20039,8 +20102,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 377,
-    "totalDependenciesCruised": 920,
+    "totalCruised": 378,
+    "totalDependenciesCruised": 923,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

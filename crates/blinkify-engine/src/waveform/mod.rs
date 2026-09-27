@@ -120,7 +120,7 @@ impl Peaks {
 
 /// Where a waveform stands, for the timeline to draw a placeholder until it
 /// is ready.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "state", rename_all = "kebab-case")]
 #[ts(export)]
 pub enum WaveformStatus {
@@ -129,6 +129,11 @@ pub enum WaveformStatus {
         fraction: f64,
     },
     Ready,
+    /// Generation stopped without a waveform (#152). Nothing is coming, so
+    /// nothing may keep saying it is; asking again retries.
+    Failed {
+        reason: String,
+    },
 }
 
 #[derive(Debug, Error)]
@@ -482,5 +487,16 @@ mod tests {
         let peaks = builder.finish(48_000);
         let summed: Vec<_> = peaks.summed(&peaks.levels[0], 0..1).collect();
         assert_eq!(summed, vec![(-8192, 16384)]);
+    }
+
+    #[test]
+    fn a_failure_reaches_the_renderer_with_its_reason() {
+        let status = WaveformStatus::Failed {
+            reason: "could not decode the audio".to_owned(),
+        };
+        assert_eq!(
+            serde_json::to_value(&status).expect("serialises"),
+            serde_json::json!({ "state": "failed", "reason": "could not decode the audio" })
+        );
     }
 }

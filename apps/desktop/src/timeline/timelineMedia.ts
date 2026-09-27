@@ -52,7 +52,7 @@ export class TimelineMedia implements MediaSource {
   private paths = new Map<number, string>();
   private readonly strips = new Map<string, Loaded<Filmstrip>>();
   private readonly sheets = new Map<string, Loaded<CanvasImageSource>>();
-  private readonly waveforms = new Map<string, WaveformStatus["state"]>();
+  private readonly waveforms = new Map<string, WaveformStatus>();
   private readonly chunks = new Map<string, Loaded<Int16Array>>();
   private disposed = false;
 
@@ -152,9 +152,23 @@ export class TimelineMedia implements MediaSource {
   /** A waveform the engine reported on. */
   waveformUpdate(update: WaveformUpdate): void {
     const key = `${update.path}|${update.stream}`;
-    const was = this.waveforms.get(key);
-    this.waveforms.set(key, update.status.state);
-    if (update.status.state === "ready" && was !== "ready") this.changed();
+    const was = this.waveforms.get(key)?.state;
+    this.waveforms.set(key, update.status);
+    if (update.status.state !== "pending" && was !== update.status.state)
+      this.changed();
+  }
+
+  /**
+   * Why `source`'s `stream` has no waveform, once the engine has stopped
+   * trying (#152); `null` while it is ready or still coming. A failed
+   * waveform is not asked for again by drawing: it would fail the same way,
+   * once per repaint.
+   */
+  waveformFailure(source: number, stream: number): string | null {
+    const path = this.paths.get(source);
+    if (path === undefined) return null;
+    const status = this.waveforms.get(`${path}|${stream}`);
+    return status?.state === "failed" ? status.reason : null;
   }
 
   peaks(
@@ -167,13 +181,24 @@ export class TimelineMedia implements MediaSource {
     const path = this.paths.get(source);
     if (path === undefined || pixels <= 0) return null;
     const waveform = `${path}|${stream}`;
-    const state = this.waveforms.get(waveform);
+    const state = this.waveforms.get(waveform)?.state;
     if (state === undefined) {
-      this.waveforms.set(waveform, "pending");
+      this.waveforms.set(waveform, { state: "pending", fraction: 0 });
       this.backend
         .invoke<WaveformStatus>("generate_waveform", { path, stream })
-        .then((status) => this.waveformUpdate({ path, stream, status }))
-        .catch(() => undefined);
+        .then((status) => {
+          // `pending` is what was assumed on asking; applying it late would
+          // undo a `ready` or `failed` event that overtook this answer.
+          if (status.state !== "pending")
+            this.waveformUpdate({ path, stream, status });
+        })
+        .catch((error: unknown) =>
+          this.waveformUpdate({
+            path,
+            stream,
+            status: { state: "failed", reason: String(error) },
+          }),
+        );
       return null;
     }
     if (state !== "ready") return null;
