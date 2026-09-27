@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 375,
-    "tests": 57,
+    "files": 376,
+    "tests": 58,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 147,
-      "tests": 51,
+      "files": 148,
+      "tests": 52,
       "untested": [
         "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/inspector/SequenceSummary.tsx",
@@ -20,7 +20,6 @@
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/library/AssetCard.tsx",
-        "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
@@ -1111,19 +1110,36 @@
       ],
       "hasNoDependents": false
     },
+    "apps/desktop/src/library/libraryMedia.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/library/libraryMedia.ts",
+        "apps/desktop/src/timeline/timelineMedia.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
     "apps/desktop/src/library/libraryMedia.ts": {
       "workspace": "apps/desktop",
       "layer": "renderer",
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/timeline/draw.ts",
-        "apps/desktop/src/timeline/timelineMedia.ts"
+        "apps/desktop/src/timeline/timelineMedia.ts",
+        "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
         "apps/desktop/src/library/AssetCard.tsx",
-        "apps/desktop/src/library/MediaLibrary.tsx"
+        "apps/desktop/src/library/MediaLibrary.tsx",
+        "apps/desktop/src/library/libraryMedia.test.ts"
       ],
-      "coveredByTests": [],
+      "coveredByTests": [
+        "apps/desktop/src/library/libraryMedia.test.ts"
+      ],
       "hasNoDependents": false
     },
     "apps/desktop/src/main.tsx": {
@@ -2818,11 +2834,13 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/library/libraryMedia.test.ts",
         "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/timelineMedia.test.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/library/libraryMedia.test.ts",
         "apps/desktop/src/timeline/timelineMedia.test.ts"
       ],
       "hasNoDependents": false
@@ -5166,6 +5184,8 @@
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/library/assets.ts",
         "apps/desktop/src/library/library.store.ts",
+        "apps/desktop/src/library/libraryMedia.test.ts",
+        "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/player/CropOverlay.test.tsx",
         "apps/desktop/src/player/CropOverlay.tsx",
         "apps/desktop/src/player/LevelMeter.tsx",
@@ -5229,6 +5249,7 @@
         "apps/desktop/src/inspector/gain.test.ts",
         "apps/desktop/src/inspector/speed.test.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/library/libraryMedia.test.ts",
         "apps/desktop/src/player/CropOverlay.test.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/OperationsPanel.test.tsx",

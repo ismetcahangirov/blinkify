@@ -25,6 +25,9 @@ import type { MediaSource, Tile } from "./draw.js";
 /** Waveform columns fetched per request: a screen is a handful of these. */
 export const PEAK_CHUNK = 512;
 
+/** The engine's waveform event: see `media::WAVEFORM_EVENT` in the shell. */
+export const WAVEFORM_EVENT = "media://waveform";
+
 /** Chunks kept, least recently used dropped first. */
 const PEAK_CHUNKS_KEPT = 4096;
 

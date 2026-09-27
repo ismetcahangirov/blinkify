@@ -101,7 +101,11 @@ caches strips by content, the timeline finds them already made.
 
 Asking is also what starts the work. When a card appears, it asks for its
 thumbnail and its waveform (#25). The engine generates both at background
-priority (#22), and the card says _Preparing…_ until both are ready.
+priority (#22), and the card says _Preparing…_ until both are ready. A thumbnail
+is the answer to its request. A waveform is not: `generate_waveform` answers
+`pending` at once, and `ready` comes later as the engine's waveform event. So
+the library's `TimelineMedia` listens for that event, as the timeline's does
+(#150). A waveform that fails is not reported yet (#152).
 
 ## Eligibility at the point of import
 
