@@ -229,6 +229,12 @@ it is fitted to the sequence's shape turned the same way. A portrait phone
 clip rendered between copies of itself is never transposed, and a gap is
 black at the coded shape. ADR-0021 has the rule and what it replaced.
 
+A smart-cut seam is decoded the same way. Its pictures always join packets of
+their own source, so they are encoded exactly as coded and never turned: the
+output's display matrix turns them once, with the copied packets around them
+(#142). A seam decoded with FFmpeg's default autorotation would be turned twice
+and play sideways.
+
 ### Crop (#128)
 
 A cropped clip's rectangle is in the source's display pixels (ADR-0019).

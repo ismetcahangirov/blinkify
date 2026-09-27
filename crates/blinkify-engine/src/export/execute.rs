@@ -1664,7 +1664,9 @@ fn video_codec(inputs: &BTreeMap<SourceId, ExportInput>, segment: &Segment) -> O
 /// The seam encoder for `from..to` of `source`: decoded from the keyframe
 /// before it, trimmed to exactly those pictures on their own timestamps,
 /// and encoded as `choice` says, without B-frames so its decode order is
-/// its presentation order.
+/// its presentation order. Its pictures stay as coded, never autorotated:
+/// they join packets of their own source, which the output's display matrix
+/// turns once for the whole stream (#142).
 fn seam_command(
     path: &Path,
     source: &SegmentSource,
@@ -1674,7 +1676,8 @@ fn seam_command(
     let seek = seconds(from, source.time_base) - SEEK_MARGIN_SECONDS;
     let mut command = SidecarCommand::ffmpeg()
         .option("-v", "error")
-        .flag("-copyts");
+        .flag("-copyts")
+        .flag("-noautorotate");
     if seek > 0.0 {
         command = command.option("-ss", format!("{seek:.6}"));
     }
