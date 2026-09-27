@@ -213,6 +213,8 @@ function reencodedAnyway(
       reasons.add("A reversed clip is re-encoded whatever its speed.");
     else if (clip.forced === "freeze-frame")
       reasons.add("A held frame is re-encoded whatever its speed.");
+    else if (clip.forced === "filter-changes-pixels")
+      reasons.add("A cropped clip is re-encoded whatever its speed.");
     if (eligibility[clip.source]?.eligible === false)
       reasons.add(
         "Its source does not match the sequence settings, so it is re-encoded whatever its speed.",

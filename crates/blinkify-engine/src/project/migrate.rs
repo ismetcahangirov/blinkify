@@ -20,7 +20,7 @@ use super::{ProjectError, SCHEMA_VERSION};
 type Migration = fn(Value) -> Result<Value, ProjectError>;
 
 /// `MIGRATIONS[n]` migrates version `n + 1` to `n + 2`.
-const MIGRATIONS: &[Migration] = &[v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5, v5_to_v6];
+const MIGRATIONS: &[Migration] = &[v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5, v5_to_v6, v6_to_v7];
 
 /// Schema 2 (#57): the sequence records whether its settings still wait for
 /// the first clip. A version-1 sequence with no clip had never been given
@@ -188,6 +188,17 @@ fn v5_to_v6(mut value: Value) -> Result<Value, ProjectError> {
     Ok(value)
 }
 
+/// Schema 7 (#127): a clip may be cropped. A version-6 file has no crop, so
+/// only the version changes — bumped so a version-6 build refuses a file
+/// holding one as newer, not damaged.
+fn v6_to_v7(mut value: Value) -> Result<Value, ProjectError> {
+    value
+        .as_object_mut()
+        .ok_or_else(|| ProjectError::Corrupt("the project is not an object".to_owned()))?
+        .insert("schemaVersion".to_owned(), Value::from(7));
+    Ok(value)
+}
+
 #[cfg(test)]
 #[allow(
     clippy::expect_used,
@@ -299,6 +310,15 @@ mod tests {
         assert_eq!(
             operations[3],
             json!({ "op": "normalise", "targetLufs": -16.0, "ceilingDbtp": -1.0, "bypassed": false })
+        );
+    }
+
+    #[test]
+    fn schema_6_has_no_crop_so_only_its_version_moves() {
+        let v6 = json!({ "schemaVersion": 6, "name": "x", "sequence": { "tracks": [] } });
+        assert_eq!(
+            v6_to_v7(v6).expect("migrate"),
+            json!({ "schemaVersion": 7, "name": "x", "sequence": { "tracks": [] } })
         );
     }
 

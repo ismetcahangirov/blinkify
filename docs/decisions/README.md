@@ -84,3 +84,4 @@ Why it was plausible. Why it lost.
 | [0016](./ADR-0016-the-export-report-is-measured-on-the-written-file.md)                      | The export report is measured on the written file                               | Accepted |
 | [0017](./ADR-0017-reversed-preview-decodes-backwards-a-chunk-at-a-time.md)                   | Preview a reversed clip by decoding it backwards a chunk at a time              | Accepted |
 | [0018](./ADR-0018-the-attribution-document-is-generated-from-local-sources.md)               | Generate the attribution document ourselves, from local sources only            | Accepted |
+| [0019](./ADR-0019-a-crop-is-a-rectangle-per-clip-in-display-pixels.md)                       | A crop is a rectangle per clip, in the source's display pixels                  | Accepted |

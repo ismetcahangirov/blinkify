@@ -78,6 +78,12 @@ Each `Edit` variant compiles to primitive changes:
   waiting for its first clip (#57).
 - **Speed** — one `Speed` operation replaces all of a clip's speed changes;
   `1/1` removes it.
+- **Set crop / Reset crop** — one `Crop` operation per video clip, a
+  rectangle in the source's display pixels checked against its shape: inside
+  the picture, at least 16 × 16, on its chroma grid. A rectangle that is the
+  whole picture removes it. A sound clip, or a clip whose source's shape is
+  not known, is refused with the reason. See
+  [ADR-0019](../decisions/ADR-0019-a-crop-is-a-rectangle-per-clip-in-display-pixels.md).
 - **Add clip** — the next clip id, placed in order, and selected.
 - **Remove clips** — removed, and taken out of the selection.
 

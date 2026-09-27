@@ -26,7 +26,9 @@ use blinkify_engine::export::plan::{ExportPlan, plan};
 use blinkify_engine::playback::{PlaybackPlan, SourceMedia, chain_rendered};
 use blinkify_engine::project::asset::AssetInfo;
 use blinkify_engine::project::edit::{Document, Edit, EditContext, HistoryView, SettingsImpact};
-use blinkify_engine::project::evaluate::{OperationsAt, Timeline, audio_operation, evaluate};
+use blinkify_engine::project::evaluate::{
+    OperationsAt, Timeline, audio_operation, evaluate, filters_picture,
+};
 use blinkify_engine::project::session::Session;
 use blinkify_engine::project::speed::SpeedVerdict;
 use blinkify_engine::project::split::{CutPoint, cut_point};
@@ -685,10 +687,13 @@ impl Diagnostics {
 /// Whether the preview renders `operation`: timing always, a hold and a
 /// reverse too, as the export renders them (#113); of the audio chain, what
 /// `chain_rendered` says — and noise reduction only while its model is
-/// installed (#47).
+/// installed (#47). A crop is not drawn by the preview yet (#129): the
+/// export applies it whatever the preview shows.
 fn previewed(operation: &Operation, models: bool) -> bool {
-    audio_operation(operation)
-        .is_none_or(|step| chain_rendered(&step) && (models || step.stage() != AudioStage::Denoise))
+    !filters_picture(operation)
+        && audio_operation(operation).is_none_or(|step| {
+            chain_rendered(&step) && (models || step.stage() != AudioStage::Denoise)
+        })
 }
 
 /// What exporting the open project would do (#39): every segment of the
@@ -861,5 +866,11 @@ mod tests {
         assert!(previewed(&reverse, false));
         assert!(!previewed(&denoise, false));
         assert!(previewed(&denoise, true));
+    }
+
+    #[test]
+    fn a_crop_is_listed_as_not_previewed_until_the_preview_draws_it() {
+        let crop = operation(r#"{"op":"crop","x":656,"y":0,"width":608,"height":1080}"#);
+        assert!(!previewed(&crop, true));
     }
 }

@@ -27,6 +27,7 @@
 //!   project changes no byte — no spurious diff, no "unsaved changes" prompt.
 
 pub mod asset;
+pub mod crop;
 pub mod edit;
 pub mod evaluate;
 pub mod migrate;
@@ -55,7 +56,7 @@ use crate::probe::Rational;
 use crate::proxy::ExportSource;
 
 /// The schema this build writes, and the newest it reads.
-pub const SCHEMA_VERSION: u32 = 6;
+pub const SCHEMA_VERSION: u32 = 7;
 
 /// The project file extension, without the dot.
 pub const EXTENSION: &str = "blinkify";
@@ -255,6 +256,15 @@ pub enum Operation {
     /// Play the trim backwards (#35). Re-encoded at export: packets cannot
     /// be copied in reverse order.
     Reverse,
+    /// Show only this rectangle of the picture, in the source's display
+    /// pixels — after its rotation, as the user drew it (#127). The pictures
+    /// are re-encoded at export; the sound is not touched.
+    Crop {
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+    },
 }
 
 /// A step of a clip's audio chain, by kind, in the fixed order the chain
@@ -328,7 +338,41 @@ impl Operation {
             Self::Denoise { .. } => Some(AudioStage::Denoise),
             Self::Gain { .. } => Some(AudioStage::Gain),
             Self::Normalise { .. } => Some(AudioStage::Normalise),
-            Self::Trim { .. } | Self::Speed { .. } | Self::Freeze { .. } | Self::Reverse => None,
+            Self::Trim { .. }
+            | Self::Speed { .. }
+            | Self::Freeze { .. }
+            | Self::Reverse
+            | Self::Crop { .. } => None,
+        }
+    }
+
+    /// A crop to `rect`.
+    #[must_use]
+    pub fn crop(rect: crop::CropRect) -> Self {
+        Self::Crop {
+            x: rect.x,
+            y: rect.y,
+            width: rect.width,
+            height: rect.height,
+        }
+    }
+
+    /// The rectangle, if this is a crop.
+    #[must_use]
+    pub fn crop_rect(&self) -> Option<crop::CropRect> {
+        match *self {
+            Self::Crop {
+                x,
+                y,
+                width,
+                height,
+            } => Some(crop::CropRect {
+                x,
+                y,
+                width,
+                height,
+            }),
+            _ => None,
         }
     }
 
@@ -600,6 +644,12 @@ pub(crate) fn check_operation(clip: ClipId, operation: &Operation) -> Result<(),
         } => target_lufs.is_finite() && target_lufs < 0.0 && valid_ceiling(ceiling_dbtp),
         Operation::Freeze { frames } => frames >= 1,
         Operation::Reverse => true,
+        // What the rectangle must be against its source's shape is checked
+        // by the edit layer, which knows the shape (`crop::check`); a file
+        // can only be held to a rectangle that exists.
+        Operation::Crop { .. } => operation.crop_rect().is_some_and(|rect| {
+            rect.width > 0 && rect.height > 0 && rect.right().is_some() && rect.bottom().is_some()
+        }),
     };
     if valid {
         Ok(())
@@ -729,7 +779,7 @@ mod tests {
                 clip_id += 1 + u32::try_from(random.below(3)).expect("small");
                 let mut operations = Vec::new();
                 for _ in 0..random.below(5) {
-                    operations.push(match random.below(5) {
+                    operations.push(match random.below(6) {
                         0 => {
                             let from = random.int(1 << 40);
                             Operation::Trim {
@@ -751,6 +801,12 @@ mod tests {
                         3 => Operation::Denoise {
                             strength: random.float(),
                             bypassed: random.below(2) == 0,
+                        },
+                        4 => Operation::Crop {
+                            x: u32::try_from(random.below(4000)).expect("small"),
+                            y: u32::try_from(random.below(4000)).expect("small"),
+                            width: 1 + u32::try_from(random.below(4000)).expect("small"),
+                            height: 1 + u32::try_from(random.below(4000)).expect("small"),
                         },
                         _ => Operation::Normalise {
                             target_lufs: -1.0 - random.float() * 40.0,
@@ -810,6 +866,30 @@ mod tests {
         assert!(text.contains("\"op\": \"trim\""), "{text}");
         assert!(text.contains("\"op\": \"speed\""), "{text}");
         assert!(text.contains("\"db\": -3.5"), "{text}");
+    }
+
+    #[test]
+    fn a_crop_is_tagged_data_and_an_empty_one_is_refused() {
+        let mut cropped = project();
+        cropped.sequence.tracks[0].clips[0].push(Operation::Crop {
+            x: 656,
+            y: 0,
+            width: 608,
+            height: 1080,
+        });
+        let text = cropped.to_json().expect("json");
+        assert!(text.contains("\"op\": \"crop\""), "{text}");
+        assert_eq!(Project::from_json(&text).expect("load"), cropped);
+        for (width, height, x) in [(0, 1080, 0), (608, 0, 0), (608, 1080, u32::MAX)] {
+            let mut empty = project();
+            empty.sequence.tracks[0].clips[0].push(Operation::Crop {
+                x,
+                y: 0,
+                width,
+                height,
+            });
+            assert!(empty.validate().is_err(), "{width}×{height} at {x}");
+        }
     }
 
     #[test]

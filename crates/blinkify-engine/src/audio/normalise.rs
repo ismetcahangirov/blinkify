@@ -221,6 +221,7 @@ mod tests {
             motion: None,
             silent: false,
             forced: None,
+            crop: None,
         }
     }
 

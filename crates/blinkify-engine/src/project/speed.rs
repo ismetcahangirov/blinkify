@@ -141,6 +141,8 @@ mod tests {
             pixel_aspect: rational(1, 1),
             variable_frame_rate: variable,
             hdr: false,
+            chroma: Some(crate::probe::ChromaSubsampling::Yuv420),
+            rotation: 0,
         }
     }
 
@@ -162,6 +164,7 @@ mod tests {
             motion: None,
             silent: false,
             forced: None,
+            crop: None,
         }
     }
 

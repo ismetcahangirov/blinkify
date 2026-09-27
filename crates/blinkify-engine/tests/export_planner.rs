@@ -22,6 +22,7 @@ use blinkify_engine::export::plan::{
 };
 use blinkify_engine::export::profile::{EncoderChoice, Unmatched};
 use blinkify_engine::probe::Rational;
+use blinkify_engine::project::crop::CropRect;
 use blinkify_engine::project::evaluate::evaluate;
 use blinkify_engine::project::settings::{SequenceSettings, StreamGeometry, copy_eligibility};
 use blinkify_engine::project::speed;
@@ -64,6 +65,8 @@ fn geometry() -> StreamGeometry {
         pixel_aspect: Rational { num: 1, den: 1 },
         variable_frame_rate: false,
         hdr: false,
+        chroma: Some(blinkify_engine::probe::ChromaSubsampling::Yuv420),
+        rotation: 0,
     }
 }
 
@@ -802,6 +805,95 @@ fn a_seam_no_encoder_here_can_make_is_declined_with_the_keyframe_cut_offered() {
         of(&plan_of(&copy, &one_source()), Media::Video)[0].encoder,
         None
     );
+}
+
+/// A clip of source 1's `from..to`, cropped to a centred 9:16 rectangle.
+fn cropped(id: ClipId, start: i64, from: i64, to: i64) -> Clip {
+    let mut clip = video_clip(id, 1, start, from, to);
+    clip.push(Operation::crop(CropRect {
+        x: 656,
+        y: 0,
+        width: 608,
+        height: 1080,
+    }));
+    clip
+}
+
+#[test]
+fn a_cropped_clip_re_encodes_its_pictures_only_and_its_neighbours_are_copied() {
+    let project = project(
+        1,
+        vec![video_track(vec![
+            video_clip(1, 1, 0, 2 * SECOND, 5 * SECOND),
+            cropped(2, 90, 8 * SECOND, 10 * SECOND),
+            video_clip(3, 1, 150, 12 * SECOND, 14 * SECOND),
+        ])],
+    );
+    let plan = plan_of(&project, &one_source());
+    let video = of(&plan, Media::Video);
+    assert_eq!(video.len(), 3, "{video:#?}");
+    assert_eq!(video[0].tier, ExportTier::StreamCopy);
+    assert_eq!(
+        video[1].tier,
+        ExportTier::FullReEncode {
+            reason: ReEncodeReason::FilterChangesPixels
+        }
+    );
+    assert_eq!(
+        video[1].causes,
+        vec![Cause::Operation {
+            reason: ReEncodeReason::FilterChangesPixels
+        }]
+    );
+    assert_eq!(video[1].encoder, Some(nvenc()));
+    assert_eq!(video[1].decline, None);
+    assert_eq!(video[2].tier, ExportTier::StreamCopy);
+    // Every sound is a copy, the cropped clip's included.
+    let audio = of(&plan, Media::Audio);
+    assert!(!audio.is_empty());
+    for segment in &audio {
+        assert_eq!(segment.tier, ExportTier::StreamCopy, "{segment:#?}");
+        assert!(segment.causes.is_empty());
+    }
+    assert_eq!(plan.summary.video.re_encoded, 60);
+    assert_eq!(plan.summary.audio.re_encoded, 0);
+    assert!(plan.summary.exportable);
+}
+
+#[test]
+fn a_cropped_hdr_clip_or_one_no_encoder_here_can_match_is_declined() {
+    let project = project_with(cropped(1, 0, 2 * SECOND, 6 * SECOND));
+
+    let mut hdr = one_source();
+    hdr.get_mut(&1)
+        .and_then(|f| f.video.as_mut())
+        .expect("v")
+        .geometry
+        .hdr = true;
+    let mut hdr_project = project.clone();
+    hdr_project.sequence.settings = SequenceSettings::matching(&StreamGeometry {
+        hdr: true,
+        ..geometry()
+    })
+    .expect("valid");
+    let plan = plan_of(&hdr_project, &hdr);
+    let video = of(&plan, Media::Video);
+    assert_eq!(video[0].decline, Some(Decline::HdrWouldBeRendered));
+    assert!(!plan.summary.exportable);
+
+    let mut unmatched = one_source();
+    unmatched
+        .get_mut(&1)
+        .and_then(|f| f.video.as_mut())
+        .expect("v")
+        .encoder = Err(Unmatched::NoEncoder {
+        codec: VideoCodec::H264,
+    });
+    let plan = plan_of(&project, &unmatched);
+    let video = of(&plan, Media::Video);
+    assert!(matches!(video[0].decline, Some(Decline::NoEncoder { .. })));
+    assert_eq!(video[0].encoder, None, "never whatever is available");
+    assert!(!plan.summary.exportable);
 }
 
 fn project_with(clip: Clip) -> Project {
