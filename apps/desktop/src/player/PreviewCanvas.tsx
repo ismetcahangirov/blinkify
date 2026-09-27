@@ -47,8 +47,14 @@ export function PreviewCanvas({ session }: PreviewCanvasProps) {
         usePreviewStore.getState().showFrame(frame.frameNumber, frame.position);
         if (frame.black) {
           context.clearRect(0, 0, width, height);
+          usePreviewStore.getState().showPicture(null);
           return;
         }
+        usePreviewStore.getState().showPicture({
+          width: frame.width,
+          height: frame.height,
+          rotation: frame.rotation,
+        });
         if (staging.width !== frame.width || staging.height !== frame.height) {
           staging.width = frame.width;
           staging.height = frame.height;

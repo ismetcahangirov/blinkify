@@ -125,3 +125,16 @@ works is [`../architecture/clip-interaction.md`](../architecture/clip-interactio
 | Escape while dragging         | Abandon the drag                          |
 | Ctrl+wheel                    | Zoom about the pointer                    |
 | Wheel, Shift+wheel            | Scroll the tracks, scroll sideways        |
+
+## Framing a crop on the preview
+
+From [#131](https://github.com/ismetcahangirov/blinkify/issues/131); the
+behaviour is in [`capcut-layout-reference.md`](./capcut-layout-reference.md).
+
+| Key or pointer               | Action                                      |
+| ---------------------------- | ------------------------------------------- |
+| Drag a handle or the inside  | Resize or move the crop, on the chroma grid |
+| Shift while dragging         | Keep the rectangle's shape                  |
+| Arrow keys, Shift+arrow keys | Move the crop one grid step, ten grid steps |
+| Escape while dragging        | Put the crop back as it was before the drag |
+| Escape, Enter                | End framing, keeping the crop as it stands  |

@@ -82,6 +82,9 @@ pub(crate) struct Opened {
 pub(crate) struct ProjectPreview {
     pub(crate) session: u32,
     sources: BTreeMap<SourceId, Arc<SourceMedia>>,
+    /// The clip whose crop is being framed on the preview (#131): it plays
+    /// whole, so the rectangle can be drawn over the picture it cuts from.
+    framing: Option<ClipId>,
 }
 
 impl OpenProject {
@@ -221,7 +224,11 @@ pub(crate) fn refresh(engine: &MediaEngine, opened: &mut Opened) -> Result<(), S
     let project = opened.session.document().project();
     let timeline = evaluate(project).map_err(|error| error.to_string())?;
     if let Some(preview) = &mut opened.preview {
-        let plan = plan_for(engine, project, &timeline, &mut preview.sources)?;
+        let shown = match preview.framing {
+            Some(clip) => timeline.clone().with_crop_lifted(clip),
+            None => timeline.clone(),
+        };
+        let plan = plan_for(engine, project, &shown, &mut preview.sources)?;
         if let Some(player) = engine.preview(preview.session) {
             player.set_plan(plan);
         }
@@ -360,6 +367,7 @@ pub fn open_project_preview(
     opened.preview = Some(ProjectPreview {
         session: preview.session,
         sources,
+        framing: None,
     });
     Ok(preview)
 }
@@ -540,6 +548,34 @@ pub fn preview_settings(
         .document()
         .settings_impact(&settings)
         .map_err(|error| error.to_string())
+}
+
+/// Show `clip` whole in the preview while its crop is framed on it (#131),
+/// or with `None` show every clip as it exports again. A preview setting:
+/// the graph, the plan and the export are untouched.
+///
+/// # Errors
+///
+/// No project is open, or its graph cannot be evaluated.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn frame_crop(
+    engine: State<'_, MediaEngine>,
+    state: State<'_, OpenProject>,
+    clip: Option<ClipId>,
+) -> Result<(), String> {
+    let mut guard = state.lock()?;
+    let opened = guard.as_mut().ok_or("no project is open")?;
+    let Some(preview) = opened.preview.as_mut() else {
+        return Ok(());
+    };
+    if preview.framing == clip {
+        return Ok(());
+    }
+    preview.framing = clip;
+    refresh(&engine, opened)
 }
 
 /// Start a gesture — a slider being dragged — whose edits are one history

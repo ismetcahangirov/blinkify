@@ -342,11 +342,34 @@ In order:
 - **Left, top, width, height**, two by two, in the source's pixels as
   displayed, stepping on its chroma grid. A value the engine refuses is shown
   under its field, in the warning colour, with the reason — never as a toast.
-- **Reset crop**, in the section header.
+- **Frame on preview** and **Reset crop**, in the section header. Framing is
+  one clip at a time; see below.
 - **The cost**, from the export plan, in the statement style the speed and
   gain sections use: "Cropping re-encodes this clip's pictures (4.2 s). Its
   sound is still copied." with the re-encode tone, or "Not cropped: this
   clip's pictures are copied bit for bit." with the lossless tone.
+
+**Framing a crop on the preview** (#131). From **Frame on preview**, the
+player shows the selected clip's **whole** picture, not the cropped one: the
+rectangle is drawn over what it cuts from, with the area outside it dimmed,
+eight handles and a draggable inside. The cropped result is shown when framing
+ends. This is decided here and not left to the implementation: a cropped
+picture under a rectangle would show neither what is kept nor what is lost.
+
+- **A drag is one undo entry**, sent live while it moves; its sides snap to
+  the source's chroma grid in the picture's display orientation, stay inside
+  the picture and keep the minimum size, whatever the display scale.
+- **A preset's shape is kept** while a corner or an edge is dragged; **Shift**
+  keeps whatever shape the rectangle has. The inspector's aspect presets are
+  in the framing bar too.
+- **Arrow keys** move the rectangle one grid step, ten with Shift; a key held
+  down is one undo entry.
+- **Escape during a drag** puts the crop back as it was before that drag.
+  Otherwise **Escape**, **Enter** or **Done** end framing and keep the crop as
+  it stands — Escape changes nothing, it only leaves. Selecting another clip
+  ends framing the same way.
+- Only the preview changes while framing: the graph, the plan and the export
+  never see it.
 
 **Reframe** is in the File menu and in Sequence settings. Its dialog chooses
 9:16, 1:1, 4:5 or 16:9 and states, before anything is applied, what the

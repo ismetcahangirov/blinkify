@@ -17,6 +17,8 @@ import {
   sideOf,
   type Side,
 } from "./crop.js";
+import { useCropFramingStore } from "../player/cropFraming.store.js";
+import { usePreviewStore } from "../player/preview.store.js";
 import { editGesture, type EditGesture } from "./editGesture.js";
 import { shared } from "./mixedValue.js";
 
@@ -51,6 +53,12 @@ export function CropSection({ clips }: { clips: readonly Placement[] }) {
     readonly selected: string;
   } | null>(null);
   const gesture = useRef<EditGesture | null>(null);
+  const framing = useCropFramingStore((state) => state.clip);
+  const frame = useCropFramingStore((state) => state.enter);
+  const leaveFraming = useCropFramingStore((state) => state.leave);
+  const previewing = usePreviewStore((state) => state.kind === "project");
+  // Framing on the preview is one clip at a time (#131).
+  const single = clips.length === 1 ? clips[0] : undefined;
 
   const ids = clips.map((clip) => clip.clip);
   const selected = ids.join(",");
@@ -110,6 +118,18 @@ export function CropSection({ clips }: { clips: readonly Placement[] }) {
         <h3 id="inspector-crop" className="inspector-section__title">
           Crop
         </h3>
+        {single && known && previewing ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-pressed={framing === single.clip}
+            onClick={() =>
+              void (framing === single.clip ? leaveFraming() : frame(single))
+            }
+          >
+            {framing === single.clip ? "Done framing" : "Frame on preview"}
+          </Button>
+        ) : null}
         <Button
           size="sm"
           variant="ghost"

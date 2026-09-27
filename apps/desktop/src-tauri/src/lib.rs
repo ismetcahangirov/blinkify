@@ -96,6 +96,7 @@ pub fn run() {
             project::undo_edit,
             project::redo_edit,
             project::begin_gesture,
+            project::frame_crop,
             project::end_gesture,
             project::preview_settings,
             project::cut_point_at,

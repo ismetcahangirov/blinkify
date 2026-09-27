@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 370,
-    "tests": 55,
+    "files": 375,
+    "tests": 57,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 142,
-      "tests": 49,
+      "files": 147,
+      "tests": 51,
       "untested": [
         "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/inspector/SequenceSummary.tsx",
@@ -651,6 +651,8 @@
         "apps/desktop/src/inspector/crop.ts",
         "apps/desktop/src/inspector/editGesture.ts",
         "apps/desktop/src/inspector/mixedValue.ts",
+        "apps/desktop/src/player/cropFraming.store.ts",
+        "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/timeline/draw.ts",
         "packages/types/src/index.ts",
@@ -831,7 +833,8 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/inspector/CropSection.tsx",
-        "apps/desktop/src/inspector/crop.test.ts"
+        "apps/desktop/src/inspector/crop.test.ts",
+        "apps/desktop/src/player/CropOverlay.tsx"
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/crop.test.ts"
@@ -881,7 +884,8 @@
         "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
-        "apps/desktop/src/inspector/editGesture.test.ts"
+        "apps/desktop/src/inspector/editGesture.test.ts",
+        "apps/desktop/src/player/CropOverlay.tsx"
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/editGesture.test.ts"
@@ -1135,6 +1139,46 @@
       "coveredByTests": [],
       "hasNoDependents": true
     },
+    "apps/desktop/src/player/CropOverlay.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/player/CropOverlay.tsx",
+        "apps/desktop/src/player/cropFraming.store.ts",
+        "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/player/CropOverlay.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/inspector/crop.ts",
+        "apps/desktop/src/inspector/editGesture.ts",
+        "apps/desktop/src/player/cropFraming.store.ts",
+        "apps/desktop/src/player/cropFraming.ts",
+        "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/player/CropOverlay.test.tsx",
+        "apps/desktop/src/shell/zones/PlayerZone.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/player/CropOverlay.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/player/DecodeStatsOverlay.tsx": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -1309,6 +1353,57 @@
       ],
       "hasNoDependents": false
     },
+    "apps/desktop/src/player/cropFraming.store.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/CropSection.tsx",
+        "apps/desktop/src/player/CropOverlay.test.tsx",
+        "apps/desktop/src/player/CropOverlay.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/player/CropOverlay.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/player/cropFraming.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/player/cropFraming.ts",
+        "apps/desktop/src/player/orientation.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/player/cropFraming.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/player/orientation.ts",
+        "apps/desktop/src/player/preview.store.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/player/CropOverlay.tsx",
+        "apps/desktop/src/player/cropFraming.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/player/cropFraming.test.ts"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/player/framePump.test.ts": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -1395,9 +1490,12 @@
       "dependsOn": [],
       "dependedOnBy": [
         "apps/desktop/src/player/PreviewCanvas.tsx",
+        "apps/desktop/src/player/cropFraming.test.ts",
+        "apps/desktop/src/player/cropFraming.ts",
         "apps/desktop/src/player/orientation.test.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/player/cropFraming.test.ts",
         "apps/desktop/src/player/orientation.test.ts"
       ],
       "hasNoDependents": false
@@ -1425,6 +1523,9 @@
       "dependedOnBy": [
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
+        "apps/desktop/src/player/CropOverlay.test.tsx",
+        "apps/desktop/src/player/CropOverlay.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/LevelMeter.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
@@ -1434,6 +1535,8 @@
         "apps/desktop/src/player/ScrubBar.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/player/cropFraming.store.ts",
+        "apps/desktop/src/player/cropFraming.ts",
         "apps/desktop/src/player/metering.ts",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/project/project.store.ts",
@@ -1447,6 +1550,7 @@
       ],
       "coveredByTests": [
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/player/CropOverlay.test.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
@@ -1718,6 +1822,10 @@
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/library/assets.ts",
         "apps/desktop/src/library/library.store.ts",
+        "apps/desktop/src/player/CropOverlay.test.tsx",
+        "apps/desktop/src/player/CropOverlay.tsx",
+        "apps/desktop/src/player/cropFraming.store.ts",
+        "apps/desktop/src/player/cropFraming.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
@@ -1761,6 +1869,7 @@
         "apps/desktop/src/inspector/LoudnessControl.test.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/player/CropOverlay.test.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/ReframeDialog.test.tsx",
@@ -2035,6 +2144,7 @@
       "layer": "renderer",
       "isTest": false,
       "dependsOn": [
+        "apps/desktop/src/player/CropOverlay.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/OperationsPanel.tsx",
@@ -2405,6 +2515,8 @@
         "apps/desktop/src/inspector/gain.ts",
         "apps/desktop/src/inspector/loudness.ts",
         "apps/desktop/src/library/libraryMedia.ts",
+        "apps/desktop/src/player/CropOverlay.tsx",
+        "apps/desktop/src/player/cropFraming.store.ts",
         "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/timeline/TimelineCanvas.tsx",
         "apps/desktop/src/timeline/assetDrop.test.ts",
@@ -5054,6 +5166,8 @@
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/library/assets.ts",
         "apps/desktop/src/library/library.store.ts",
+        "apps/desktop/src/player/CropOverlay.test.tsx",
+        "apps/desktop/src/player/CropOverlay.tsx",
         "apps/desktop/src/player/LevelMeter.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/OperationsPanel.test.tsx",
@@ -5061,6 +5175,8 @@
         "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/player/TransportBar.tsx",
+        "apps/desktop/src/player/cropFraming.test.ts",
+        "apps/desktop/src/player/cropFraming.ts",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/player/preview.store.ts",
         "apps/desktop/src/player/timecode.ts",
@@ -5113,10 +5229,12 @@
         "apps/desktop/src/inspector/gain.test.ts",
         "apps/desktop/src/inspector/speed.test.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
+        "apps/desktop/src/player/CropOverlay.test.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/OperationsPanel.test.tsx",
         "apps/desktop/src/player/ScrubBar.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
+        "apps/desktop/src/player/cropFraming.test.ts",
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
@@ -5683,6 +5801,8 @@
         "apps/desktop/src/inspector/VideoInspector.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/main.tsx",
+        "apps/desktop/src/player/CropOverlay.test.tsx",
+        "apps/desktop/src/player/CropOverlay.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/MonitorControls.tsx",
         "apps/desktop/src/player/ScrubBar.tsx",
@@ -5716,6 +5836,7 @@
         "apps/desktop/src/export/ExportDialog.test.tsx",
         "apps/desktop/src/export/ExportReportDialog.test.tsx",
         "apps/desktop/src/inspector/CropSection.test.tsx",
+        "apps/desktop/src/player/CropOverlay.test.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",

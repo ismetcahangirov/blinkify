@@ -3,6 +3,7 @@ import { Button } from "@blinkify/ui";
 import { listen } from "@tauri-apps/api/event";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 
+import { CropOverlay } from "../../player/CropOverlay.js";
 import { DecodeStatsOverlay } from "../../player/DecodeStatsOverlay.js";
 import { MonitorControls } from "../../player/MonitorControls.js";
 import { OperationsPanel } from "../../player/OperationsPanel.js";
@@ -164,6 +165,7 @@ export const PlayerZone = memo(function PlayerZone() {
               : "Drop a video file here to preview it."}
           </p>
         )}
+        {session !== null && kind === "project" && <CropOverlay />}
         {session !== null && showStats && <DecodeStatsOverlay />}
         {session !== null && kind === "project" && showOperations && (
           <OperationsPanel session={session} />
