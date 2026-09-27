@@ -22,9 +22,11 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use blinkify_engine::audio::gain::{GainAdvice, advise, measure_request};
-use blinkify_engine::export::plan::{ExportPlan, plan};
+use blinkify_engine::export::cost::{ClipsCost, ReframeImpact, clips_cost, reframe_impact};
+use blinkify_engine::export::plan::{ExportPlan, SourceFacts as ExportFacts, plan};
 use blinkify_engine::playback::{PlaybackPlan, SourceMedia, chain_rendered};
 use blinkify_engine::project::asset::AssetInfo;
+use blinkify_engine::project::crop::{Aspect, CropFrame};
 use blinkify_engine::project::edit::{Document, Edit, EditContext, HistoryView, SettingsImpact};
 use blinkify_engine::project::evaluate::{OperationsAt, Timeline, audio_operation, evaluate};
 use blinkify_engine::project::session::Session;
@@ -124,6 +126,10 @@ pub struct ProjectView {
     /// What each video clip's speed does to its pictures at export (#56):
     /// the model's answer, which the inspector states and never works out.
     pub speeds: BTreeMap<ClipId, SpeedVerdict>,
+    /// What the crop controls need of each source with pictures (#130): its
+    /// displayed size, its grid and its preset rectangles, from the engine.
+    /// A source not listed is offline or unreadable, and cannot be cropped.
+    pub frames: BTreeMap<SourceId, CropFrame>,
 }
 
 /// What an edit, an undo or a redo returns: the project now, and the
@@ -166,6 +172,7 @@ impl ProjectView {
             speeds: timeline
                 .map(|timeline| document.speed_verdicts(timeline))
                 .unwrap_or_default(),
+            frames: document.crop_frames(),
         }
     }
 }
@@ -583,7 +590,8 @@ fn significant(edit: &Edit) -> bool {
         | Edit::DetachAudio { .. }
         | Edit::Split { .. }
         | Edit::FreezeFrame { .. }
-        | Edit::SetSettings { .. } => true,
+        | Edit::SetSettings { .. }
+        | Edit::Reframe { .. } => true,
         Edit::MoveClips { moves } => moves.len() > 1,
         Edit::RemoveClips { clips } => clips.len() > 1,
         _ => false,
@@ -707,27 +715,107 @@ pub fn plan_export(
     engine: State<'_, MediaEngine>,
     state: State<'_, OpenProject>,
 ) -> Result<ExportPlan, String> {
-    // Copied out, so no probe or index read happens under the lock.
-    let (project, timeline) = {
-        let guard = state.lock()?;
-        let opened = guard.as_ref().ok_or("no project is open")?;
-        let project = opened.session.document().project().clone();
-        let timeline = match &opened.timeline {
-            Some(timeline) => timeline.clone(),
-            None => evaluate(&project).map_err(|error| error.to_string())?,
-        };
-        (project, timeline)
+    let (project, timeline) = snapshot(&state)?;
+    let facts = export_facts(&engine, &project)?;
+    plan_with(&engine, &project, &timeline, &facts)
+}
+
+/// The open project and its evaluated graph, copied out so no probe or
+/// index read happens under the lock.
+fn snapshot(state: &OpenProject) -> Result<(Project, Timeline), String> {
+    let guard = state.lock()?;
+    let opened = guard.as_ref().ok_or("no project is open")?;
+    let project = opened.session.document().project().clone();
+    let timeline = match &opened.timeline {
+        Some(timeline) => timeline.clone(),
+        None => evaluate(&project).map_err(|error| error.to_string())?,
     };
+    Ok((project, timeline))
+}
+
+/// What the planner needs of each source of `project` that is present.
+fn export_facts(
+    engine: &MediaEngine,
+    project: &Project,
+) -> Result<BTreeMap<SourceId, ExportFacts>, String> {
     let mut facts = BTreeMap::new();
     for (&id, source) in &project.sources {
         if source.check().is_present() {
             facts.insert(id, engine.export_facts(source.path())?);
         }
     }
+    Ok(facts)
+}
+
+/// The plan of `timeline`, made in `project`, over `facts`.
+fn plan_with(
+    engine: &MediaEngine,
+    project: &Project,
+    timeline: &Timeline,
+    facts: &BTreeMap<SourceId, ExportFacts>,
+) -> Result<ExportPlan, String> {
     // A normalised sequence processes every clip's sound (#48): the plan
     // must know, measured or not.
-    let timeline = crate::loudness::resolved(&engine, &project, &timeline)?;
-    plan(&timeline, &project.sequence.settings, &facts).map_err(|error| error.to_string())
+    let timeline = crate::loudness::resolved(engine, project, timeline)?;
+    plan(&timeline, &project.sequence.settings, facts).map_err(|error| error.to_string())
+}
+
+/// What the export does to `clips`' pictures and sound (#130): the crop
+/// section's statement at the point of use, read off the same plan the
+/// export dialog and the application bar read, and asked again after every
+/// edit.
+///
+/// # Errors
+///
+/// No project is open, or its timeline cannot be planned: the statement is
+/// then not made, never guessed.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn clip_cost(
+    engine: State<'_, MediaEngine>,
+    state: State<'_, OpenProject>,
+    clips: Vec<ClipId>,
+) -> Result<ClipsCost, String> {
+    let (project, timeline) = snapshot(&state)?;
+    let facts = export_facts(&engine, &project)?;
+    let plan = plan_with(&engine, &project, &timeline, &facts)?;
+    Ok(clips_cost(&plan, &clips))
+}
+
+/// What reframing the open project to `aspect` would do and cost (#132),
+/// before it is applied: the engine's decisions and the plans of the project
+/// before and after, as `preview_settings` states a settings change (#57).
+///
+/// # Errors
+///
+/// No project is open, the reframe would be refused (the message says why),
+/// or a plan cannot be made, so the cost cannot be stated.
+#[tauri::command(async)]
+// Tauri injects managed state and arguments by value; see
+// `updater::pending_update`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn preview_reframe(
+    engine: State<'_, MediaEngine>,
+    state: State<'_, OpenProject>,
+    aspect: Aspect,
+) -> Result<ReframeImpact, String> {
+    let (reframe, after) = {
+        let guard = state.lock()?;
+        let opened = guard.as_ref().ok_or("no project is open")?;
+        opened
+            .session
+            .document()
+            .preview_reframe(aspect)
+            .map_err(|error| error.to_string())?
+    };
+    let (project, timeline) = snapshot(&state)?;
+    let facts = export_facts(&engine, &project)?;
+    let before = plan_with(&engine, &project, &timeline, &facts)?;
+    let reframed = evaluate(&after).map_err(|error| error.to_string())?;
+    let after = plan_with(&engine, &after, &reframed, &facts)?;
+    Ok(reframe_impact(reframe, &before, &after))
 }
 
 /// What clip `clip`'s gain does (#46): how loud it is before the gain, how

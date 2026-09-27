@@ -84,6 +84,11 @@ Each `Edit` variant compiles to primitive changes:
   whole picture removes it. A sound clip, or a clip whose source's shape is
   not known, is refused with the reason. See
   [ADR-0019](../decisions/ADR-0019-a-crop-is-a-rectangle-per-clip-in-display-pixels.md).
+- **Set crop sides / Crop to aspect** (#130) — the inspector's: one side
+  set on every clip, each keeping its others; or each clip cropped to the
+  centred preset its own picture holds. **Reframe** (#132) — the settings and
+  a crop per clip on unlocked tracks, one entry. See
+  [`crop-and-reframe.md`](./crop-and-reframe.md).
 - **Add clip** — the next clip id, placed in order, and selected.
 - **Remove clips** — removed, and taken out of the selection.
 

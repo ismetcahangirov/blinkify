@@ -40,6 +40,7 @@ function view(entries: string[], applied: number): ProjectView {
     extents: [],
     assets: {},
     speeds: {},
+    frames: {},
   };
 }
 

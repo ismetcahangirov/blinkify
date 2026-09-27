@@ -68,6 +68,7 @@ function view(tracks: Track[]): ProjectView {
     extents: [],
     assets: {},
     speeds: {},
+    frames: {},
   };
 }
 

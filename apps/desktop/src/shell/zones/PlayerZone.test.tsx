@@ -179,6 +179,7 @@ describe("PlayerZone", () => {
         extents: [],
         assets: {},
         speeds: {},
+        frames: {},
         timeline: null,
         history: { entries: [], applied: 0 },
       },

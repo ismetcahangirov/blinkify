@@ -134,6 +134,7 @@ const VIEW: ProjectView = {
   extents: [],
   assets: { 1: PHONE, 2: SONG },
   speeds: {},
+  frames: {},
   timeline: null,
   history: { entries: [], applied: 0 },
 };

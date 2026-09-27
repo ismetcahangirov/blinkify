@@ -10,6 +10,7 @@
 //! re-encodes (#39).
 
 pub mod audio;
+pub mod cost;
 pub mod execute;
 pub mod facts;
 pub mod loudness;
