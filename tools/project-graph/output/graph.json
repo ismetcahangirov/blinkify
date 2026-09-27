@@ -3790,6 +3790,66 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/library/libraryMedia.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./libraryMedia.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/library/libraryMedia.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/timelineMedia.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/timelineMedia.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/library/libraryMedia.ts",
       "dependencies": [
         {
@@ -3826,11 +3886,30 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
         "apps/desktop/src/library/AssetCard.tsx",
-        "apps/desktop/src/library/MediaLibrary.tsx"
+        "apps/desktop/src/library/MediaLibrary.tsx",
+        "apps/desktop/src/library/libraryMedia.test.ts"
       ],
       "orphan": false,
       "valid": true
@@ -10262,6 +10341,7 @@
         }
       ],
       "dependents": [
+        "apps/desktop/src/library/libraryMedia.test.ts",
         "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/timeline/mountTimeline.ts",
         "apps/desktop/src/timeline/timelineMedia.test.ts"
@@ -17643,6 +17723,8 @@
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/library/assets.ts",
         "apps/desktop/src/library/library.store.ts",
+        "apps/desktop/src/library/libraryMedia.test.ts",
+        "apps/desktop/src/library/libraryMedia.ts",
         "apps/desktop/src/player/CropOverlay.test.tsx",
         "apps/desktop/src/player/CropOverlay.tsx",
         "apps/desktop/src/player/LevelMeter.tsx",
@@ -19913,8 +19995,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 375,
-    "totalDependenciesCruised": 914,
+    "totalCruised": 376,
+    "totalDependenciesCruised": 918,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

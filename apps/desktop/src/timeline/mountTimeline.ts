@@ -18,11 +18,8 @@ import {
 import { layoutRows, RULER_HEIGHT } from "./rows.js";
 import { RedrawScheduler, type FrameSource } from "./scheduler.js";
 import { readTheme } from "./theme.js";
-import { TimelineMedia } from "./timelineMedia.js";
+import { TimelineMedia, WAVEFORM_EVENT } from "./timelineMedia.js";
 import { useTimelineStore } from "./timeline.store.js";
-
-/** The engine's waveform event: see `media::WAVEFORM_EVENT` in the shell. */
-const WAVEFORM_EVENT = "media://waveform";
 
 function loadImage(url: string): Promise<CanvasImageSource> {
   return new Promise((resolve, reject) => {

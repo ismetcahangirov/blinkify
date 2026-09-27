@@ -1,6 +1,8 @@
+import type { WaveformUpdate } from "@blinkify/types";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import type { Tile } from "../timeline/draw.js";
-import { TimelineMedia } from "../timeline/timelineMedia.js";
+import { TimelineMedia, WAVEFORM_EVENT } from "../timeline/timelineMedia.js";
 
 /**
  * The library's thumbnails and background preparation (#53).
@@ -32,7 +34,8 @@ function loadImage(url: string): Promise<CanvasImageSource> {
 let media: TimelineMedia | null = null;
 
 function shared(): TimelineMedia {
-  media ??= new TimelineMedia(
+  if (media) return media;
+  const made = new TimelineMedia(
     {
       invoke: (command, args) => invoke(command, args),
       loadImage,
@@ -41,7 +44,14 @@ function shared(): TimelineMedia {
     },
     () => listeners.forEach((listener) => listener()),
   );
-  return media;
+  // `generate_waveform` answers `pending` at once; `ready` arrives only as
+  // this event (#150). The library lives as long as the window, so the
+  // subscription does too.
+  void listen<WaveformUpdate>(WAVEFORM_EVENT, (event) =>
+    made.waveformUpdate(event.payload),
+  ).catch(() => undefined);
+  media = made;
+  return made;
 }
 
 /** Call `listener` whenever a thumbnail or waveform arrives. */
