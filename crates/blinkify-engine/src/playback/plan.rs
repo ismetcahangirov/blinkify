@@ -269,6 +269,11 @@ pub struct Segment {
     /// as the evaluator resolved it (#127); `None` for the whole picture.
     /// The decoder crops it (#129) exactly as the export does (#128).
     pub crop: Option<CropRect>,
+    /// Where the clip's sequence frames end on the timeline, when it came
+    /// from the edit graph. A forward segment is never longer: its last
+    /// partial tick is not a frame the evaluator counts (ADR-0023), and the
+    /// next clip starts there.
+    pub frames_end: Option<ProgramTime>,
 }
 
 impl Segment {
@@ -290,6 +295,7 @@ impl Segment {
             clip: None,
             placement: None,
             crop: None,
+            frames_end: None,
         }
     }
 
@@ -404,7 +410,8 @@ impl Segment {
     }
 
     /// The segment's length on the timeline. A held or reversed segment
-    /// ends where its sequence frames do, rounded as its start is.
+    /// ends where its sequence frames do, rounded as its start is; a forward
+    /// one where its source runs out, but no later than its frames end.
     #[must_use]
     pub fn duration(&self) -> ProgramTime {
         if let Some(placement) = &self.placement {
@@ -412,13 +419,17 @@ impl Segment {
                 .saturating_sub(self.timeline_start)
                 .max(0);
         }
-        time::rescale(
+        let duration = time::rescale(
             self.source_out.saturating_sub(self.source_in),
             self.played_time_base(),
             MICROSECONDS,
             Rounding::Up,
         )
-        .unwrap_or(0)
+        .unwrap_or(0);
+        match self.frames_end {
+            Some(end) => duration.min(end.saturating_sub(self.timeline_start).max(0)),
+            None => duration,
+        }
     }
 
     #[must_use]
@@ -426,8 +437,9 @@ impl Segment {
         self.timeline_start.saturating_add(self.duration())
     }
 
-    /// The source tick shown at timeline position `t`, rounded down: the
-    /// frame on screen is the newest one at or before it. For a held or
+    /// The source tick shown at timeline position `t`, to the nearest tick:
+    /// the frame on screen is the newest one at or before it. A timestamp
+    /// is itself only exact to half a tick (ADR-0023). For a held or
     /// reversed segment it is the tick [`Placement::source_at`] names for
     /// the sequence frame at `t`.
     #[must_use]
@@ -443,15 +455,20 @@ impl Segment {
                 .clamp(self.source_in, last);
         }
         let offset = t.saturating_sub(self.timeline_start);
-        self.source_in.saturating_add(
-            time::rescale(
-                offset,
-                MICROSECONDS,
-                self.played_time_base(),
-                Rounding::Down,
+        // Rounded up to the out point, the tick would name a frame the
+        // segment does not play.
+        let last = self.source_out.saturating_sub(1).max(self.source_in);
+        self.source_in
+            .saturating_add(
+                time::rescale(
+                    offset,
+                    MICROSECONDS,
+                    self.played_time_base(),
+                    Rounding::Nearest,
+                )
+                .unwrap_or(0),
             )
-            .unwrap_or(0),
-        )
+            .min(last)
     }
 
     /// Where the frame at source tick `pts` starts on the timeline, rounded
@@ -488,13 +505,7 @@ impl Segment {
         let passed = next
             .filter(|next| *next < self.source_out)
             .map_or(0, |next| self.source_out - next);
-        let frames = time::rescale(
-            passed.max(0),
-            placement.played_time_base(),
-            placement.sequence_time_base,
-            Rounding::Up,
-        )
-        .unwrap_or(0);
+        let frames = placement.frames_until(passed.max(0)).unwrap_or(0).max(0);
         let frame = placement
             .start
             .saturating_add(frames)
@@ -765,6 +776,8 @@ fn segment_of(
     .ok_or_else(unplaceable)?;
     let timeline_start = time::rescale(placement.start, sequence, MICROSECONDS, Rounding::Down)
         .ok_or_else(unplaceable)?;
+    let frames_end = time::rescale(placement.end(), sequence, MICROSECONDS, Rounding::Down)
+        .ok_or_else(unplaceable)?;
     Ok(Segment {
         source: Arc::clone(source),
         source_in,
@@ -778,6 +791,7 @@ fn segment_of(
             .is_some()
             .then(|| Arc::new(placement.clone())),
         crop: placement.crop,
+        frames_end: Some(frames_end),
     })
 }
 

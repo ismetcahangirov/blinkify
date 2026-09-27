@@ -7,8 +7,8 @@
 //! The sources are VP9 made here by the sidecar's software encoder, so the
 //! export runs on every machine (H.264 needs a hardware encoder, ADR-0003),
 //! in MP4, whose 1/15360 time base puts every frame of 30 fps on a whole
-//! tick: the evaluator's arithmetic is exact there, and preview and export
-//! can be compared frame for frame.
+//! tick, and in Matroska, whose milliseconds round them (#134, ADR-0023):
+//! preview and export are compared frame for frame on both.
 
 #![allow(
     clippy::expect_used,
@@ -50,7 +50,12 @@ const FRAME_BYTES: usize = WIDTH * HEIGHT * 4;
 
 /// `seconds` of 30 fps VP9 in MP4, a keyframe every second.
 fn vp9(name: &str, seconds: u32) -> Source {
-    let path = common::scratch(&format!("motion-{name}")).join("source.mp4");
+    vp9_in(name, seconds, "mp4")
+}
+
+/// `seconds` of 30 fps VP9 in the container `extension` names.
+fn vp9_in(name: &str, seconds: u32, extension: &str) -> Source {
+    let path = common::scratch(&format!("motion-{name}")).join(format!("source.{extension}"));
     common::orchestrator()
         .run_to_end(
             SidecarCommand::ffmpeg()
@@ -429,6 +434,76 @@ fn a_reversed_clip_shows_frame_n_where_the_export_writes_frame_n() {
     );
     assert!(shown.len() >= 60, "{} of 90 frames shown", shown.len());
     assert_eq!(player.stats().error, None);
+    player.close();
+}
+
+#[test]
+fn on_millisecond_timestamps_every_frame_shown_is_the_frame_the_export_writes() {
+    // #134: Matroska rounds 30 fps frames to 0, 33, 67, 100 ms. Forwards,
+    // held and backwards, the preview must name the frame the export writes
+    // at each sequence frame, not the one before it.
+    let orchestrator = common::orchestrator();
+    let source = vp9_in("rounded", 4, "mkv");
+    assert_eq!(source.video().time_base, Rational { num: 1, den: 1000 });
+    let (k0, k1, k2) = (source.keyframe(0), source.keyframe(1), source.keyframe(2));
+    // Held between two frames: the frame on screen there is the one before.
+    let held = k1 + 180;
+    let (timeline, export_plan) = both(
+        &source,
+        vec![
+            source.clip(1, 0, k0, k1, &[]),
+            source.clip(2, 30, held, held + 1, &[Operation::Freeze { frames: 45 }]),
+            source.clip(3, 75, k1, k2, &[Operation::Reverse]),
+        ],
+    );
+    let target = common::scratch("motion-rounded-export").join("rounded.mkv");
+    source
+        .export(&export_plan, &target, AudioTarget::Opus { kilobits: 128 })
+        .expect("exports");
+    let exported = decoded(&target);
+    assert_eq!(exported.len(), 30 + 45 + 30);
+
+    let media = media(&orchestrator, &source.path);
+    let stream = media.video.as_ref().expect("video").index;
+    let before_held = media
+        .index
+        .frame_at_or_before(stream, held)
+        .expect("table")
+        .expect("a frame");
+    assert!(before_held < held, "the hold is between frames");
+    let sources = BTreeMap::from([(1, Arc::clone(&media))]);
+    let plan = PlaybackPlan::from_timeline(&timeline, &sources).expect("plan");
+    let player = player(&orchestrator, plan, AudioChoice::Silent);
+    for n in [0, 1, 2, 3, 14, 29, 30, 52, 74, 75, 76, 77, 78, 90, 104] {
+        player.command(TransportCommand::Seek {
+            position: at_frame(n),
+        });
+        let shown = landed(&player);
+        let pts = shown.picture.as_ref().expect("a picture").pts;
+        let placement = timeline.placements().find(|p| p.covers(n)).expect("a clip");
+        let named = media
+            .index
+            .frame_at_or_before(stream, placement.source_at(n).expect("in the clip"))
+            .expect("table")
+            .expect("a frame");
+        assert_eq!(pts, named, "frame {n}");
+        if (30..75).contains(&n) {
+            assert_eq!(pts, before_held, "frame {n}");
+        }
+        assert!(
+            picture(&shown) == reference_frame(&source.path, pts).as_slice(),
+            "frame {n}: not the source's frame"
+        );
+        // Every other frame differs from its neighbours, so the export's
+        // frame n is the best match only where both name one frame.
+        let (best, score) = best_match(picture(&shown), &exported);
+        if !(30..75).contains(&n) {
+            assert_eq!(best, n as usize, "frame {n} matches export frame {best}");
+        }
+        let here = psnr(picture(&shown), &exported[n as usize]);
+        assert!(here > 30.0, "frame {n}: PSNR {here} against the export");
+        assert!(score >= here, "frame {n}");
+    }
     player.close();
 }
 

@@ -193,6 +193,23 @@ fn exact(frames: i64, rate: Rational) -> String {
     )
 }
 
+/// The one frame a hold at `in_` shows: the newest at or before it, as the
+/// evaluator and the preview name it (#134, ADR-0023), not the first after.
+///
+/// No filter looks ahead, so `fps` does it: every frame at or before `in_`
+/// is stamped 0 and every later one a second, and `fps` emits the frame it
+/// holds for 0 only when a later one arrives, which is the last at or
+/// before. The clone `tpad` adds after the last frame is that later one when
+/// the hold is on the file's last frame. `fps` runs at the sequence's
+/// `rate`, so the frame leaves on the sequence's time base.
+fn held_frame(in_: i64, rate: Rational) -> String {
+    format!(
+        "tpad=stop=1:stop_mode=clone,setpts=if(lte(PTS\\,{in_})\\,0\\,1/TB),\
+         fps=fps={}:start_time=0,select=eq(n\\,0)",
+        rate_text(rate)
+    )
+}
+
 /// The encoder's options, the plan's choice for the output's reference.
 fn encode(mut command: SidecarCommand, choice: &EncoderChoice) -> SidecarCommand {
     for (name, value) in choice.arguments(choice.codec) {
@@ -276,8 +293,7 @@ pub fn render_job(
     let slower = format!("setpts=PTS*{}/{}", source.speed.den, source.speed.num);
     match source.motion {
         Some(Motion::Hold) => {
-            let mut graph =
-                format!("trim=start_pts={in_},setpts=PTS-STARTPTS,select=eq(n\\,0),{picture}");
+            let mut graph = format!("{},{picture}", held_frame(in_, rate));
             let _ = write!(
                 graph,
                 "loop=loop={}:size=1:start=0,{fit},{}",

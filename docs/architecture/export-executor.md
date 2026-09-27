@@ -193,7 +193,7 @@ reaches it without the plan's recorded reason.
 
 | Segment                 | What the renderer does                                                   |
 | ----------------------- | ------------------------------------------------------------------------ |
-| held frame              | decodes the one frame at the in-point and repeats it for the held length |
+| held frame              | decodes the frame on screen at the in-point, repeated (below)            |
 | reversed clip           | decodes a chunk at a time, last chunk first, each reversed (below)       |
 | speed no file carries   | retimes the pictures by the speed, then puts them on the sequence's grid |
 | clip in another shape   | scales to fit the sequence, pads the rest black, conforms the frame rate |
@@ -250,6 +250,18 @@ region against FFmpeg's own autorotated crop of the source for a clip turned
 0° and 90°. An HDR clip or a clip no encoder here can match is declined by
 the plan before anything runs. The dialog and the report name the crop as
 the reason and suggest removing it.
+
+### The held frame
+
+A hold shows the frame on screen at its in-point: the newest at or before it,
+as the evaluator and the preview name it
+([ADR-0023](../decisions/ADR-0023-a-source-timestamp-is-exact-to-half-a-tick.md),
+#134). No FFmpeg filter looks ahead to find the last frame before a time, and
+buffering from the seek point would hold seconds of 4K. So `fps` does it: every
+frame at or before the in-point is stamped 0 and every later one a second, and
+`fps`, at the sequence's rate, emits the frame it holds for 0 only when a later
+one arrives. A clone of the last frame (`tpad`) is that later one when the hold
+is on the file's last frame. One frame is held at a time.
 
 ### Reverse, in bounded memory
 

@@ -88,3 +88,4 @@ Why it was plausible. Why it lost.
 | [0020](./ADR-0020-crop-is-not-done-through-the-codec-cropping-window.md)                     | A crop is re-encoded; the codec's cropping window is not a lossless crop        | Accepted |
 | [0021](./ADR-0021-one-crop-filter-in-the-decoders-orientation.md)                            | One crop filter, applied in the orientation each decoder delivers               | Accepted |
 | [0022](./ADR-0022-reframe-is-one-edit-of-settings-and-per-clip-crops.md)                     | Reframe is one edit of settings and per-clip crops, sized by the sources        | Accepted |
+| [0023](./ADR-0023-a-source-timestamp-is-exact-to-half-a-tick.md)                             | A source timestamp is exact to half a tick                                      | Accepted |

@@ -28,13 +28,25 @@ file, no clock, no media. Per clip it resolves:
 | ---------------- | ----------------------------------------------------------------- |
 | Source range     | The last `trim`. Trims are absolute, so a later one replaces.     |
 | Speed            | The product of every `speed`, reduced (`6/2` → `3/1`).            |
-| Place and length | `start`; length in sequence frames, rounded **up**.               |
+| Place and length | `start`; length in sequence frames, rounded **up** (ADR-0023).    |
 | Audio chain      | `gain`, `denoise`, `normalise`, in the order given.               |
 | Errors           | Inconsistent graph, untrimmed clip, overlap on a track, overflow. |
 
 `Timeline::at(position)` is what applies at one sequence frame, including
-the source tick on screen (rounded **down**). It is the export's answer and
-the diagnostic view's content.
+the source tick on screen. It is the export's answer and the diagnostic view's
+content.
+
+A source timestamp is only exact to half a tick: the muxer rounded it. So a
+sequence frame's moment is taken to the **nearest** source tick
+(`Placement::ticks_into`), and a clip's length counts a partial last frame
+only when it is longer than half a tick (`Placement::frames_until`, rounded
+up after taking half a tick off). The two are one pair: the frame `ticks_into`
+puts at a tick is the one `frames_until` counts to it, so a split, a trim and
+the evaluator agree. On an exact time base (MP4's 1/15360 at 30 fps) this is
+the same as rounding down and up; on Matroska's milliseconds it is the
+difference between the frame the export writes and the one before it.
+[ADR-0023](../decisions/ADR-0023-a-source-timestamp-is-exact-to-half-a-tick.md)
+has the rule and the alternatives.
 
 ## Enforcing the single path
 
@@ -108,11 +120,16 @@ generates held and reversed clips too.
 The test exports the same graph and compares, frame by frame, the preview's
 picture with the source frame the evaluator names (bit for bit) and with the
 export's frame at the same sequence frame (it is the best match among all of
-them). On a source whose timestamps are rounded to milliseconds the
-evaluator's tick can fall a rounding error before a frame, forwards and
-backwards; that is
-[#134](https://github.com/ismetcahangirov/blinkify/issues/134), and the test
-uses MP4, whose time base holds every frame exactly.
+them). It runs on MP4, whose time base holds every frame exactly, and on
+Matroska, whose millisecond timestamps are rounded: forwards, held between two
+frames, and backwards
+([#134](https://github.com/ismetcahangirov/blinkify/issues/134)).
+
+A hold shows the frame **at or before** its in-point, the one on screen when
+it was frozen. The export's hold chooses the same frame (see
+[`export-executor.md`](./export-executor.md)), where it used to take the first
+frame at or after the in-point, which differs whenever the in-point is not a
+frame's own timestamp.
 
 A clip's speed changes its segment's time base: frames map through
 `source tb × speed`, and the audio decoder's `atempo` is the clip's speed

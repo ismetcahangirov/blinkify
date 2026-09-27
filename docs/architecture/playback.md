@@ -30,7 +30,12 @@ interpretation. Until then a plan is a whole file, or built by hand in tests.
 
 A segment converts between the two times with opposite roundings: a frame's
 place on the timeline rounds **up**, a timeline position's source tick rounds
-**down** (`crate::time`). That is what makes a frame survive the round trip —
+to the **nearest** tick, because a timestamp is itself only exact to half a
+tick
+([ADR-0023](../decisions/ADR-0023-a-source-timestamp-is-exact-to-half-a-tick.md)).
+A segment from the edit graph also ends no later than its clip's sequence
+frames, which do not count a last partial tick shorter than half a tick, so the
+next clip never overlaps it. That is what makes a frame survive the round trip —
 `time.rs` asserts it for every tick of a second in four time bases.
 
 ## Audio is the clock
