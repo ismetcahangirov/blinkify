@@ -1643,6 +1643,233 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/inspector/CropSection.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./CropSection.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/CropSection.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/inspector/CropSection.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./crop.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/crop.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./editGesture.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/editGesture.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./mixedValue.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/mixedValue.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../timeline/draw.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/draw.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/inspector/CropSection.test.tsx",
+        "apps/desktop/src/inspector/VideoInspector.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/inspector/DenoiseControl.test.tsx",
       "dependencies": [
         {
@@ -2371,6 +2598,23 @@
         },
         {
           "dynamic": false,
+          "module": "./CropSection.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/CropSection.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./SourceProperties.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2492,6 +2736,96 @@
       ],
       "dependents": [
         "apps/desktop/src/shell/zones/InspectorZone.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/inspector/crop.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./crop.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/inspector/crop.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/inspector/crop.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../project/project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/inspector/CropSection.tsx",
+        "apps/desktop/src/inspector/crop.test.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2644,6 +2978,7 @@
       ],
       "dependents": [
         "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts"
@@ -2830,6 +3165,7 @@
       "dependencies": [],
       "dependents": [
         "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/LoudnessControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
@@ -4869,6 +5205,197 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/project/ReframeDialog.test.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ReframeDialog.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/ReframeDialog.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./reframe.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/reframe.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/project/ReframeDialog.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./SequenceSettingsDialog.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/SequenceSettingsDialog.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./reframe.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/reframe.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/ui",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "import"
+          ],
+          "resolved": "packages/ui/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
+        "apps/desktop/src/shell/AppBar.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
       "dependencies": [
         {
@@ -5005,7 +5532,9 @@
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
+        "apps/desktop/src/project/ReframeDialog.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
+        "apps/desktop/src/project/reframe.ts",
         "apps/desktop/src/shell/AppBar.tsx"
       ],
       "orphan": false,
@@ -5162,6 +5691,8 @@
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/CropSection.test.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/DenoiseControl.test.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/LoudnessControl.test.tsx",
@@ -5170,6 +5701,7 @@
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
+        "apps/desktop/src/inspector/crop.ts",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/inspector/editGesture.ts",
         "apps/desktop/src/inspector/speed.ts",
@@ -5181,10 +5713,13 @@
         "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
+        "apps/desktop/src/project/ReframeDialog.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
+        "apps/desktop/src/project/reframe.ts",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.tsx",
@@ -5208,6 +5743,70 @@
         "apps/desktop/src/timeline/timeline.store.ts",
         "apps/desktop/src/timeline/timelineCommands.test.ts",
         "apps/desktop/src/timeline/timelineCommands.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "apps/desktop/src/project/reframe.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./SequenceSettingsDialog.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/SequenceSettingsDialog.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./project.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@blinkify/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "undetermined",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
+        "apps/desktop/src/project/ReframeDialog.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -5302,6 +5901,23 @@
             "import"
           ],
           "resolved": "apps/desktop/src/project/ProjectLifecycle.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../project/ReframeDialog.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/project/ReframeDialog.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8039,6 +8655,8 @@
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/CropSection.test.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/DenoiseControl.test.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/LoudnessControl.test.tsx",
@@ -9255,6 +9873,18 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/Aspect.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/PresetRect.ts",
+        "packages/types/src/generated/Reframe.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/AssetInfo.ts",
       "dependencies": [
         {
@@ -9563,6 +10193,34 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/ClipsCost.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./SoundCost",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/SoundCost.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/CodecCapability.ts",
       "dependencies": [
         {
@@ -9744,11 +10402,41 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/CropFrame.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./PresetRect",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/PresetRect.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/ProjectView.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/CropRect.ts",
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/PresetRect.ts",
         "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -9911,6 +10599,24 @@
     {
       "source": "packages/types/src/generated/Edit.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Aspect",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Aspect.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./AudioStage",
@@ -11791,6 +12497,53 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/PresetRect.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Aspect",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Aspect.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./CropRect",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/CropRect.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/CropFrame.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/PreviewOpened.ts",
       "dependencies": [
         {
@@ -11947,6 +12700,24 @@
             "import"
           ],
           "resolved": "packages/types/src/generated/CopyEligibility.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./CropFrame",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/CropFrame.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -12218,6 +12989,109 @@
     {
       "source": "packages/types/src/generated/RecoveryOffer.ts",
       "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/Reframe.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Aspect",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Aspect.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ReframeBasis",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ReframeBasis.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SequenceSettings",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/SequenceSettings.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "packages/types/src/generated/ReframeImpact.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/ReframeBasis.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Reframe.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/ReframeImpact.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Reframe",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/Reframe.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "packages/types/src/generated/index.ts"
       ],
@@ -12666,6 +13540,7 @@
         "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/ExportPlan.ts",
+        "packages/types/src/generated/Reframe.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -12752,6 +13627,16 @@
       "dependencies": [],
       "dependents": [
         "packages/types/src/generated/SnapOffer.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "packages/types/src/generated/SoundCost.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/ClipsCost.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -13613,6 +14498,23 @@
         },
         {
           "dynamic": false,
+          "module": "./Aspect",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Aspect.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./AssetInfo",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -13851,6 +14753,23 @@
         },
         {
           "dynamic": false,
+          "module": "./ClipsCost",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ClipsCost.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./CodecCapability",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -13961,6 +14880,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/CopyNote.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./CropFrame",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/CropFrame.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15143,6 +16079,23 @@
         },
         {
           "dynamic": false,
+          "module": "./PresetRect",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/PresetRect.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./PreviewOpened",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15381,6 +16334,57 @@
         },
         {
           "dynamic": false,
+          "module": "./Reframe",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/Reframe.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ReframeBasis",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ReframeBasis.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ReframeImpact",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/ReframeImpact.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Refusal",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -15593,6 +16597,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/SnappedCut.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SoundCost",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/SoundCost.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -16053,10 +17074,14 @@
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/CropSection.test.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/LoudnessControl.test.tsx",
         "apps/desktop/src/inspector/LoudnessControl.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
+        "apps/desktop/src/inspector/crop.test.ts",
+        "apps/desktop/src/inspector/crop.ts",
         "apps/desktop/src/inspector/denoise.ts",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/inspector/editGesture.ts",
@@ -16082,10 +17107,13 @@
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
+        "apps/desktop/src/project/ReframeDialog.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/project/reframe.ts",
         "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
@@ -17747,6 +18775,8 @@
         "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/CropSection.test.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/LoudnessControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
@@ -17762,6 +18792,8 @@
         "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
+        "apps/desktop/src/project/ReframeDialog.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
@@ -18326,8 +19358,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 355,
-    "totalDependenciesCruised": 837,
+    "totalCruised": 370,
+    "totalDependenciesCruised": 886,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

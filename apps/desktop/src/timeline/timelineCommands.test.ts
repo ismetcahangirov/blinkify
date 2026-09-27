@@ -64,6 +64,7 @@ function view(): ProjectView {
     extents: [],
     assets: {},
     speeds: {},
+    frames: {},
   };
 }
 

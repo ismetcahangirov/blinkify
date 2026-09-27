@@ -17,6 +17,7 @@ import { ExportDialog } from "../export/ExportDialog.js";
 import { ExportQueueButton } from "../export/ExportQueue.js";
 import { LosslessIndicator } from "../export/LosslessIndicator.js";
 import { HistoryControls } from "../project/HistoryControls.js";
+import { ReframeDialog } from "../project/ReframeDialog.js";
 import { SequenceSettingsDialog } from "../project/SequenceSettingsDialog.js";
 import { ShortcutReference } from "../shortcuts/ShortcutReference.js";
 import { ThirdPartyNotices } from "./ThirdPartyNotices.js";
@@ -55,6 +56,9 @@ const noop = (): void => undefined;
 interface MenuActions {
   /** Open the sequence settings (#57); `null` with no project open. */
   readonly sequenceSettings: (() => void) | null;
+  /** Reframe the sequence to another shape (#132); `null` with no project
+   * open. */
+  readonly reframe: (() => void) | null;
   /** Whether a project is open, for Save and Close (#54). */
   readonly hasProject: boolean;
   /** Recently opened projects (#54), most recent first. */
@@ -128,6 +132,12 @@ const menus = (
             label: "Sequence settings…",
             disabled: actions.sequenceSettings === null,
             onSelect: actions.sequenceSettings ?? noop,
+          },
+          {
+            id: "reframe",
+            label: "Reframe…",
+            disabled: actions.reframe === null,
+            onSelect: actions.reframe ?? noop,
           },
         ],
       },
@@ -214,6 +224,7 @@ export function AppBar() {
   const hasProject = useProjectStore((state) => state.view !== null);
   const recent = useProjectStore((state) => state.recent);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [reframeOpen, setReframeOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [noticesOpen, setNoticesOpen] = useState(false);
 
@@ -247,6 +258,7 @@ export function AppBar() {
       <nav className="shell__menus" aria-label="Main menu">
         {menus({
           sequenceSettings: hasProject ? () => setSettingsOpen(true) : null,
+          reframe: hasProject ? () => setReframeOpen(true) : null,
           hasProject,
           recent,
           notices: () => setNoticesOpen(true),
@@ -320,7 +332,12 @@ export function AppBar() {
       <SequenceSettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
+        onReframe={() => {
+          setSettingsOpen(false);
+          setReframeOpen(true);
+        }}
       />
+      <ReframeDialog open={reframeOpen} onOpenChange={setReframeOpen} />
       <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
       <ShortcutReference />
       <ThirdPartyNotices open={noticesOpen} onOpenChange={setNoticesOpen} />

@@ -122,6 +122,7 @@ function view(
     extents: [],
     assets: { 1: PHONE },
     speeds,
+    frames: {},
   };
 }
 
@@ -343,5 +344,25 @@ describe("the inspector", () => {
     expect(
       screen.getByText("A reversed clip is re-encoded whatever its speed."),
     ).toBeVisible();
+  });
+
+  it("offers a crop for pictures and none for a sound-only selection", () => {
+    const sound: Placement = { ...placement(2), kind: "audio" };
+    const current = view([placement(1)]);
+    const tracks = current.timeline?.tracks ?? [];
+    tracks.push({
+      id: 2,
+      kind: "audio",
+      visible: true,
+      audible: true,
+      placements: [sound],
+    });
+    show(current, [2]);
+    expect(screen.queryByRole("heading", { name: "Crop" })).toBeNull();
+    expect(screen.getByRole("heading", { name: "Audio" })).toBeVisible();
+    act(() => {
+      useProjectStore.setState({ selection: [1] });
+    });
+    expect(screen.getByRole("heading", { name: "Crop" })).toBeVisible();
   });
 });

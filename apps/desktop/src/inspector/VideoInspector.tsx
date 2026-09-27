@@ -2,15 +2,16 @@ import { Button } from "@blinkify/ui";
 import { useProjectStore } from "../project/project.store.js";
 import type { Placement } from "../timeline/draw.js";
 import { ClipTimingFields } from "./ClipTimingFields.js";
+import { CropSection } from "./CropSection.js";
 import { SourceProperties } from "./SourceProperties.js";
 import { SpeedControl } from "./SpeedControl.js";
 import { shared } from "./mixedValue.js";
 import { NORMAL_SPEED, sameRatio } from "./speed.js";
 
 /**
- * The video section (#56): the selected video clips' timing, speed and
- * source, in the order the layout reference gives (clip, speed, then what
- * the source is).
+ * The video section (#56): the selected video clips' timing, speed, crop
+ * (#130) and source, in the order the layout reference gives (clip, speed,
+ * transform, then what the source is).
  *
  * A view of the selection and nothing else. It reads the evaluated graph
  * and sends edits; it holds no copy of a value that could disagree with
@@ -62,6 +63,8 @@ export function VideoInspector({ clips }: { clips: readonly Placement[] }) {
         </h3>
         <SpeedControl clips={clips} />
       </section>
+
+      <CropSection clips={clips} />
 
       <section className="inspector-section" aria-labelledby="inspector-source">
         <h3 id="inspector-source" className="inspector-section__title">

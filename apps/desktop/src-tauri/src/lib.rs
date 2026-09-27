@@ -123,6 +123,8 @@ pub fn run() {
             export::clear_export_history,
             project::operations_at,
             project::plan_export,
+            project::clip_cost,
+            project::preview_reframe,
             project::gain_advice,
             loudness::loudness_report,
             loudness::sequence_loudness_report,

@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 355,
-    "tests": 52,
+    "files": 370,
+    "tests": 55,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 135,
-      "tests": 46,
+      "files": 142,
+      "tests": 49,
       "untested": [
         "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/inspector/SequenceSummary.tsx",
@@ -42,11 +42,12 @@
       ]
     },
     "packages/types": {
-      "files": 145,
+      "files": 153,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
         "packages/types/src/generated/AppliedClip.ts",
+        "packages/types/src/generated/Aspect.ts",
         "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/AudioEncoding.ts",
         "packages/types/src/generated/AudioInfo.ts",
@@ -61,6 +62,7 @@
         "packages/types/src/generated/ChromaSubsampling.ts",
         "packages/types/src/generated/Clip.ts",
         "packages/types/src/generated/ClipMove.ts",
+        "packages/types/src/generated/ClipsCost.ts",
         "packages/types/src/generated/CodecCapability.ts",
         "packages/types/src/generated/Color.ts",
         "packages/types/src/generated/ColourPolicy.ts",
@@ -68,6 +70,7 @@
         "packages/types/src/generated/ContentLight.ts",
         "packages/types/src/generated/CopyEligibility.ts",
         "packages/types/src/generated/CopyNote.ts",
+        "packages/types/src/generated/CropFrame.ts",
         "packages/types/src/generated/CropRect.ts",
         "packages/types/src/generated/CutPoint.ts",
         "packages/types/src/generated/Decline.ts",
@@ -137,6 +140,7 @@
         "packages/types/src/generated/PlaybackState.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/PlaybackUpdate.ts",
+        "packages/types/src/generated/PresetRect.ts",
         "packages/types/src/generated/PreviewOpened.ts",
         "packages/types/src/generated/PreviewSpeed.ts",
         "packages/types/src/generated/ProfileCapability.ts",
@@ -151,6 +155,9 @@
         "packages/types/src/generated/Reason.ts",
         "packages/types/src/generated/RecentProject.ts",
         "packages/types/src/generated/RecoveryOffer.ts",
+        "packages/types/src/generated/Reframe.ts",
+        "packages/types/src/generated/ReframeBasis.ts",
+        "packages/types/src/generated/ReframeImpact.ts",
         "packages/types/src/generated/Refusal.ts",
         "packages/types/src/generated/ReportSegment.ts",
         "packages/types/src/generated/SeamReason.ts",
@@ -164,6 +171,7 @@
         "packages/types/src/generated/SizeEstimate.ts",
         "packages/types/src/generated/SnapOffer.ts",
         "packages/types/src/generated/SnappedCut.ts",
+        "packages/types/src/generated/SoundCost.ts",
         "packages/types/src/generated/SourceProfile.ts",
         "packages/types/src/generated/SourceRef.ts",
         "packages/types/src/generated/SourceStatus.ts",
@@ -620,6 +628,43 @@
       ],
       "hasNoDependents": false
     },
+    "apps/desktop/src/inspector/CropSection.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/inspector/CropSection.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/inspector/CropSection.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/inspector/crop.ts",
+        "apps/desktop/src/inspector/editGesture.ts",
+        "apps/desktop/src/inspector/mixedValue.ts",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/draw.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/CropSection.test.tsx",
+        "apps/desktop/src/inspector/VideoInspector.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/CropSection.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/inspector/DenoiseControl.test.tsx": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -749,6 +794,7 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/mixedValue.ts",
@@ -761,6 +807,35 @@
         "apps/desktop/src/shell/zones/InspectorZone.tsx"
       ],
       "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/inspector/crop.test.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/inspector/crop.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/inspector/crop.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/inspector/CropSection.tsx",
+        "apps/desktop/src/inspector/crop.test.ts"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/inspector/crop.test.ts"
+      ],
       "hasNoDependents": false
     },
     "apps/desktop/src/inspector/denoise.ts": {
@@ -803,6 +878,7 @@
       ],
       "dependedOnBy": [
         "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts"
@@ -869,6 +945,7 @@
       "dependsOn": [],
       "dependedOnBy": [
         "apps/desktop/src/inspector/AudioInspector.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/LoudnessControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
@@ -1505,6 +1582,41 @@
       ],
       "hasNoDependents": false
     },
+    "apps/desktop/src/project/ReframeDialog.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/project/ReframeDialog.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/project/reframe.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/project/ReframeDialog.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/project/reframe.ts",
+        "packages/types/src/index.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
+        "apps/desktop/src/shell/AppBar.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/project/ReframeDialog.test.tsx"
+      ],
+      "hasNoDependents": false
+    },
     "apps/desktop/src/project/SequenceSettingsDialog.test.tsx": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -1532,7 +1644,9 @@
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
+        "apps/desktop/src/project/ReframeDialog.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
+        "apps/desktop/src/project/reframe.ts",
         "apps/desktop/src/shell/AppBar.tsx"
       ],
       "coveredByTests": [
@@ -1585,6 +1699,8 @@
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/CropSection.test.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/DenoiseControl.test.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/LoudnessControl.test.tsx",
@@ -1594,6 +1710,7 @@
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
+        "apps/desktop/src/inspector/crop.ts",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/inspector/editGesture.ts",
         "apps/desktop/src/inspector/speed.ts",
@@ -1605,10 +1722,13 @@
         "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
+        "apps/desktop/src/project/ReframeDialog.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/SourcesBanner.tsx",
+        "apps/desktop/src/project/reframe.ts",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.tsx",
@@ -1636,12 +1756,14 @@
       "coveredByTests": [
         "apps/desktop/src/export/ExportDialog.test.tsx",
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
+        "apps/desktop/src/inspector/CropSection.test.tsx",
         "apps/desktop/src/inspector/DenoiseControl.test.tsx",
         "apps/desktop/src/inspector/LoudnessControl.test.tsx",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
@@ -1650,6 +1772,24 @@
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
         "apps/desktop/src/timeline/timelineCommands.test.ts"
+      ],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/project/reframe.ts": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "apps/desktop/src/project/SequenceSettingsDialog.tsx",
+        "apps/desktop/src/project/project.store.ts",
+        "packages/types/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
+        "apps/desktop/src/project/ReframeDialog.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/project/ReframeDialog.test.tsx"
       ],
       "hasNoDependents": false
     },
@@ -1674,6 +1814,7 @@
         "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
+        "apps/desktop/src/project/ReframeDialog.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/project.store.ts",
         "apps/desktop/src/shell/ThirdPartyNotices.tsx",
@@ -2251,6 +2392,8 @@
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/CropSection.test.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/DenoiseControl.test.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/LoudnessControl.test.tsx",
@@ -2281,6 +2424,7 @@
       "coveredByTests": [
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/inspector/CropSection.test.tsx",
         "apps/desktop/src/inspector/DenoiseControl.test.tsx",
         "apps/desktop/src/inspector/LoudnessControl.test.tsx",
         "apps/desktop/src/inspector/gain.test.ts",
@@ -2657,6 +2801,20 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Aspect.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/PresetRect.ts",
+        "packages/types/src/generated/Reframe.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/AssetInfo.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2840,6 +2998,19 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/ClipsCost.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/SoundCost.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/CodecCapability.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2933,6 +3104,20 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/CropFrame.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/PresetRect.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/ProjectView.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/CropRect.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -2941,6 +3126,7 @@
       "dependedOnBy": [
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/PresetRect.ts",
         "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -3053,6 +3239,7 @@
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
+        "packages/types/src/generated/Aspect.ts",
         "packages/types/src/generated/AudioStage.ts",
         "packages/types/src/generated/ClipMove.ts",
         "packages/types/src/generated/CropRect.ts",
@@ -3860,6 +4047,21 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/PresetRect.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Aspect.ts",
+        "packages/types/src/generated/CropRect.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/CropFrame.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/PreviewOpened.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -3934,6 +4136,7 @@
       "dependsOn": [
         "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/CopyEligibility.ts",
+        "packages/types/src/generated/CropFrame.ts",
         "packages/types/src/generated/HistoryView.ts",
         "packages/types/src/generated/Project.ts",
         "packages/types/src/generated/SourceStatus.ts",
@@ -4067,6 +4270,47 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/Reframe.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Aspect.ts",
+        "packages/types/src/generated/ReframeBasis.ts",
+        "packages/types/src/generated/SequenceSettings.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/ReframeImpact.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/ReframeBasis.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Reframe.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/ReframeImpact.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [
+        "packages/types/src/generated/Reframe.ts"
+      ],
+      "dependedOnBy": [
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/Refusal.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -4185,6 +4429,7 @@
         "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/ExportPlan.ts",
+        "packages/types/src/generated/Reframe.ts",
         "packages/types/src/generated/Sequence.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -4247,6 +4492,18 @@
       "dependsOn": [],
       "dependedOnBy": [
         "packages/types/src/generated/SnapOffer.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "packages/types/src/generated/SoundCost.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/ClipsCost.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -4597,6 +4854,7 @@
       "dependsOn": [
         "packages/types/src/generated/Applied.ts",
         "packages/types/src/generated/AppliedClip.ts",
+        "packages/types/src/generated/Aspect.ts",
         "packages/types/src/generated/AssetInfo.ts",
         "packages/types/src/generated/AudioEncoding.ts",
         "packages/types/src/generated/AudioInfo.ts",
@@ -4611,6 +4869,7 @@
         "packages/types/src/generated/ChromaSubsampling.ts",
         "packages/types/src/generated/Clip.ts",
         "packages/types/src/generated/ClipMove.ts",
+        "packages/types/src/generated/ClipsCost.ts",
         "packages/types/src/generated/CodecCapability.ts",
         "packages/types/src/generated/Color.ts",
         "packages/types/src/generated/ColourPolicy.ts",
@@ -4618,6 +4877,7 @@
         "packages/types/src/generated/ContentLight.ts",
         "packages/types/src/generated/CopyEligibility.ts",
         "packages/types/src/generated/CopyNote.ts",
+        "packages/types/src/generated/CropFrame.ts",
         "packages/types/src/generated/CropRect.ts",
         "packages/types/src/generated/CutPoint.ts",
         "packages/types/src/generated/Decline.ts",
@@ -4687,6 +4947,7 @@
         "packages/types/src/generated/PlaybackState.ts",
         "packages/types/src/generated/PlaybackStatus.ts",
         "packages/types/src/generated/PlaybackUpdate.ts",
+        "packages/types/src/generated/PresetRect.ts",
         "packages/types/src/generated/PreviewOpened.ts",
         "packages/types/src/generated/PreviewSpeed.ts",
         "packages/types/src/generated/ProfileCapability.ts",
@@ -4701,6 +4962,9 @@
         "packages/types/src/generated/Reason.ts",
         "packages/types/src/generated/RecentProject.ts",
         "packages/types/src/generated/RecoveryOffer.ts",
+        "packages/types/src/generated/Reframe.ts",
+        "packages/types/src/generated/ReframeBasis.ts",
+        "packages/types/src/generated/ReframeImpact.ts",
         "packages/types/src/generated/Refusal.ts",
         "packages/types/src/generated/ReportSegment.ts",
         "packages/types/src/generated/SeamReason.ts",
@@ -4714,6 +4978,7 @@
         "packages/types/src/generated/SizeEstimate.ts",
         "packages/types/src/generated/SnapOffer.ts",
         "packages/types/src/generated/SnappedCut.ts",
+        "packages/types/src/generated/SoundCost.ts",
         "packages/types/src/generated/SourceProfile.ts",
         "packages/types/src/generated/SourceRef.ts",
         "packages/types/src/generated/SourceStatus.ts",
@@ -4769,10 +5034,14 @@
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/CropSection.test.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/LoudnessControl.test.tsx",
         "apps/desktop/src/inspector/LoudnessControl.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
+        "apps/desktop/src/inspector/crop.test.ts",
+        "apps/desktop/src/inspector/crop.ts",
         "apps/desktop/src/inspector/denoise.ts",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/inspector/editGesture.ts",
@@ -4798,10 +5067,13 @@
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
+        "apps/desktop/src/project/ReframeDialog.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/project/reframe.ts",
         "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.tsx",
@@ -4834,7 +5106,9 @@
         "apps/desktop/src/export/exportJobs.test.ts",
         "apps/desktop/src/inspector/AudioInspector.test.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.test.ts",
+        "apps/desktop/src/inspector/CropSection.test.tsx",
         "apps/desktop/src/inspector/LoudnessControl.test.tsx",
+        "apps/desktop/src/inspector/crop.test.ts",
         "apps/desktop/src/inspector/editGesture.test.ts",
         "apps/desktop/src/inspector/gain.test.ts",
         "apps/desktop/src/inspector/speed.test.ts",
@@ -4846,6 +5120,7 @@
         "apps/desktop/src/player/preview.store.test.ts",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SourcesBanner.test.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
@@ -5400,6 +5675,8 @@
         "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/inspector/AudioInspector.tsx",
         "apps/desktop/src/inspector/ClipTimingFields.tsx",
+        "apps/desktop/src/inspector/CropSection.test.tsx",
+        "apps/desktop/src/inspector/CropSection.tsx",
         "apps/desktop/src/inspector/DenoiseControl.tsx",
         "apps/desktop/src/inspector/LoudnessControl.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
@@ -5415,6 +5692,8 @@
         "apps/desktop/src/project/HistoryControls.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.tsx",
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
+        "apps/desktop/src/project/ReframeDialog.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
@@ -5436,10 +5715,12 @@
         "apps/desktop/src/App.test.tsx",
         "apps/desktop/src/export/ExportDialog.test.tsx",
         "apps/desktop/src/export/ExportReportDialog.test.tsx",
+        "apps/desktop/src/inspector/CropSection.test.tsx",
         "apps/desktop/src/player/MonitorControls.test.tsx",
         "apps/desktop/src/player/TransportBar.test.tsx",
         "apps/desktop/src/project/HistoryControls.test.tsx",
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
+        "apps/desktop/src/project/ReframeDialog.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
         "apps/desktop/src/shell/ThirdPartyNotices.test.tsx",

@@ -47,6 +47,7 @@ function view(dirty = false, path: string | null = null): ProjectView {
     extents: [],
     assets: {},
     speeds: {},
+    frames: {},
   };
 }
 

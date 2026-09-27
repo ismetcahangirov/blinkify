@@ -315,12 +315,12 @@ a user ends up with a fully re-encoded export and no idea why.
 
 **A video clip selected.** In order:
 
-| Section   | Contents                                                                                | Tier                                                                                                       |
-| --------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Clip      | Source file, in and out points, duration                                                | Tier 1 or 2 — a trim is a cut, not a filter.                                                               |
-| Speed     | Constant speed change (#56, #42)                                                        | Tier 1 while the resulting rate is 1–240 fps: timestamps are rescaled and the pixels untouched (ADR-0009). |
-| Transform | Crop, scale, rotation — reserved, not yet built                                         | **Tier 3.** Any of these changes pixels and forces a re-encode of the segment.                             |
-| Audio     | The clip's own audio: noise reduction, gain, loudness (#46–#49), and detaching it (#36) | Its own tier. Audio is a separate stream and a gain filter must not drag video into tier 3.                |
+| Section   | Contents                                                                                   | Tier                                                                                                       |
+| --------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Clip      | Source file, in and out points, duration                                                   | Tier 1 or 2 — a trim is a cut, not a filter.                                                               |
+| Speed     | Constant speed change (#56, #42)                                                           | Tier 1 while the resulting rate is 1–240 fps: timestamps are rescaled and the pixels untouched (ADR-0009). |
+| Transform | Crop (#130): left, top, width, height; aspect presets; reset. Scale and rotation not built | **Tier 3.** A crop re-encodes the clip's pictures; its sound is still copied. Stated in the section.       |
+| Audio     | The clip's own audio: noise reduction, gain, loudness (#46–#49), and detaching it (#36)    | Its own tier. Audio is a separate stream and a gain filter must not drag video into tier 3.                |
 
 Several clips selected show each property they share, and **mixed** for one
 they do not; setting a mixed property is explicit and applies to every selected
@@ -330,6 +330,29 @@ Every section that would force a re-encode says so, in the section, before the
 user commits to it — not in the export dialog afterwards. `CLAUDE.md` section 20
 rule 3: if the output will differ from the source, the user is told before the
 export starts.
+
+**The Transform section** is titled **Crop**, because crop is the only
+transform that exists; it shows no scale or rotation field until one is built.
+In order:
+
+- **Aspect**: Free, Source, 16:9, 9:16, 1:1, 4:5. A preset fits the largest
+  centred rectangle of that shape to each selected clip's own picture, as the
+  engine rounds it. Free is what the control reads when the sides match no
+  preset; it is reached by typing the sides, so it cannot be chosen.
+- **Left, top, width, height**, two by two, in the source's pixels as
+  displayed, stepping on its chroma grid. A value the engine refuses is shown
+  under its field, in the warning colour, with the reason — never as a toast.
+- **Reset crop**, in the section header.
+- **The cost**, from the export plan, in the statement style the speed and
+  gain sections use: "Cropping re-encodes this clip's pictures (4.2 s). Its
+  sound is still copied." with the re-encode tone, or "Not cropped: this
+  clip's pictures are copied bit for bit." with the lossless tone.
+
+**Reframe** is in the File menu and in Sequence settings. Its dialog chooses
+9:16, 1:1, 4:5 or 16:9 and states, before anything is applied, what the
+engine decided and what it costs — clips re-encoded and for how long, clips
+that stay copies, the size chosen and why, clips scaled up, clips left on
+locked tracks. Applying it is one edit; one undo takes it back.
 
 **An audio clip selected — and the Audio section of a video clip with sound.**
 In the order the chain runs them (ADR-0011):

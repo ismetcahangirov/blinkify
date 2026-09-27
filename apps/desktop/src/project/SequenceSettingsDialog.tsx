@@ -98,21 +98,31 @@ export function impactStatement(impact: SettingsImpact): string {
 export function SequenceSettingsDialog({
   open,
   onOpenChange,
+  onReframe,
 }: {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
+  /** Change the shape with each clip's crop placed instead (#132). */
+  readonly onReframe?: () => void;
 }) {
   const hasProject = useProjectStore((state) => state.view !== null);
   // Mounted only while open, so each opening starts from what the sequence
   // has rather than from a draft left over from the last one.
   if (!open || !hasProject) return null;
-  return <SettingsDialogBody onOpenChange={onOpenChange} />;
+  return (
+    <SettingsDialogBody
+      onOpenChange={onOpenChange}
+      {...(onReframe ? { onReframe } : {})}
+    />
+  );
 }
 
 function SettingsDialogBody({
   onOpenChange,
+  onReframe,
 }: {
   readonly onOpenChange: (open: boolean) => void;
+  readonly onReframe?: () => void;
 }) {
   const view = useProjectStore((state) => state.view);
   const edit = useProjectStore((state) => state.edit);
@@ -272,6 +282,17 @@ function SettingsDialogBody({
             would have to be re-encoded is declined, never converted.
           </dd>
         </dl>
+        {onReframe ? (
+          <div className="sequence-settings__reframe">
+            <p className="sequence-settings__note">
+              A new size here scales every clip to fit. To change the shape with
+              each clip cropped to it instead, reframe.
+            </p>
+            <Button size="sm" variant="secondary" onClick={onReframe}>
+              Reframe…
+            </Button>
+          </div>
+        ) : null}
         <p
           className="sequence-settings__impact"
           role="status"

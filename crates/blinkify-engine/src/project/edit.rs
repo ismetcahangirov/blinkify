@@ -34,7 +34,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
 
-use super::crop::CropRect;
+use super::crop::{Aspect, CropRect, centred};
 use super::evaluate::{EvaluatedTrack, Motion, Placement, Timeline, evaluate};
 use super::settings::{CopyEligibility, SettingsError, StreamGeometry, copy_eligibility};
 use super::split::halves;
@@ -283,6 +283,31 @@ pub enum Edit {
     ResetCrop {
         clips: Vec<ClipId>,
     },
+    /// Set some sides of video clips' crops (#130), each clip keeping its
+    /// own other sides; a clip not cropped starts from its whole picture.
+    /// What a multi-clip selection's fields send: the side the user changed,
+    /// applied to every clip, and nothing they did not.
+    SetCropSides {
+        clips: Vec<ClipId>,
+        x: Option<u32>,
+        y: Option<u32>,
+        width: Option<u32>,
+        height: Option<u32>,
+    },
+    /// Crop video clips to the largest centred rectangle of `aspect` each
+    /// one's own picture holds (#130), rounded to its grid by the engine.
+    /// `source` removes the crop.
+    CropToAspect {
+        clips: Vec<ClipId>,
+        aspect: Aspect,
+    },
+    /// Reframe the sequence to `aspect` (#132): the sequence settings take
+    /// that shape and every video clip on an unlocked track a centred crop of
+    /// it. One edit made of settings and per-clip crops, so it undoes
+    /// exactly (ADR-0022). A clip already of that shape is not cropped.
+    Reframe {
+        aspect: Aspect,
+    },
 }
 
 impl Edit {
@@ -360,8 +385,22 @@ impl Edit {
             Self::SnapToKeyframes { snaps } => {
                 clips(snaps.len(), "Snap cut to keyframes", "Snap cuts of")
             }
-            Self::SetCrop { clips: ids, .. } => clips(ids.len(), "Crop clip", "Crop"),
-            Self::ResetCrop { clips: ids } => clips(ids.len(), "Reset crop", "Reset crop of"),
+            Self::SetCrop { clips: ids, .. } | Self::SetCropSides { clips: ids, .. } => {
+                clips(ids.len(), "Crop clip", "Crop")
+            }
+            Self::ResetCrop { clips: ids }
+            | Self::CropToAspect {
+                clips: ids,
+                aspect: Aspect::Source,
+            } => clips(ids.len(), "Reset crop", "Reset crop of"),
+            Self::CropToAspect { clips: ids, aspect } => {
+                if ids.len() == 1 {
+                    format!("Crop to {aspect}")
+                } else {
+                    format!("Crop {} clips to {aspect}", ids.len())
+                }
+            }
+            Self::Reframe { aspect } => format!("Reframe to {aspect}"),
         }
     }
 }
@@ -639,9 +678,9 @@ impl From<(Vec<Change>, Vec<ClipId>)> for Compiled {
 /// What the document knows about its sources that is not in the graph: read
 /// from the files, never saved.
 #[derive(Debug, Default)]
-struct Facts {
+pub(super) struct Facts {
     /// What each source's pictures are (#57).
-    geometry: BTreeMap<SourceId, StreamGeometry>,
+    pub(super) geometry: BTreeMap<SourceId, StreamGeometry>,
     /// Which ticks of each source stream exist (#34).
     extents: BTreeMap<(SourceId, u32), StreamExtent>,
     /// What the library shows of each source (#53).
@@ -735,6 +774,20 @@ fn compile(
         Edit::BypassAudio { clips, bypassed } => (bypass_audio(project, clips, *bypassed)?, kept),
         Edit::SetCrop { clips, rect } => (set_crop(project, facts, clips, Some(*rect))?, kept),
         Edit::ResetCrop { clips } => (set_crop(project, facts, clips, None)?, kept),
+        Edit::SetCropSides {
+            clips,
+            x,
+            y,
+            width,
+            height,
+        } => (
+            set_crop_sides(project, facts, clips, [*x, *y, *width, *height])?,
+            kept,
+        ),
+        Edit::CropToAspect { clips, aspect } => {
+            (crop_to_aspect(project, facts, clips, *aspect)?, kept)
+        }
+        Edit::Reframe { aspect } => (super::reframe::reframe(project, facts, *aspect)?.1, kept),
         Edit::SetSequenceLoudness { loudness } => {
             if let Some(target) = loudness
                 && !target.is_valid()
@@ -1341,10 +1394,60 @@ fn set_reverse(
     Ok(changes)
 }
 
+/// The picture `clip` of `track` shows, for a crop to be checked against.
+/// A sound clip has none; a source whose shape is not known (offline,
+/// unreadable) cannot be cropped, since whether a rectangle fits cannot be
+/// told.
+pub(super) fn picture<'a>(
+    facts: &'a Facts,
+    track: &Track,
+    clip: &Clip,
+) -> Result<&'a StreamGeometry, EditError> {
+    let id = clip.id;
+    if track.kind != TrackKind::Video {
+        return Err(EditError::Refused(format!(
+            "clip {id} is sound: it has no picture to crop"
+        )));
+    }
+    facts.geometry.get(&clip.source).ok_or_else(|| {
+        EditError::Refused(format!(
+            "clip {id}'s source is offline or could not be read, so its picture \
+             size is not known: relink it before cropping"
+        ))
+    })
+}
+
+/// The clip's crop, if it has one.
+pub(super) fn crop_of(clip: &Clip) -> Option<CropRect> {
+    clip.operations.iter().rev().find_map(Operation::crop_rect)
+}
+
+/// `clip` cropped to `wanted` (or, with `None`, not cropped) as a change,
+/// or nothing when that is what it already is. A rectangle that is the whole
+/// of `shape` is no crop.
+pub(super) fn recropped(
+    clip: &Clip,
+    wanted: Option<CropRect>,
+    shape: Option<&StreamGeometry>,
+) -> Option<Change> {
+    let wanted = wanted.filter(|rect| shape.is_none_or(|shape| !rect.is_whole(shape)));
+    let mut operations: Vec<Operation> = clip
+        .operations
+        .iter()
+        .filter(|operation| operation.crop_rect().is_none())
+        .copied()
+        .collect();
+    operations.extend(wanted.map(Operation::crop));
+    (operations != clip.operations).then(|| {
+        Change::ReplaceClip(Clip {
+            operations,
+            ..clip.clone()
+        })
+    })
+}
+
 /// Crop video clips to `rect`, or with `None` remove their crops. The
-/// rectangle is checked against each clip's source: a source whose shape is
-/// not known — offline, unreadable — cannot be cropped, since whether the
-/// rectangle fits cannot be told.
+/// rectangle is checked against each clip's source ([`picture`]).
 fn set_crop(
     project: &Project,
     facts: &Facts,
@@ -1354,37 +1457,71 @@ fn set_crop(
     let mut changes = Vec::new();
     for &id in &clips.iter().copied().collect::<BTreeSet<_>>() {
         let (track, clip) = find(project, id)?;
-        let wanted = match rect {
+        let shape = match rect {
             Some(rect) => {
-                if track.kind != TrackKind::Video {
-                    return Err(EditError::Refused(format!(
-                        "clip {id} is sound: it has no picture to crop"
-                    )));
-                }
-                let shape = facts.geometry.get(&clip.source).ok_or_else(|| {
-                    EditError::Refused(format!(
-                        "clip {id}'s source is offline or could not be read, so its picture                          size is not known: relink it before cropping"
-                    ))
-                })?;
+                let shape = picture(facts, track, clip)?;
                 super::crop::check(&rect, shape)
                     .map_err(|error| EditError::Refused(format!("clip {id}: {error}")))?;
-                (!rect.is_whole(shape)).then(|| Operation::crop(rect))
+                Some(shape)
             }
             None => None,
         };
-        let mut operations: Vec<Operation> = clip
-            .operations
-            .iter()
-            .filter(|operation| operation.crop_rect().is_none())
-            .copied()
-            .collect();
-        operations.extend(wanted);
-        if operations != clip.operations {
-            changes.push(Change::ReplaceClip(Clip {
-                operations,
-                ..clip.clone()
-            }));
+        changes.extend(recropped(clip, rect, shape));
+    }
+    Ok(changes)
+}
+
+/// Set the given sides (left, top, width, height) of each clip's crop,
+/// keeping its others.
+fn set_crop_sides(
+    project: &Project,
+    facts: &Facts,
+    clips: &[ClipId],
+    [x, y, width, height]: [Option<u32>; 4],
+) -> Result<Vec<Change>, EditError> {
+    let mut changes = Vec::new();
+    for &id in &clips.iter().copied().collect::<BTreeSet<_>>() {
+        let (track, clip) = find(project, id)?;
+        let shape = picture(facts, track, clip)?;
+        let now = crop_of(clip).unwrap_or_else(|| CropRect::whole(shape.width, shape.height));
+        let rect = CropRect {
+            x: x.unwrap_or(now.x),
+            y: y.unwrap_or(now.y),
+            width: width.unwrap_or(now.width),
+            height: height.unwrap_or(now.height),
+        };
+        super::crop::check(&rect, shape)
+            .map_err(|error| EditError::Refused(format!("clip {id}: {error}")))?;
+        changes.extend(recropped(clip, Some(rect), Some(shape)));
+    }
+    Ok(changes)
+}
+
+/// Crop each clip to the largest centred rectangle of `aspect` its own
+/// picture holds.
+fn crop_to_aspect(
+    project: &Project,
+    facts: &Facts,
+    clips: &[ClipId],
+    aspect: Aspect,
+) -> Result<Vec<Change>, EditError> {
+    let mut changes = Vec::new();
+    for &id in &clips.iter().copied().collect::<BTreeSet<_>>() {
+        let (track, clip) = find(project, id)?;
+        if aspect == Aspect::Source {
+            // Removing a crop needs no shape: it works offline too.
+            changes.extend(recropped(clip, None, None));
+            continue;
         }
+        let shape = picture(facts, track, clip)?;
+        let rect = centred(shape, aspect).ok_or_else(|| {
+            EditError::Refused(format!(
+                "clip {id}'s picture is too small to hold a {aspect} crop of at least \
+                 {} pixels a side",
+                super::crop::MIN_SIZE
+            ))
+        })?;
+        changes.extend(recropped(clip, Some(rect), Some(shape)));
     }
     Ok(changes)
 }
@@ -2584,6 +2721,40 @@ impl Document {
                 Some((placement.clip, super::speed::verdict(placement, shape)))
             })
             .collect()
+    }
+
+    /// What the crop controls need of each source with pictures (#130): its
+    /// displayed size, its grid and its preset rectangles. A source that is
+    /// offline or unreadable is not listed, and its clips cannot be cropped.
+    #[must_use]
+    pub fn crop_frames(&self) -> BTreeMap<SourceId, super::crop::CropFrame> {
+        self.facts
+            .geometry
+            .iter()
+            .filter(|(id, _)| self.project.sources.contains_key(id))
+            .map(|(&id, shape)| (id, super::crop::CropFrame::of(shape)))
+            .collect()
+    }
+
+    /// What reframing to `aspect` would do, without doing it (#132): the
+    /// decisions, and the project the edit would leave, for the planner to
+    /// state the cost before the user commits. Applying [`Edit::Reframe`]
+    /// afterwards makes exactly this project.
+    ///
+    /// # Errors
+    ///
+    /// The reframe would be refused, with the reason the edit gives.
+    pub fn preview_reframe(
+        &self,
+        aspect: Aspect,
+    ) -> Result<(super::reframe::Reframe, Project), EditError> {
+        let (reframe, changes) = super::reframe::reframe(&self.project, &self.facts, aspect)?;
+        let mut after = self.project.clone();
+        apply_all(&mut after, changes)?;
+        if self.evaluates {
+            evaluate(&after).map_err(|error| EditError::Refused(error.to_string()))?;
+        }
+        Ok((reframe, after))
     }
 
     fn eligibility_at(&self, settings: &SequenceSettings) -> BTreeMap<SourceId, CopyEligibility> {
@@ -4800,6 +4971,465 @@ mod tests {
         );
     }
 
+    /// A portrait phone clip: coded 1920 × 1080, turned a quarter, so
+    /// displayed 1080 × 1920.
+    fn phone() -> StreamGeometry {
+        StreamGeometry {
+            width: 1080,
+            height: 1920,
+            rotation: 90,
+            ..hd()
+        }
+    }
+
+    fn crop_on(document: &Document, id: ClipId) -> Option<CropRect> {
+        placement_of(document, id).crop
+    }
+
+    /// Video clips on two tracks: 1 and 2 of source 1 (1920 × 1080) on
+    /// track 1, 3 of source 2 on track 2, one second each; sources described
+    /// as `second`. Sound on no track.
+    fn two_sources(second: StreamGeometry) -> Document {
+        let mut project = Project::new("Trip", SequenceSettings::default());
+        project.sources.insert(1, source(1));
+        project.sources.insert(2, source(2));
+        let clip = |id, source, start| {
+            Clip::new(
+                id,
+                source,
+                0,
+                TB,
+                start,
+                vec![Operation::Trim { from: 0, to: 1000 }],
+            )
+        };
+        project.sequence.tracks = vec![
+            Track {
+                id: 1,
+                kind: TrackKind::Video,
+                clips: vec![clip(1, 1, 0), clip(2, 1, 30)],
+                ..Track::default()
+            },
+            Track {
+                id: 2,
+                kind: TrackKind::Video,
+                clips: vec![clip(3, 2, 60)],
+                ..Track::default()
+            },
+        ];
+        let mut document = Document::new(project).expect("valid");
+        document.describe_source(1, Some(hd()));
+        document.describe_source(2, Some(second));
+        document
+    }
+
+    fn refusal(document: &mut Document, edit: &Edit) -> String {
+        match document.apply(edit, &EditContext::default()) {
+            Err(EditError::Refused(reason)) => reason,
+            other => panic!("not refused: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_preset_crops_each_clip_to_its_own_picture_in_one_edit() {
+        let mut document = two_sources(phone());
+        let before = json(&document);
+        document
+            .apply(
+                &Edit::CropToAspect {
+                    clips: vec![1, 3],
+                    aspect: Aspect::Square,
+                },
+                &EditContext::default(),
+            )
+            .expect("crop");
+        assert_eq!(
+            crop_on(&document, 1),
+            Some(CropRect {
+                x: 420,
+                y: 0,
+                width: 1080,
+                height: 1080
+            })
+        );
+        assert_eq!(
+            crop_on(&document, 3),
+            Some(CropRect {
+                x: 0,
+                y: 420,
+                width: 1080,
+                height: 1080
+            }),
+            "the phone clip's own picture, as displayed"
+        );
+        assert_eq!(crop_on(&document, 2), None);
+        assert_eq!(document.history().entries, vec!["Crop 2 clips to 1:1"]);
+        // A preset the picture already has is no crop: clip 1 is 16:9.
+        document
+            .apply(
+                &Edit::CropToAspect {
+                    clips: vec![1],
+                    aspect: Aspect::Widescreen,
+                },
+                &EditContext::default(),
+            )
+            .expect("16:9");
+        assert_eq!(crop_on(&document, 1), None);
+        assert_eq!(placement_of(&document, 1).forced, None);
+        // The source's own shape is the reset.
+        document
+            .apply(
+                &Edit::CropToAspect {
+                    clips: vec![3],
+                    aspect: Aspect::Source,
+                },
+                &EditContext::default(),
+            )
+            .expect("source");
+        assert_eq!(json(&document), before);
+        document.undo();
+        document.undo();
+        document.undo();
+        assert_eq!(json(&document), before);
+    }
+
+    #[test]
+    fn a_preset_that_cannot_be_made_is_refused_and_a_reset_needs_no_picture() {
+        let mut document = with_sound();
+        let before = json(&document);
+        let vertical = |clips| Edit::CropToAspect {
+            clips,
+            aspect: Aspect::Vertical,
+        };
+        assert!(refusal(&mut document, &vertical(vec![1])).contains("relink it"));
+        assert_eq!(json(&document), before);
+        // Offline, a crop made while it was known still resets.
+        let mut known = croppable();
+        known
+            .apply(&vertical(vec![1]), &EditContext::default())
+            .expect("crop");
+        known.describe_source(1, None);
+        known
+            .apply(
+                &Edit::CropToAspect {
+                    clips: vec![1],
+                    aspect: Aspect::Source,
+                },
+                &EditContext::default(),
+            )
+            .expect("reset offline");
+        assert_eq!(crop_on(&known, 1), None);
+        // Sound has no picture.
+        let mut detached = croppable();
+        detached
+            .apply(
+                &Edit::DetachAudio { clips: vec![2] },
+                &EditContext::default(),
+            )
+            .expect("detach");
+        assert!(refusal(&mut detached, &vertical(vec![4])).contains("no picture"));
+    }
+
+    #[test]
+    fn crop_sides_set_what_was_changed_on_every_clip_and_keep_the_rest() {
+        let mut document = croppable();
+        document
+            .apply(
+                &Edit::SetCrop {
+                    clips: vec![1],
+                    rect: VERTICAL,
+                },
+                &EditContext::default(),
+            )
+            .expect("crop");
+        let sides = |x, width| Edit::SetCropSides {
+            clips: vec![1, 2],
+            x,
+            y: None,
+            width,
+            height: None,
+        };
+        document
+            .apply(&sides(None, Some(400)), &EditContext::default())
+            .expect("width");
+        assert_eq!(
+            crop_on(&document, 1),
+            Some(CropRect {
+                width: 400,
+                ..VERTICAL
+            })
+        );
+        assert_eq!(
+            crop_on(&document, 2),
+            Some(CropRect {
+                x: 0,
+                y: 0,
+                width: 400,
+                height: 1080
+            }),
+            "a clip not cropped starts from its whole picture"
+        );
+        assert_eq!(
+            document.history().entries.last().map(String::as_str),
+            Some("Crop 2 clips")
+        );
+        // Past the right edge for clip 1 (656 + 400 is fine, 1600 + 400 is
+        // not): refused for both, nothing changes.
+        let before = json(&document);
+        assert!(refusal(&mut document, &sides(Some(1600), None)).contains("within 1920 × 1080"));
+        assert_eq!(json(&document), before);
+        // Setting a side back to the whole picture's is no crop.
+        document
+            .apply(
+                &Edit::SetCropSides {
+                    clips: vec![2],
+                    x: None,
+                    y: None,
+                    width: Some(1920),
+                    height: None,
+                },
+                &EditContext::default(),
+            )
+            .expect("whole");
+        assert_eq!(crop_on(&document, 2), None);
+    }
+
+    #[test]
+    fn a_field_drag_is_one_entry_and_one_undo_restores_the_value_from_before_it() {
+        let mut document = croppable();
+        document
+            .apply(
+                &Edit::SetCrop {
+                    clips: vec![1],
+                    rect: VERTICAL,
+                },
+                &EditContext::default(),
+            )
+            .expect("crop");
+        let entries = document.history().entries.len();
+        document.begin_gesture("Crop clip", &EditContext::default());
+        for x in [650, 640, 600, 500] {
+            document
+                .apply(
+                    &Edit::SetCropSides {
+                        clips: vec![1],
+                        x: Some(x),
+                        y: None,
+                        width: None,
+                        height: None,
+                    },
+                    &EditContext::default(),
+                )
+                .expect("drag");
+        }
+        document.end_gesture();
+        assert_eq!(document.history().entries.len(), entries + 1);
+        assert_eq!(crop_on(&document, 1).map(|r| r.x), Some(500));
+        document.undo();
+        assert_eq!(crop_on(&document, 1), Some(VERTICAL));
+    }
+
+    fn reframe(document: &mut Document, aspect: Aspect) {
+        document
+            .apply(&Edit::Reframe { aspect }, &EditContext::default())
+            .expect("reframe");
+    }
+
+    #[test]
+    fn a_landscape_sequence_reframed_to_vertical_crops_every_clip_and_takes_the_crop_s_size() {
+        let mut document = croppable();
+        let before = json(&document);
+        let (decided, after) = document.preview_reframe(Aspect::Vertical).expect("preview");
+        assert_eq!(json(&document), before, "a preview changes nothing");
+        assert_eq!(
+            (decided.settings.width, decided.settings.height),
+            (608, 1080)
+        );
+        assert_eq!(
+            decided.settings.frame_rate,
+            document.project().sequence.settings.frame_rate
+        );
+        assert_eq!(
+            decided.basis,
+            super::super::reframe::ReframeBasis::Cropped { source: 1 }
+        );
+        assert_eq!(decided.cropped, vec![1, 2, 3]);
+        assert!(decided.scaled_up.is_empty(), "the crops fill it exactly");
+        reframe(&mut document, Aspect::Vertical);
+        assert_eq!(
+            document.project().to_json().expect("json"),
+            after.to_json().expect("json"),
+            "the edit makes the project the preview described"
+        );
+        for clip in [1, 2, 3] {
+            assert_eq!(crop_on(&document, clip), Some(VERTICAL));
+            assert_eq!(placement_of(&document, clip).sound_forced(), None);
+        }
+        assert_eq!(document.history().entries, vec!["Reframe to 9:16"]);
+        // One undo is the project byte for byte; redo is the reframe again.
+        document.undo();
+        assert_eq!(json(&document), before);
+        document.redo();
+        assert_eq!(json(&document), after.to_json().expect("json"));
+        // Reframing back removes the crops it added: the file it was.
+        reframe(&mut document, Aspect::Widescreen);
+        assert_eq!(json(&document), before);
+    }
+
+    #[test]
+    fn a_source_already_of_the_shape_lends_its_size_and_stays_uncropped() {
+        let mut document = two_sources(phone());
+        let (decided, _) = document.preview_reframe(Aspect::Vertical).expect("preview");
+        assert_eq!(
+            decided.basis,
+            super::super::reframe::ReframeBasis::Native { source: 2 }
+        );
+        assert_eq!(
+            (decided.settings.width, decided.settings.height),
+            (1080, 1920)
+        );
+        assert_eq!(decided.uncropped, vec![3]);
+        assert_eq!(decided.cropped, vec![1, 2]);
+        assert_eq!(
+            decided.scaled_up,
+            vec![1, 2],
+            "608 × 1080 fills 1080 × 1920"
+        );
+        reframe(&mut document, Aspect::Vertical);
+        assert_eq!(crop_on(&document, 3), None);
+        assert_eq!(placement_of(&document, 3).forced, None);
+        let eligibility = document.eligibility();
+        assert!(eligibility[&2].eligible, "the phone clip is copied");
+        assert!(!eligibility[&1].eligible);
+        // Portrait sources in a portrait sequence, turned to 16:9.
+        reframe(&mut document, Aspect::Widescreen);
+        assert_eq!(
+            crop_on(&document, 3),
+            Some(CropRect {
+                x: 0,
+                y: 656,
+                width: 1080,
+                height: 608
+            })
+        );
+        assert_eq!(crop_on(&document, 1), None, "back to its own shape");
+        assert_eq!(
+            (
+                document.project().sequence.settings.width,
+                document.project().sequence.settings.height
+            ),
+            (1920, 1080)
+        );
+    }
+
+    #[test]
+    fn a_crop_already_of_the_shape_stays_where_the_user_moved_it() {
+        let mut document = croppable();
+        reframe(&mut document, Aspect::Vertical);
+        let moved = CropRect { x: 0, ..VERTICAL };
+        document
+            .apply(
+                &Edit::SetCrop {
+                    clips: vec![2],
+                    rect: moved,
+                },
+                &EditContext::default(),
+            )
+            .expect("move");
+        let (decided, _) = document.preview_reframe(Aspect::Vertical).expect("again");
+        assert_eq!(decided.kept, vec![1, 2, 3]);
+        let entries = document.history().entries.len();
+        reframe(&mut document, Aspect::Vertical);
+        assert_eq!(document.history().entries.len(), entries, "nothing to do");
+        assert_eq!(crop_on(&document, 2), Some(moved));
+    }
+
+    #[test]
+    fn a_locked_track_is_left_as_it_is_and_named() {
+        let mut document = two_sources(hd());
+        document
+            .apply(
+                &Edit::SetTrack {
+                    track: 2,
+                    muted: None,
+                    solo: None,
+                    locked: Some(true),
+                    collapsed: None,
+                },
+                &EditContext::default(),
+            )
+            .expect("lock");
+        let (decided, _) = document.preview_reframe(Aspect::Square).expect("preview");
+        assert_eq!(decided.locked, vec![3]);
+        assert_eq!(decided.cropped, vec![1, 2]);
+        reframe(&mut document, Aspect::Square);
+        assert_eq!(crop_on(&document, 3), None);
+        assert!(crop_on(&document, 1).is_some());
+        // Every track locked: nothing to reframe.
+        document
+            .apply(
+                &Edit::SetTrack {
+                    track: 1,
+                    muted: None,
+                    solo: None,
+                    locked: Some(true),
+                    collapsed: None,
+                },
+                &EditContext::default(),
+            )
+            .expect("lock");
+        assert!(
+            refusal(
+                &mut document,
+                &Edit::Reframe {
+                    aspect: Aspect::Vertical
+                }
+            )
+            .contains("locked")
+        );
+    }
+
+    #[test]
+    fn a_reframe_that_cannot_be_placed_is_refused_and_changes_nothing() {
+        // Empty.
+        let mut empty =
+            Document::new(Project::new("Empty", SequenceSettings::default())).expect("valid");
+        assert!(
+            refusal(
+                &mut empty,
+                &Edit::Reframe {
+                    aspect: Aspect::Vertical
+                }
+            )
+            .contains("no video clips")
+        );
+        // Offline: its crop cannot be placed.
+        let mut offline = with_sound();
+        let before = json(&offline);
+        assert!(
+            refusal(
+                &mut offline,
+                &Edit::Reframe {
+                    aspect: Aspect::Vertical
+                }
+            )
+            .contains("relink it before reframing")
+        );
+        assert!(offline.preview_reframe(Aspect::Vertical).is_err());
+        assert_eq!(json(&offline), before);
+        // The source's own shape is not a ratio to reframe to.
+        let mut document = croppable();
+        assert!(
+            refusal(
+                &mut document,
+                &Edit::Reframe {
+                    aspect: Aspect::Source
+                }
+            )
+            .contains("ratio")
+        );
+    }
+
     #[allow(clippy::too_many_lines, clippy::cast_precision_loss)]
     fn random_edit(random: &mut Random, document: &Document) -> Edit {
         let project = document.project();
@@ -4807,7 +5437,26 @@ mod tests {
         let tracks: Vec<TrackId> = project.sequence.tracks.iter().map(|t| t.id).collect();
         let clip = random.pick(&clips).unwrap_or(1);
         let track = random.pick(&tracks).unwrap_or(1);
-        match random.below(18) {
+        let aspect =
+            |random: &mut Random| random.pick(&Aspect::PRESETS).unwrap_or(Aspect::Vertical);
+        match random.below(21) {
+            20 => Edit::Reframe {
+                aspect: aspect(random),
+            },
+            19 => Edit::CropToAspect {
+                clips: vec![clip],
+                aspect: aspect(random),
+            },
+            18 => {
+                let mut side = |bound| u32::try_from(random.int(bound)).ok();
+                Edit::SetCropSides {
+                    clips: vec![clip],
+                    x: side(900),
+                    y: None,
+                    width: side(1920),
+                    height: side(1080),
+                }
+            }
             17 => Edit::ResetCrop { clips: vec![clip] },
             16 => {
                 // On the grid and off it, inside the frame and past it.

@@ -10,6 +10,10 @@ import { useProjectStore } from "../project/project.store.js";
  * entry. Edits go one at a time and only the latest waiting one is sent — a
  * drag that outruns the engine skips values rather than queueing hundreds,
  * and cannot arrive out of order.
+ *
+ * `answered`, if given, hears the engine's answer to each edit sent — its
+ * refusal, or `null` — so a control can show a refusal where it was made
+ * (#130) rather than lose it.
  */
 export interface EditGesture {
   change: (edit: Edit) => void;
@@ -17,7 +21,10 @@ export interface EditGesture {
   end: () => Promise<void>;
 }
 
-export function editGesture(label: string): EditGesture {
+export function editGesture(
+  label: string,
+  answered?: (refusal: string | null, edit: Edit) => void,
+): EditGesture {
   const project = () => useProjectStore.getState();
   let opened: Promise<void> | null = null;
   let waiting: Edit | null = null;
@@ -27,7 +34,8 @@ export function editGesture(label: string): EditGesture {
     while (waiting) {
       const edit = waiting;
       waiting = null;
-      await project().edit(edit);
+      const refusal = await project().edit(edit);
+      answered?.(refusal, edit);
     }
     sending = null;
   };

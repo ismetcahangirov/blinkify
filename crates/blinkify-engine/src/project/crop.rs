@@ -136,6 +136,222 @@ pub fn check(rect: &CropRect, shape: &StreamGeometry) -> Result<(), CropError> {
     Ok(())
 }
 
+/// A shape a crop can be fitted to (#130): the source's own, or one of the
+/// four the reframe (#132) offers. A rectangle of any other shape is "free":
+/// what the sides are when they match no preset, not a preset itself.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub enum Aspect {
+    /// The whole picture: no crop.
+    #[serde(rename = "source")]
+    Source,
+    #[serde(rename = "16:9")]
+    Widescreen,
+    #[serde(rename = "9:16")]
+    Vertical,
+    #[serde(rename = "1:1")]
+    Square,
+    #[serde(rename = "4:5")]
+    Portrait,
+}
+
+impl Aspect {
+    /// Every preset, in the order the controls list them.
+    pub const PRESETS: [Self; 5] = [
+        Self::Source,
+        Self::Widescreen,
+        Self::Vertical,
+        Self::Square,
+        Self::Portrait,
+    ];
+
+    /// Width to height on screen, or `None` for the source's own.
+    #[must_use]
+    pub fn ratio(self) -> Option<(u32, u32)> {
+        match self {
+            Self::Source => None,
+            Self::Widescreen => Some((16, 9)),
+            Self::Vertical => Some((9, 16)),
+            Self::Square => Some((1, 1)),
+            Self::Portrait => Some((4, 5)),
+        }
+    }
+
+    /// `9:16`, or `source`: what the user reads.
+    #[must_use]
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Source => "source",
+            Self::Widescreen => "16:9",
+            Self::Vertical => "9:16",
+            Self::Square => "1:1",
+            Self::Portrait => "4:5",
+        }
+    }
+}
+
+impl std::fmt::Display for Aspect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.label())
+    }
+}
+
+/// The largest multiple of `step` not above `value`.
+fn floor_to(value: u32, step: u32) -> u32 {
+    value - value % step.max(1)
+}
+
+/// One side of a rectangle of a given shape from the other, on a picture's
+/// grid. The pixel aspect is part of it: a rectangle's shape on screen is its
+/// width times the pixel aspect, over its height.
+struct Sides {
+    /// Pixel width over pixel height, as a fraction.
+    num: u128,
+    den: u128,
+    across: u32,
+    down: u32,
+}
+
+impl Sides {
+    fn of(shape: &StreamGeometry, (width, height): (u32, u32)) -> Self {
+        let pixel = shape.pixel_aspect;
+        // A pixel aspect that is not a ratio is taken as square, as the
+        // sequence settings take it.
+        let (pixel_num, pixel_den) = if pixel.num > 0 && pixel.den > 0 {
+            (pixel.num.unsigned_abs(), pixel.den.unsigned_abs())
+        } else {
+            (1, 1)
+        };
+        let (across, down) = alignment(shape);
+        Self {
+            num: u128::from(width) * u128::from(pixel_den),
+            den: u128::from(height) * u128::from(pixel_num),
+            across,
+            down,
+        }
+    }
+
+    /// `value × num / den`, to the nearest multiple of `step`; a half rounds
+    /// up, so 607.5 on a grid of 2 is 608.
+    fn nearest(value: u32, num: u128, den: u128, step: u32) -> u32 {
+        let step = u128::from(step.max(1));
+        let steps = (2 * u128::from(value) * num + den * step).div_euclid(2 * den * step);
+        u32::try_from(steps * step).unwrap_or(u32::MAX)
+    }
+
+    fn width_for(&self, height: u32) -> u32 {
+        Self::nearest(height, self.num, self.den, self.across)
+    }
+
+    fn height_for(&self, width: u32) -> u32 {
+        Self::nearest(width, self.den, self.num, self.down)
+    }
+}
+
+/// The largest rectangle of `aspect` centred on a picture of `shape`, on its
+/// chroma grid: the one place a preset is rounded (#130), so the numbers the
+/// controls show are the numbers stored, and the reframe (#132) and the
+/// preview's handles (#131) fit the same rectangle.
+///
+/// A picture already of that shape, to within the grid, is returned whole:
+/// cropping it would remove rounding, not picture, and cost a re-encode for
+/// nothing. `Source` is always the whole picture. `None` when the picture is
+/// too small to hold the shape at [`MIN_SIZE`] a side.
+#[must_use]
+pub fn centred(shape: &StreamGeometry, aspect: Aspect) -> Option<CropRect> {
+    let whole = CropRect::whole(shape.width, shape.height);
+    let Some(ratio) = aspect.ratio() else {
+        return Some(whole);
+    };
+    let sides = Sides::of(shape, ratio);
+    let widest = floor_to(shape.width, sides.across);
+    let tallest = floor_to(shape.height, sides.down);
+    if sides.width_for(shape.height) >= widest && sides.height_for(shape.width) >= tallest {
+        return Some(whole);
+    }
+    let (width, height) = if sides.width_for(tallest) <= widest {
+        (sides.width_for(tallest), tallest)
+    } else {
+        (widest, sides.height_for(widest).min(tallest))
+    };
+    if width < MIN_SIZE || height < MIN_SIZE {
+        return None;
+    }
+    let rect = CropRect {
+        x: floor_to((shape.width - width).div_euclid(2), sides.across),
+        y: floor_to((shape.height - height).div_euclid(2), sides.down),
+        width,
+        height,
+    };
+    debug_assert_eq!(check(&rect, shape), Ok(()));
+    Some(rect)
+}
+
+/// Whether `rect` has the shape of `aspect` on a picture of `shape`, to
+/// within the grid, wherever it sits and however large it is. The reframe
+/// (#132) keeps a crop that already has the shape it asks for, where the user
+/// put it.
+#[must_use]
+pub fn has_aspect(rect: &CropRect, shape: &StreamGeometry, aspect: Aspect) -> bool {
+    match aspect.ratio() {
+        None => rect.is_whole(shape),
+        Some(ratio) => {
+            let sides = Sides::of(shape, ratio);
+            sides.width_for(rect.height) == rect.width
+                || sides.height_for(rect.width) == rect.height
+        }
+    }
+}
+
+/// A preset and the rectangle it fits on one picture.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PresetRect {
+    pub aspect: Aspect,
+    pub rect: CropRect,
+}
+
+/// What the crop controls need to know about a source's picture (#130): its
+/// size as displayed, the grid the sides keep to, and each preset's
+/// rectangle, all worked out here so the controls work nothing out.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct CropFrame {
+    /// Display pixels, rotation applied.
+    pub width: u32,
+    pub height: u32,
+    /// The step of the left edge and the width.
+    pub across: u32,
+    /// The step of the top edge and the height.
+    pub down: u32,
+    /// The smallest side a crop may have.
+    pub min_size: u32,
+    /// Every preset the picture can hold, in [`Aspect::PRESETS`] order.
+    pub presets: Vec<PresetRect>,
+}
+
+impl CropFrame {
+    #[must_use]
+    pub fn of(shape: &StreamGeometry) -> Self {
+        let (across, down) = alignment(shape);
+        Self {
+            width: shape.width,
+            height: shape.height,
+            across,
+            down,
+            min_size: MIN_SIZE,
+            presets: Aspect::PRESETS
+                .iter()
+                .filter_map(|&aspect| {
+                    centred(shape, aspect).map(|rect| PresetRect { aspect, rect })
+                })
+                .collect(),
+        }
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::expect_used)]
 mod tests {
@@ -277,5 +493,132 @@ mod tests {
         let unknown = shape(1920, 1080, None, 0);
         assert!(check(&odd_x, &unknown).is_err());
         assert!(check(&odd_y, &unknown).is_err());
+    }
+
+    fn rect(x: u32, y: u32, width: u32, height: u32) -> CropRect {
+        CropRect {
+            x,
+            y,
+            width,
+            height,
+        }
+    }
+
+    fn preset(shape: &StreamGeometry, aspect: Aspect) -> CropRect {
+        centred(shape, aspect).expect("the picture holds it")
+    }
+
+    #[test]
+    fn a_preset_on_a_landscape_picture_is_its_largest_centred_rectangle() {
+        let hd = hd();
+        // #130's acceptance: 9:16 on 1920 × 1080 is 608 × 1080 from 656.
+        assert_eq!(preset(&hd, Aspect::Vertical), rect(656, 0, 608, 1080));
+        assert_eq!(preset(&hd, Aspect::Square), rect(420, 0, 1080, 1080));
+        assert_eq!(preset(&hd, Aspect::Portrait), rect(528, 0, 864, 1080));
+        // Already 16:9, and the source's own: the whole picture, no crop.
+        assert!(preset(&hd, Aspect::Widescreen).is_whole(&hd));
+        assert!(preset(&hd, Aspect::Source).is_whole(&hd));
+        for aspect in Aspect::PRESETS {
+            let fitted = preset(&hd, aspect);
+            assert_eq!(check(&fitted, &hd), Ok(()), "{aspect}");
+            assert!(has_aspect(&fitted, &hd, aspect), "{aspect}");
+        }
+    }
+
+    #[test]
+    fn a_preset_on_a_portrait_phone_clip_is_fitted_to_the_picture_as_displayed() {
+        // A phone held upright: coded 1920 × 1080 with a quarter turn, so
+        // displayed 1080 × 1920.
+        let phone = shape(1080, 1920, Some(ChromaSubsampling::Yuv420), 90);
+        assert_eq!(preset(&phone, Aspect::Widescreen), rect(0, 656, 1080, 608));
+        assert_eq!(preset(&phone, Aspect::Square), rect(0, 420, 1080, 1080));
+        assert_eq!(preset(&phone, Aspect::Portrait), rect(0, 284, 1080, 1350));
+        assert!(preset(&phone, Aspect::Vertical).is_whole(&phone));
+        // 4:2:2 halves the colour across the coded picture, which is down
+        // on the turned one: the offsets keep to that.
+        let turned = shape(1080, 1920, Some(ChromaSubsampling::Yuv422), 90);
+        assert_eq!(alignment(&turned), (1, 2));
+        let square = preset(&turned, Aspect::Square);
+        assert_eq!(square, rect(0, 420, 1080, 1080));
+        assert_eq!(check(&square, &turned), Ok(()));
+    }
+
+    #[test]
+    fn a_preset_on_a_square_picture() {
+        let square = shape(1080, 1080, Some(ChromaSubsampling::Yuv420), 0);
+        assert!(preset(&square, Aspect::Square).is_whole(&square));
+        assert_eq!(preset(&square, Aspect::Widescreen), rect(0, 236, 1080, 608));
+        assert_eq!(preset(&square, Aspect::Vertical), rect(236, 0, 608, 1080));
+        assert_eq!(preset(&square, Aspect::Portrait), rect(108, 0, 864, 1080));
+    }
+
+    #[test]
+    fn a_preset_on_an_odd_picture_keeps_to_the_grid_and_inside_it() {
+        let odd = shape(1919, 1079, Some(ChromaSubsampling::Yuv420), 0);
+        let vertical = preset(&odd, Aspect::Vertical);
+        assert_eq!(vertical, rect(656, 0, 606, 1078));
+        // Within rounding of 16:9 already: not cropped for one pixel.
+        assert!(preset(&odd, Aspect::Widescreen).is_whole(&odd));
+        // The source's own is the whole picture, odd or not.
+        assert!(preset(&odd, Aspect::Source).is_whole(&odd));
+        for aspect in [Aspect::Vertical, Aspect::Square, Aspect::Portrait] {
+            let fitted = preset(&odd, aspect);
+            assert_eq!(check(&fitted, &odd), Ok(()), "{aspect}: {fitted:?}");
+        }
+        // Codec padding is picture, not rounding: 1088 rows crop to 1080.
+        let padded = shape(1920, 1088, Some(ChromaSubsampling::Yuv420), 0);
+        assert_eq!(preset(&padded, Aspect::Widescreen), rect(0, 4, 1920, 1080));
+        // 4:4:4 has no grid: odd offsets and sizes are exact.
+        let full = shape(1001, 1001, Some(ChromaSubsampling::Yuv444), 0);
+        assert_eq!(preset(&full, Aspect::Widescreen), rect(0, 219, 1001, 563));
+    }
+
+    #[test]
+    fn a_preset_follows_the_pixel_aspect() {
+        // DV widescreen: 720 × 576 stored, 64:45 pixels, 16:9 on screen.
+        let mut dv = shape(720, 576, Some(ChromaSubsampling::Yuv420), 0);
+        dv.pixel_aspect = Rational { num: 64, den: 45 };
+        assert!(preset(&dv, Aspect::Widescreen).is_whole(&dv));
+        // A square on screen is 405 stored pixels wide, rounded to 406.
+        assert_eq!(preset(&dv, Aspect::Square), rect(156, 0, 406, 576));
+    }
+
+    #[test]
+    fn a_picture_too_small_for_a_shape_holds_no_preset_of_it() {
+        let sliver = shape(16, 64, Some(ChromaSubsampling::Yuv420), 0);
+        assert_eq!(centred(&sliver, Aspect::Widescreen), None);
+        let frame = CropFrame::of(&sliver);
+        assert!(frame.presets.iter().all(|p| p.aspect != Aspect::Widescreen));
+        assert_eq!(
+            frame.presets.first().map(|p| p.aspect),
+            Some(Aspect::Source)
+        );
+    }
+
+    #[test]
+    fn a_frame_carries_the_grid_and_every_preset_the_controls_offer() {
+        let frame = CropFrame::of(&hd());
+        assert_eq!((frame.width, frame.height), (1920, 1080));
+        assert_eq!((frame.across, frame.down, frame.min_size), (2, 2, 16));
+        assert_eq!(
+            frame.presets.iter().map(|p| p.aspect).collect::<Vec<_>>(),
+            Aspect::PRESETS.to_vec()
+        );
+        let text = serde_json::to_string(&Aspect::Vertical).expect("json");
+        assert_eq!(text, "\"9:16\"");
+    }
+
+    #[test]
+    fn a_crop_has_an_aspect_wherever_it_sits() {
+        let hd = hd();
+        assert!(has_aspect(&rect(0, 0, 608, 1080), &hd, Aspect::Vertical));
+        assert!(has_aspect(&rect(100, 200, 304, 540), &hd, Aspect::Vertical));
+        assert!(!has_aspect(&rect(0, 0, 700, 1080), &hd, Aspect::Vertical));
+        assert!(has_aspect(
+            &CropRect::whole(1920, 1080),
+            &hd,
+            Aspect::Source
+        ));
+        assert!(!has_aspect(&rect(0, 0, 1080, 1080), &hd, Aspect::Source));
     }
 }

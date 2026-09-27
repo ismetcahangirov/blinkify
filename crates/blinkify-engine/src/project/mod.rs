@@ -32,6 +32,7 @@ pub mod edit;
 pub mod evaluate;
 pub mod migrate;
 pub mod recent;
+pub mod reframe;
 pub mod session;
 pub mod settings;
 pub mod source;

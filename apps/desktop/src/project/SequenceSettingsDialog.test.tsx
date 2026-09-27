@@ -53,6 +53,7 @@ function view(matchFirstClip = false): ProjectView {
     extents: [],
     assets: {},
     speeds: {},
+    frames: {},
   };
 }
 
@@ -154,6 +155,22 @@ describe("the sequence settings dialog", () => {
     );
     // Confirming the settings as they are is a choice too.
     expect(screen.getByRole("button", { name: "Apply" })).toBeEnabled();
+  });
+
+  it("offers the reframe for a change of shape with each clip cropped", async () => {
+    invoked.mockResolvedValue(NONE);
+    const onReframe = vi.fn();
+    render(
+      <TooltipProvider>
+        <SequenceSettingsDialog
+          open
+          onOpenChange={() => undefined}
+          onReframe={onReframe}
+        />
+      </TooltipProvider>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Reframe…" }));
+    expect(onReframe).toHaveBeenCalledTimes(1);
   });
 
   it("words durations, aspects and gains", () => {
