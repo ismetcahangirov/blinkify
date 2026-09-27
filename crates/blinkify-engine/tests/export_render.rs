@@ -43,6 +43,27 @@ fn vp9() -> Source {
     )
 }
 
+#[test]
+fn the_shared_source_is_made_once_and_never_remade_under_a_reader() {
+    // #137: every test here reads `vp9()` on its own thread. Making it again
+    // empties the directory another test is reading from.
+    let first = vp9();
+    let made = std::fs::metadata(&first.path)
+        .and_then(|m| m.modified())
+        .expect("made");
+    let again: Vec<_> = (0..4)
+        .map(|_| std::thread::spawn(|| vp9().path))
+        .map(|reader| reader.join().expect("reader"))
+        .collect();
+    for path in again {
+        assert_eq!(path, first.path);
+        let modified = std::fs::metadata(&path)
+            .and_then(|m| m.modified())
+            .expect("still there");
+        assert_eq!(modified, made, "the fixture was made again");
+    }
+}
+
 fn tiers(plan: &ExportPlan) -> Vec<ExportTier> {
     plan.segments
         .iter()

@@ -12,8 +12,7 @@ use std::collections::BTreeMap;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex, OnceLock, PoisonError};
 
 use blinkify_engine::capability::VideoCodec;
 use blinkify_engine::capability::{self, EncoderCapabilities};
@@ -395,19 +394,33 @@ pub fn turned(name: &str, size: (u32, u32), rotation: u32) -> Source {
 /// A four-second file with a keyframe every second, made here with the
 /// sidecar's own software encoder: the corpus's VP9 and AV1 files have one
 /// keyframe each, and a smart-cut needs a GOP to copy between two seams.
+///
+/// Made once per `name` per test binary. Tests run on parallel threads, and
+/// making it again empties the directory another test is reading (#137).
 pub fn keyframed(name: &str, arguments: &[(&'static str, &str)]) -> Source {
-    let path = super::scratch(&format!("smartcut-source-{name}")).join("source.mkv");
-    let mut command = SidecarCommand::ffmpeg()
-        .option("-v", "error")
-        .lavfi_input("testsrc2=size=640x360:rate=30:duration=4")
-        .option("-pix_fmt", "yuv420p")
-        .option("-g", "30")
-        .option("-keyint_min", "30");
-    for (name, value) in arguments {
-        command = command.option(name, (*value).to_owned());
-    }
-    super::orchestrator()
-        .run_to_end(command.output_file(&path), Priority::Foreground)
-        .expect("encodes");
-    Source::at(path, Some(encoders()))
+    static MADE: OnceLock<Mutex<BTreeMap<String, Arc<OnceLock<PathBuf>>>>> = OnceLock::new();
+    let once = Arc::clone(
+        MADE.get_or_init(Mutex::default)
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .entry(name.to_owned())
+            .or_default(),
+    );
+    let path = once.get_or_init(|| {
+        let path = super::scratch(&format!("smartcut-source-{name}")).join("source.mkv");
+        let mut command = SidecarCommand::ffmpeg()
+            .option("-v", "error")
+            .lavfi_input("testsrc2=size=640x360:rate=30:duration=4")
+            .option("-pix_fmt", "yuv420p")
+            .option("-g", "30")
+            .option("-keyint_min", "30");
+        for (name, value) in arguments {
+            command = command.option(name, (*value).to_owned());
+        }
+        super::orchestrator()
+            .run_to_end(command.output_file(&path), Priority::Foreground)
+            .expect("encodes");
+        path
+    });
+    Source::at(path.clone(), Some(encoders()))
 }
