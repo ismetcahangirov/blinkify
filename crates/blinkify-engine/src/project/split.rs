@@ -192,6 +192,7 @@ mod tests {
             sequence_time_base: Rational { num: 1, den: 30 },
             motion,
             forced: None,
+            crop: None,
             silent: false,
         };
         placement.length = rescale(

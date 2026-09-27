@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
 
-use crate::probe::{FrameRateMode, Rational, VideoInfo};
+use crate::probe::{ChromaSubsampling, FrameRateMode, Rational, VideoInfo};
 
 /// How the sequence treats colour.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -134,6 +134,14 @@ pub struct StreamGeometry {
     pub pixel_aspect: Rational,
     pub variable_frame_rate: bool,
     pub hdr: bool,
+    /// How the colour is sampled against the brightness: the grid a crop
+    /// has to keep to (#127). `None` when the probe could not tell.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub chroma: Option<ChromaSubsampling>,
+    /// The quarter turns, counter-clockwise, between the coded picture and
+    /// the one displayed: 0, 90, 180 or 270.
+    pub rotation: u32,
 }
 
 /// `num/den` in lowest terms, with a positive denominator.
@@ -178,6 +186,8 @@ impl StreamGeometry {
             pixel_aspect,
             variable_frame_rate: variable,
             hdr: video.hdr.is_some(),
+            chroma: video.chroma_subsampling,
+            rotation: video.rotation,
         })
     }
 }
@@ -326,6 +336,8 @@ mod tests {
             pixel_aspect: SQUARE,
             variable_frame_rate: false,
             hdr: false,
+            chroma: Some(crate::probe::ChromaSubsampling::Yuv420),
+            rotation: 0,
         }
     }
 

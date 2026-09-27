@@ -28,6 +28,7 @@ export * from "./ContainerInfo";
 export * from "./ContentLight";
 export * from "./CopyEligibility";
 export * from "./CopyNote";
+export * from "./CropRect";
 export * from "./CutPoint";
 export * from "./Decline";
 export * from "./DecodeStats";

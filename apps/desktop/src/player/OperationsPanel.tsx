@@ -66,7 +66,9 @@ export function OperationsPanel({ session }: { session: number }) {
                 {!step.previewed && (
                   <span className="player__operations-note">
                     {" "}
-                    — applied on export, not heard in preview yet
+                    — applied on export, not{" "}
+                    {step.operation.op === "crop" ? "shown" : "heard"} in
+                    preview yet
                   </span>
                 )}
               </li>
@@ -95,6 +97,8 @@ export function describe({ operation }: DiagnosticOperation): string {
       return `Freeze frame: ${String(operation.frames)} frames (re-encoded)`;
     case "reverse":
       return "Reverse (re-encoded)";
+    case "crop":
+      return `Crop: ${String(operation.width)} × ${String(operation.height)} from ${String(operation.x)}, ${String(operation.y)} (pictures re-encoded)`;
   }
 }
 

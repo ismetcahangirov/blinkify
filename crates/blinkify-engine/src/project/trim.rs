@@ -254,6 +254,7 @@ mod tests {
             sequence_time_base: sequence,
             motion: None,
             forced: None,
+            crop: None,
             silent: false,
         };
         placement.length = frames(&placement, source_out - source_in).expect("frames");

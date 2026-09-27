@@ -432,6 +432,9 @@ pub fn suggest(cause: &Cause, lossless_audio_target: bool) -> Option<String> {
                 .to_owned(),
         ),
         Cause::AudioChain | Cause::AudioSpeed { .. } | Cause::AudioMix { .. } => lossless_sound,
+        Cause::Operation {
+            reason: crate::tier::ReEncodeReason::FilterChangesPixels,
+        } => Some("Remove the crop and the clip is copied.".to_owned()),
         // A held or reversed picture has no source packets to copy.
         Cause::Operation { .. } => None,
     }
@@ -685,6 +688,18 @@ mod tests {
                 false
             )
             .is_none()
+        );
+        // A crop is the user's to take away.
+        let crop = Cause::Operation {
+            reason: crate::tier::ReEncodeReason::FilterChangesPixels,
+        };
+        assert_eq!(
+            suggest(&crop, false).as_deref(),
+            Some("Remove the crop and the clip is copied.")
+        );
+        assert_eq!(
+            crop.sentence(),
+            "The clip is cropped, so its pictures are re-encoded; its sound is copied."
         );
         // Lossless sound is suggested only where the target was not.
         assert!(suggest(&Cause::AudioChain, false).is_some());

@@ -9498,6 +9498,7 @@
       "source": "packages/types/src/generated/ChromaSubsampling.ts",
       "dependencies": [],
       "dependents": [
+        "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/VideoInfo.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -9743,6 +9744,17 @@
       "valid": true
     },
     {
+      "source": "packages/types/src/generated/CropRect.ts",
+      "dependencies": [],
+      "dependents": [
+        "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "packages/types/src/generated/CutPoint.ts",
       "dependencies": [],
       "dependents": [
@@ -9927,6 +9939,24 @@
             "import"
           ],
           "resolved": "packages/types/src/generated/ClipMove.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./CropRect",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/CropRect.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -11494,6 +11524,24 @@
         },
         {
           "dynamic": false,
+          "module": "./CropRect",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/CropRect.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Motion",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -12960,6 +13008,24 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./ChromaSubsampling",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/ChromaSubsampling.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./Rational",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -13876,6 +13942,23 @@
             "export"
           ],
           "resolved": "packages/types/src/generated/CopyNote.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./CropRect",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "packages/types/src/generated/CropRect.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -18224,8 +18307,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 354,
-    "totalDependenciesCruised": 832,
+    "totalCruised": 355,
+    "totalDependenciesCruised": 836,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

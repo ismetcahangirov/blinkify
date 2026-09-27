@@ -30,7 +30,8 @@ The planner re-derives nothing that is decided elsewhere:
 | --------------------------------------- | ----------------------------------- |
 | Is the sequence the source's shape?     | `copy_eligibility` (ADR-0008)       |
 | What does the speed do to the pictures? | `speed::verdict` (ADR-0009)         |
-| Does a hold or reverse force a render?  | `Placement.forced` (evaluator, #35) |
+| Does a hold, reverse or crop force one? | `Placement.forced` (evaluator, #35) |
+| Does that reach the sound too?          | `Placement::sound_forced` (#127)    |
 | What does the picture consist of?       | `Timeline::picture` (#36)           |
 
 ## Segments
@@ -56,7 +57,7 @@ as data. A segment carries all of its causes; its tier follows from them:
 | `out-point-not-keyframe`                  | smart-cut, window from last one    |
 | `open-gop-at-out-point`                   | smart-cut                          |
 | `keyframes-unknown`                       | re-encode: `copy-not-provable`     |
-| `operation` (hold, reverse)               | re-encode                          |
+| `operation` (hold, reverse, crop)         | re-encode; a crop, pictures only   |
 | `speed-outside-container`                 | re-encode                          |
 | `sequence-mismatch` (one per mismatch)    | re-encode                          |
 | `incompatible-encoding` (fields named)    | re-encode to the reference         |

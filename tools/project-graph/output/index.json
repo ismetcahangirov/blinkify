@@ -5,7 +5,7 @@
     "tools"
   ],
   "totals": {
-    "files": 354,
+    "files": 355,
     "tests": 52,
     "violations": 0
   },
@@ -42,7 +42,7 @@
       ]
     },
     "packages/types": {
-      "files": 144,
+      "files": 145,
       "tests": 0,
       "untested": [
         "packages/types/src/generated/Applied.ts",
@@ -68,6 +68,7 @@
         "packages/types/src/generated/ContentLight.ts",
         "packages/types/src/generated/CopyEligibility.ts",
         "packages/types/src/generated/CopyNote.ts",
+        "packages/types/src/generated/CropRect.ts",
         "packages/types/src/generated/CutPoint.ts",
         "packages/types/src/generated/Decline.ts",
         "packages/types/src/generated/DecodeStats.ts",
@@ -2805,6 +2806,7 @@
       "isTest": false,
       "dependsOn": [],
       "dependedOnBy": [
+        "packages/types/src/generated/StreamGeometry.ts",
         "packages/types/src/generated/VideoInfo.ts",
         "packages/types/src/generated/index.ts"
       ],
@@ -2931,6 +2933,19 @@
       "coveredByTests": [],
       "hasNoDependents": false
     },
+    "packages/types/src/generated/CropRect.ts": {
+      "workspace": "packages/types",
+      "layer": "ipc-contract",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "packages/types/src/generated/Edit.ts",
+        "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/index.ts"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
     "packages/types/src/generated/CutPoint.ts": {
       "workspace": "packages/types",
       "layer": "ipc-contract",
@@ -3039,6 +3054,7 @@
       "dependsOn": [
         "packages/types/src/generated/AudioStage.ts",
         "packages/types/src/generated/ClipMove.ts",
+        "packages/types/src/generated/CropRect.ts",
         "packages/types/src/generated/Edge.ts",
         "packages/types/src/generated/KeyframeSnap.ts",
         "packages/types/src/generated/LoudnessTarget.ts",
@@ -3772,6 +3788,7 @@
       "isTest": false,
       "dependsOn": [
         "packages/types/src/generated/AudioOperation.ts",
+        "packages/types/src/generated/CropRect.ts",
         "packages/types/src/generated/Motion.ts",
         "packages/types/src/generated/Rational.ts",
         "packages/types/src/generated/ReEncodeReason.ts",
@@ -4349,6 +4366,7 @@
       "layer": "ipc-contract",
       "isTest": false,
       "dependsOn": [
+        "packages/types/src/generated/ChromaSubsampling.ts",
         "packages/types/src/generated/Rational.ts"
       ],
       "dependedOnBy": [
@@ -4598,6 +4616,7 @@
         "packages/types/src/generated/ContentLight.ts",
         "packages/types/src/generated/CopyEligibility.ts",
         "packages/types/src/generated/CopyNote.ts",
+        "packages/types/src/generated/CropRect.ts",
         "packages/types/src/generated/CutPoint.ts",
         "packages/types/src/generated/Decline.ts",
         "packages/types/src/generated/DecodeStats.ts",

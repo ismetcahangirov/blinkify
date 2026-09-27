@@ -121,7 +121,8 @@ Epic #7's insert and the meter. Denoise (#47) and normalise (#48) are
 evaluated and exported, but the preview does not render them yet. The
 diagnostic view says so for each one, rather than letting the sound suggest
 the export will skip them. Hold and reverse are previewed (#113) and are not
-marked.
+marked. A crop (#127) is not drawn by the preview until #129, and is marked
+the same way.
 
 ## A graph change
 

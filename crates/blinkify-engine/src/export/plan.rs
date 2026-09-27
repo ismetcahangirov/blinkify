@@ -227,7 +227,7 @@ pub enum Cause {
     },
     /// The keyframes around a cut are not indexed yet.
     KeyframesUnknown,
-    /// A hold or a reverse (#35).
+    /// A hold or a reverse (#35), or a crop (#127).
     Operation { reason: ReEncodeReason },
     /// The speed makes a frame rate no file can carry (ADR-0009).
     SpeedOutsideContainer { rate: Rational },
@@ -304,6 +304,10 @@ impl Cause {
             Self::Operation {
                 reason: ReEncodeReason::Reverse,
             } => "The clip plays backwards, so its pictures are re-encoded.".to_owned(),
+            Self::Operation {
+                reason: ReEncodeReason::FilterChangesPixels,
+            } => "The clip is cropped, so its pictures are re-encoded; its sound is copied."
+                .to_owned(),
             Self::Operation { .. } => {
                 "The clip holds a frame, so the held picture is encoded.".to_owned()
             }
@@ -1034,7 +1038,7 @@ fn single_sound<'a>(
     sources: &'a BTreeMap<SourceId, SourceFacts>,
 ) -> Result<(Segment, Option<&'a EncodingSignature>), PlanError> {
     let mut causes = Vec::new();
-    if let Some(reason) = sound.placement.forced {
+    if let Some(reason) = sound.placement.sound_forced() {
         causes.push(Cause::Operation { reason });
     }
     // A bypassed step is kept in the graph and applied to nothing: it does

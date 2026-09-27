@@ -21,11 +21,14 @@
 //! - **Where it sits**: its start, and its length in sequence frames, rounded
 //!   up so a partial last frame still shows.
 //! - **The audio chain**: gain, denoise and normalise, in the order given.
+//! - **The crop**: the last one, in the source's display pixels (#127). It
+//!   forces the pictures to be re-encoded and leaves the sound alone.
 
 use serde::Serialize;
 use thiserror::Error;
 use ts_rs::TS;
 
+use super::crop::CropRect;
 use super::{
     AudioStage, Clip, ClipId, LoudnessTarget, Operation, Project, ProjectError, SourceId, TrackId,
     TrackKind,
@@ -140,19 +143,40 @@ pub fn audio_operation(operation: &Operation) -> Option<AudioOperation> {
         Operation::Trim { .. }
         | Operation::Speed { .. }
         | Operation::Freeze { .. }
-        | Operation::Reverse => None,
+        | Operation::Reverse
+        | Operation::Crop { .. } => None,
     }
 }
 
-/// Why `operation` forces a full re-encode of its clip, if it does — the
-/// reason the planner records and the export report states (#35).
+/// Why `operation` forces a full re-encode of its clip's pictures, if it
+/// does — the reason the planner records and the export report states (#35,
+/// #127).
 #[must_use]
 pub fn forces_re_encode(operation: &Operation) -> Option<ReEncodeReason> {
     match operation {
         Operation::Freeze { .. } => Some(ReEncodeReason::FreezeFrame),
         Operation::Reverse => Some(ReEncodeReason::Reverse),
+        Operation::Crop { .. } => Some(ReEncodeReason::FilterChangesPixels),
         _ => None,
     }
+}
+
+/// Whether `operation` filters the picture itself — a crop — rather than
+/// choosing which pictures play when.
+#[must_use]
+pub fn filters_picture(operation: &Operation) -> bool {
+    matches!(operation, Operation::Crop { .. })
+}
+
+/// Whether the re-encode `reason` forces reaches the clip's sound too. A
+/// hold and a reverse re-time it; a crop changes pixels and nothing else, so
+/// the sound of a cropped clip is still a copy.
+#[must_use]
+pub fn reaches_sound(reason: ReEncodeReason) -> bool {
+    matches!(
+        reason,
+        ReEncodeReason::FreezeFrame | ReEncodeReason::Reverse
+    )
 }
 
 /// How a clip moves through its source, when not forward.
@@ -200,12 +224,19 @@ pub struct Placement {
     pub motion: Option<Motion>,
     /// Its own sound is not played: it was detached to an audio clip (#36).
     pub silent: bool,
-    /// Why the clip must be re-encoded whole, if something forces it — a
-    /// hold or a reverse. Recorded here so the planner and the export report
-    /// cannot miss it.
+    /// Why the clip's pictures must be re-encoded whole, if something forces
+    /// it — a hold, a reverse, a crop. Recorded here so the planner and the
+    /// export report cannot miss it. A hold or a reverse is named before a
+    /// crop: it would force the re-encode on its own, and it reaches the
+    /// sound too ([`Placement::sound_forced`]).
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub forced: Option<ReEncodeReason>,
+    /// The rectangle of the picture shown, in the source's display pixels;
+    /// absent when the whole picture is (#127).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub crop: Option<CropRect>,
 }
 
 impl Placement {
@@ -254,8 +285,16 @@ impl Placement {
         (self.source_in <= tick && tick < self.source_out).then_some(tick)
     }
 
+    /// Why the clip's sound must be re-encoded whole, if something forces
+    /// it: a hold or a reverse, never a crop.
+    #[must_use]
+    pub fn sound_forced(&self) -> Option<ReEncodeReason> {
+        self.forced.filter(|&reason| reaches_sound(reason))
+    }
+
     /// The clip's operations as the evaluator resolved them: one trim, the
-    /// speed if it is not 1, then the audio chain.
+    /// speed if it is not 1, the hold or reverse, the crop, then the audio
+    /// chain.
     #[must_use]
     pub fn operations(&self) -> Vec<Operation> {
         let mut operations = vec![Operation::Trim {
@@ -272,6 +311,7 @@ impl Placement {
             Some(Motion::Reverse) => operations.push(Operation::Reverse),
             None => {}
         }
+        operations.extend(self.crop.map(Operation::crop));
         operations.extend(self.audio.iter().map(AudioOperation::operation));
         operations
     }
@@ -522,6 +562,7 @@ fn place(
     let mut audio = Vec::new();
     let mut hold = None;
     let mut reverse = false;
+    let mut crop = None;
     for operation in &clip.operations {
         match *operation {
             Operation::Trim { from, to } => trim = Some((from, to)),
@@ -536,6 +577,8 @@ fn place(
             }
             Operation::Freeze { frames } => hold = Some(frames),
             Operation::Reverse => reverse = true,
+            // Like a trim, a crop is absolute: a later one replaces it.
+            Operation::Crop { .. } => crop = operation.crop_rect(),
         }
     }
     let (source_in, source_out) = trim.ok_or(EvaluateError::Untrimmed(clip.id))?;
@@ -564,7 +607,12 @@ fn place(
         } else {
             None
         },
-        forced: clip.operations.iter().find_map(forces_re_encode),
+        forced: clip
+            .operations
+            .iter()
+            .filter_map(forces_re_encode)
+            .min_by_key(|&reason| !reaches_sound(reason)),
+        crop,
         silent: clip.detached,
     };
     let played = placement.played_time_base();

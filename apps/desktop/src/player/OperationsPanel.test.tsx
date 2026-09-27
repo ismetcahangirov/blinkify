@@ -120,4 +120,13 @@ describe("describing an operation", () => {
       describeOperation({ operation: { op: "reverse" }, previewed: true }),
     ).toBe("Reverse (re-encoded)");
   });
+
+  it("names a crop's rectangle and that its pictures are re-encoded", () => {
+    expect(
+      describeOperation({
+        operation: { op: "crop", x: 656, y: 0, width: 608, height: 1080 },
+        previewed: false,
+      }),
+    ).toBe("Crop: 608 × 1080 from 656, 0 (pictures re-encoded)");
+  });
 });
