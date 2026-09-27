@@ -14,6 +14,7 @@ pub mod library;
 pub mod lifecycle;
 pub mod loudness;
 pub mod media;
+pub mod notices;
 pub mod project;
 pub mod updater;
 pub mod window_state;
@@ -126,7 +127,8 @@ pub fn run() {
             loudness::loudness_report,
             loudness::sequence_loudness_report,
             updater::pending_update,
-            updater::install_update
+            updater::install_update,
+            notices::third_party_notices
         ])
         .setup(|app| setup(app))
         .on_window_event(|window, event| {

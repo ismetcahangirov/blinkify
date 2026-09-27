@@ -5,14 +5,14 @@
     "tools"
   ],
   "totals": {
-    "files": 346,
-    "tests": 51,
+    "files": 354,
+    "tests": 52,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 133,
-      "tests": 45,
+      "files": 135,
+      "tests": 46,
       "untested": [
         "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/inspector/SequenceSummary.tsx",
@@ -27,7 +27,6 @@
         "apps/desktop/src/player/metering.ts",
         "apps/desktop/src/player/transportGlyphs.tsx",
         "apps/desktop/src/shell.store.ts",
-        "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/Splitter.tsx",
         "apps/desktop/src/shell/windowChrome.ts",
         "apps/desktop/src/shell/zones/LibraryZone.tsx",
@@ -216,10 +215,16 @@
       ]
     },
     "tools": {
-      "files": 30,
+      "files": 36,
       "tests": 0,
       "untested": [
         "tools/apply-labels.mjs",
+        "tools/attribution/attribution.mjs",
+        "tools/attribution/check.mjs",
+        "tools/attribution/coverage-test.mjs",
+        "tools/attribution/determinism-test.mjs",
+        "tools/attribution/generate.mjs",
+        "tools/attribution/injection-test.mjs",
         "tools/check-links.mjs",
         "tools/colour-gate-test.mjs",
         "tools/colour-gate.mjs",
@@ -1670,6 +1675,7 @@
         "apps/desktop/src/project/ProjectLifecycle.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/shell/ThirdPartyNotices.tsx",
         "apps/desktop/src/shell/windowChrome.ts",
         "apps/desktop/src/shortcuts/ShortcutReference.tsx",
         "apps/desktop/src/shortcuts/shortcuts.store.ts",
@@ -1678,9 +1684,12 @@
         "packages/ui/src/index.ts"
       ],
       "dependedOnBy": [
-        "apps/desktop/src/shell/AppShell.tsx"
+        "apps/desktop/src/shell/AppShell.tsx",
+        "apps/desktop/src/shell/ThirdPartyNotices.test.tsx"
       ],
-      "coveredByTests": [],
+      "coveredByTests": [
+        "apps/desktop/src/shell/ThirdPartyNotices.test.tsx"
+      ],
       "hasNoDependents": false
     },
     "apps/desktop/src/shell/AppShell.test.tsx": {
@@ -1728,6 +1737,35 @@
         "apps/desktop/src/shell/AppShell.tsx"
       ],
       "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "apps/desktop/src/shell/ThirdPartyNotices.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shell/ThirdPartyNotices.tsx",
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "apps/desktop/src/shell/ThirdPartyNotices.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": false,
+      "dependsOn": [
+        "packages/ui/src/index.ts"
+      ],
+      "dependedOnBy": [
+        "apps/desktop/src/shell/AppBar.tsx",
+        "apps/desktop/src/shell/ThirdPartyNotices.test.tsx"
+      ],
+      "coveredByTests": [
+        "apps/desktop/src/shell/ThirdPartyNotices.test.tsx"
+      ],
       "hasNoDependents": false
     },
     "apps/desktop/src/shell/layout.store.ts": {
@@ -5360,6 +5398,8 @@
         "apps/desktop/src/project/SequenceSettingsDialog.tsx",
         "apps/desktop/src/shell/AppBar.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
+        "apps/desktop/src/shell/ThirdPartyNotices.test.tsx",
+        "apps/desktop/src/shell/ThirdPartyNotices.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
@@ -5381,6 +5421,7 @@
         "apps/desktop/src/project/ProjectLifecycle.test.tsx",
         "apps/desktop/src/project/SequenceSettingsDialog.test.tsx",
         "apps/desktop/src/shell/AppShell.test.tsx",
+        "apps/desktop/src/shell/ThirdPartyNotices.test.tsx",
         "apps/desktop/src/shell/zones/InspectorZone.test.tsx",
         "apps/desktop/src/shell/zones/PlayerZone.test.tsx",
         "apps/desktop/src/shortcuts/ShortcutReference.test.tsx",
@@ -5448,6 +5489,76 @@
       "layer": "tooling",
       "isTest": false,
       "dependsOn": [],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/attribution/attribution.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [],
+      "dependedOnBy": [
+        "tools/attribution/check.mjs",
+        "tools/attribution/coverage-test.mjs",
+        "tools/attribution/determinism-test.mjs",
+        "tools/attribution/generate.mjs",
+        "tools/attribution/injection-test.mjs"
+      ],
+      "coveredByTests": [],
+      "hasNoDependents": false
+    },
+    "tools/attribution/check.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [
+        "tools/attribution/attribution.mjs"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/attribution/coverage-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [
+        "tools/attribution/attribution.mjs"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/attribution/determinism-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [
+        "tools/attribution/attribution.mjs"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/attribution/generate.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [
+        "tools/attribution/attribution.mjs"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
+    "tools/attribution/injection-test.mjs": {
+      "workspace": "tools",
+      "layer": "tooling",
+      "isTest": false,
+      "dependsOn": [
+        "tools/attribution/attribution.mjs"
+      ],
       "dependedOnBy": [],
       "coveredByTests": [],
       "hasNoDependents": true
