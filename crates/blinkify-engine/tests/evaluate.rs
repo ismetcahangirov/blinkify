@@ -675,3 +675,37 @@ fn detached_sound_plays_once_from_its_own_track_and_writes_no_file() {
     );
     assert_eq!(files(&dir), written, "detaching wrote a file");
 }
+
+#[test]
+fn a_clip_ending_less_than_half_a_tick_into_a_frame_meets_the_next() {
+    // #134: on Matroska's milliseconds, `[0, 67)` is two frames — 67 is the
+    // third frame's own timestamp, rounded from 66.67 — and the next clip
+    // starts at frame 2. The preview's segment must end there, not at 67 ms.
+    let orchestrator = orchestrator();
+    let dir = common::scratch("evaluate-half-tick");
+    let path = clip_file(&orchestrator, &dir, 2);
+    let sources = BTreeMap::from([(1, Arc::new(media(&orchestrator, &path, None)))]);
+    let tb = Rational { num: 1, den: 1000 };
+    let project = project_with(
+        &path,
+        vec![Track {
+            id: 1,
+            kind: TrackKind::Video,
+            clips: vec![
+                Clip::new(1, 1, 0, tb, 0, vec![Operation::Trim { from: 0, to: 67 }]),
+                Clip::new(2, 1, 0, tb, 2, vec![Operation::Trim { from: 67, to: 1000 }]),
+            ],
+            ..Track::default()
+        }],
+        Rational { num: 30, den: 1 },
+    );
+    let timeline = evaluate(&project).expect("evaluate");
+    let lengths: Vec<i64> = timeline.placements().map(|p| p.length).collect();
+    assert_eq!(lengths[0], 2);
+    let plan = plan_of(&project, &sources);
+    let segments = plan.segments();
+    assert_eq!(segments[0].timeline_end(), segments[1].timeline_start);
+    // The last tick the first clip plays: the frame at 33 ms.
+    assert_eq!(segments[0].source_at(66_666), 66);
+    assert_eq!(segments[1].source_at(segments[1].timeline_start), 67);
+}

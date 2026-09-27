@@ -16,7 +16,6 @@ use super::ClipId;
 use super::evaluate::{Motion, Placement};
 
 use crate::keyframes::{GopKind, Keyframe};
-use crate::time::{Rounding, rescale};
 
 /// One half of a split: its source range, start and length.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -53,15 +52,13 @@ pub(super) fn halves(placement: &Placement, at: i64) -> Option<(Half, Half)> {
         ));
     }
     // The cut in the source is the tick on screen at the cut, as the
-    // evaluator reads it: `k` frames of the clip, rounded down. Both halves
+    // evaluator reads it: `k` frames of the clip, to the nearest tick. Both halves
     // meet there, so every source tick is in exactly one of them — nothing
     // dropped, nothing shown twice. If the far half's partial last frame
     // would make it a frame too long, that sub-frame tail is left off, so
     // the halves together end exactly where the clip did.
-    let played = placement.played_time_base();
-    let sequence = placement.sequence_time_base;
-    let span = |frames: i64| rescale(frames, sequence, played, Rounding::Down);
-    let frames = |ticks: i64| rescale(ticks, played, sequence, Rounding::Up);
+    let span = |frames: i64| placement.ticks_into(frames);
+    let frames = |ticks: i64| placement.frames_until(ticks);
     let (left, right) = if placement.motion == Some(Motion::Reverse) {
         // Backwards, the left half plays the end of the source.
         let cut = placement.source_out.checked_sub(span(k)?)?;
@@ -132,12 +129,7 @@ fn frame_of(placement: &Placement, pts: i64) -> Option<i64> {
     if pts < placement.source_in || pts >= placement.source_out {
         return None;
     }
-    let offset = rescale(
-        pts - placement.source_in,
-        placement.played_time_base(),
-        placement.sequence_time_base,
-        Rounding::Up,
-    )?;
+    let offset = placement.frames_until(pts - placement.source_in)?.max(0);
     let frame = placement.start.checked_add(offset)?;
     placement.covers(frame).then_some(frame)
 }
@@ -195,13 +187,9 @@ mod tests {
             crop: None,
             silent: false,
         };
-        placement.length = rescale(
-            source_out - source_in,
-            placement.played_time_base(),
-            placement.sequence_time_base,
-            Rounding::Up,
-        )
-        .expect("length");
+        placement.length = placement
+            .frames_until(source_out - source_in)
+            .expect("length");
         if motion == Some(Motion::Hold) {
             placement.length = 90;
         }

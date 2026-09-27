@@ -11,6 +11,7 @@
     clippy::indexing_slicing,
     clippy::panic,
     clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
     clippy::integer_division
 )]
 
@@ -131,9 +132,23 @@ fn a_held_frame_holds_the_exact_frame_between_copies() {
         .expect("exports");
     assert_eq!(frames(&target), 30 + 45 + 30);
     assert_eq!(common::decode_errors(&target), Vec::<String>::new());
-    // The held frames are the source's frame at the hold, 45 times.
-    let psnr = common::fixture::min_psnr_of_hold(&target, &source.path, 30, 75, held_at);
+    // The held frames are the source's frame on screen at the hold, 45
+    // times. 1165 ms is between the frames at 1133 and 1167: the one on
+    // screen is the one at or before it, as the evaluator names it (#134).
+    let shown = common::packet_times(&source.path, "v:0")
+        .into_iter()
+        .map(|seconds| (seconds * 1000.0).round() as i64)
+        .filter(|pts| *pts <= held_at)
+        .max()
+        .expect("a frame at or before the hold");
+    assert!(shown < held_at, "the hold is between frames");
+    let psnr = common::fixture::min_psnr_of_hold(&target, &source.path, 30, 75, shown);
     assert!(psnr > 30.0, "held frames' PSNR {psnr}");
+    let after = common::fixture::min_psnr_of_hold(&target, &source.path, 30, 75, held_at);
+    assert!(
+        after < psnr,
+        "the frame after the hold was held, PSNR {after}"
+    );
     // The copied segments either side are the source's own packets.
     let output: Vec<u64> = packets(&target, VideoCodec::Vp9)
         .iter()

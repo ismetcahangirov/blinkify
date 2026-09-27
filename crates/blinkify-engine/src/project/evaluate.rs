@@ -254,8 +254,15 @@ impl Placement {
         }
     }
 
-    /// The source tick on screen at sequence frame `position`: the last one
-    /// at or before that moment. `None` outside the clip.
+    /// The source tick on screen at sequence frame `position`: the frame
+    /// shown is the last one at or before it. `None` outside the clip.
+    ///
+    /// The moment is taken to the nearest source tick, not down: a frame's
+    /// timestamp is itself only exact to half a tick, because the muxer
+    /// rounded it. Matroska's 30 fps frames sit at 0, 33, 67 ms, and
+    /// sequence frame 2 (66.67 ms) is the frame at 67, as the export writes
+    /// it, not the one at 33 (#134, ADR-0023). Backwards, the tick is one
+    /// before the moment, so the frame the moment falls on is not yet shown.
     #[must_use]
     pub fn source_at(&self, position: i64) -> Option<i64> {
         if !self.covers(position) {
@@ -264,18 +271,36 @@ impl Placement {
         if self.motion == Some(Motion::Hold) {
             return Some(self.source_in);
         }
-        let offset = rescale(
-            position - self.start,
-            self.sequence_time_base,
-            self.played_time_base(),
-            Rounding::Down,
-        )?;
+        let offset = self.ticks_into(position - self.start)?;
         let tick = if self.motion == Some(Motion::Reverse) {
             self.source_out.checked_sub(1)?.checked_sub(offset)?
         } else {
             self.source_in.checked_add(offset)?
         };
         (self.source_in <= tick && tick < self.source_out).then_some(tick)
+    }
+
+    /// The source ticks `frames` sequence frames into the clip last, to the
+    /// nearest tick: where [`Placement::source_at`] and a split put that
+    /// frame (ADR-0023).
+    #[must_use]
+    pub fn ticks_into(&self, frames: i64) -> Option<i64> {
+        rescale(
+            frames,
+            self.sequence_time_base,
+            self.played_time_base(),
+            Rounding::Nearest,
+        )
+    }
+
+    /// The first sequence frame, counted from the clip's start, at which
+    /// [`Placement::ticks_into`] reaches `ticks`: how many frames `ticks` of
+    /// source last. A partial last frame counts only when it is more than
+    /// half a tick, the precision of the timestamps it is measured between
+    /// (ADR-0023).
+    #[must_use]
+    pub fn frames_until(&self, ticks: i64) -> Option<i64> {
+        frames_until(ticks, self.played_time_base(), self.sequence_time_base)
     }
 
     /// Why the clip's sound must be re-encoded whole, if something forces
@@ -460,6 +485,21 @@ impl Timeline {
     }
 }
 
+/// How many frames of `sequence` `ticks` of `played` last: rounded up, less
+/// half a tick. `ceil((2 × ticks − 1) / 2)` in frames, so that it is the
+/// first frame whose nearest tick reaches `ticks` (ADR-0023).
+fn frames_until(ticks: i64, played: Rational, sequence: Rational) -> Option<i64> {
+    rescale(
+        ticks.checked_mul(2)?.checked_sub(1)?,
+        Rational {
+            num: played.num,
+            den: played.den.checked_mul(2)?,
+        },
+        sequence,
+        Rounding::Up,
+    )
+}
+
 /// `placement` cut down to sequence frames `from..to`, which must lie
 /// inside it: the source range where those frames are, found as a split
 /// finds it.
@@ -631,9 +671,7 @@ fn place(
     }
     placement.length = match hold {
         Some(frames) => frames,
-        None => {
-            rescale(source_out - source_in, played, sequence, Rounding::Up).ok_or_else(overflow)?
-        }
+        None => frames_until(source_out - source_in, played, sequence).ok_or_else(overflow)?,
     };
     placement
         .start
@@ -729,6 +767,44 @@ mod tests {
         // 0.7 s at triple speed: 7 frames of 30 fps, exactly.
         assert_eq!(placement.length, 7);
         assert_eq!(placement.source_at(16), Some(225_000 + 6 * 9000));
+    }
+
+    #[test]
+    fn a_rounded_timestamp_is_the_frame_it_was_rounded_from() {
+        // #134: Matroska stores milliseconds, so 30 fps frames sit at 0, 33,
+        // 67, 100. Sequence frame 2 is 66.67 ms: the frame at 67 ms, which
+        // the muxer rounded from that moment, not the one at 33.
+        let ms = Rational { num: 1, den: 1000 };
+        let mut forward = project(vec![Clip::new(
+            1,
+            1,
+            0,
+            ms,
+            0,
+            vec![Operation::Trim { from: 0, to: 3000 }],
+        )]);
+        forward.sequence.settings.frame_rate = Rational { num: 30, den: 1 };
+        let timeline = evaluate(&forward).expect("evaluate");
+        let placement = &timeline.tracks[0].placements[0];
+        let named: Vec<_> = (0..4).map(|n| placement.source_at(n)).collect();
+        assert_eq!(named, [Some(0), Some(33), Some(67), Some(100)]);
+
+        // Backwards, frame n is the one before the moment n frames from the
+        // out point: 2967, 2933, 2900 are frames 89, 88 and 87.
+        let mut reversed = forward.clone();
+        reversed.sequence.tracks[0].clips[0]
+            .operations
+            .push(Operation::Reverse);
+        let timeline = evaluate(&reversed).expect("evaluate");
+        let placement = &timeline.tracks[0].placements[0];
+        let frames = [0, 33, 67, 100, 2900, 2933, 2967];
+        let shown = |n| {
+            let tick = placement.source_at(n).expect("in the clip");
+            frames.iter().rev().find(|&&f| f <= tick).copied()
+        };
+        assert_eq!(shown(0), Some(2967));
+        assert_eq!(shown(1), Some(2933));
+        assert_eq!(shown(2), Some(2900));
     }
 
     #[test]

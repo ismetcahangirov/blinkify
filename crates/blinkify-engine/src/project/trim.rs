@@ -66,15 +66,10 @@ pub(super) struct Trimmed {
     pub clamped: bool,
 }
 
-/// How many sequence frames `ticks` of the placement's source last: a
-/// partial last frame counts, as the evaluator counts it.
+/// How many sequence frames `ticks` of the placement's source last, as the
+/// evaluator counts them.
 fn frames(placement: &Placement, ticks: i64) -> Option<i64> {
-    rescale(
-        ticks,
-        placement.played_time_base(),
-        placement.sequence_time_base,
-        Rounding::Up,
-    )
+    placement.frames_until(ticks)
 }
 
 fn ticks(placement: &Placement, frames: i64, rounding: Rounding) -> Option<i64> {
@@ -151,10 +146,9 @@ pub(super) fn trim(
             }
             let mut clamped = wanted != delta;
             let length = placement.length + wanted;
-            let mut to =
-                placement
-                    .source_in
-                    .checked_add(ticks(placement, length, Rounding::Down)?)?;
+            let mut to = placement
+                .source_in
+                .checked_add(placement.ticks_into(length)?)?;
             if to > highest {
                 to = highest;
                 clamped = true;
