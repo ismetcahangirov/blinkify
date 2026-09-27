@@ -62,6 +62,11 @@ interface PreviewState {
   applyUpdate: (update: PlaybackUpdate) => void;
   /** The canvas drew a frame. */
   showFrame: (frameNumber: number, position: number) => void;
+  /** The last picture drawn, as decoded: its size and rotation. What the
+   * crop framing (#131) lays its rectangle over; `null` for black. */
+  picture: Picture | null;
+  /** The canvas drew a picture of this size and rotation. */
+  showPicture: (picture: Picture | null) => void;
   refreshStats: () => Promise<void>;
   /** The frame stream stopped working. */
   fail: (message: string) => void;
@@ -71,6 +76,14 @@ interface PreviewState {
   /** Put the in or out point on the frame on screen. While looping, the
    * loop follows. */
   mark: (point: "in" | "out") => Promise<void>;
+}
+
+/** The picture on screen, as the last frame drawn was: its decoded size and
+ * the rotation it is turned by. */
+export interface Picture {
+  readonly width: number;
+  readonly height: number;
+  readonly rotation: number;
 }
 
 export interface Marks {
@@ -260,6 +273,18 @@ export const usePreviewStore = create<PreviewState>((set, get) => {
       if (update.session === get().session) set({ playback: update.status });
     },
 
+    picture: null,
+    showPicture: (picture) => {
+      const shown = get().picture;
+      const same =
+        shown === picture ||
+        (shown !== null &&
+          picture !== null &&
+          shown.width === picture.width &&
+          shown.height === picture.height &&
+          shown.rotation === picture.rotation);
+      if (!same) set({ picture });
+    },
     showFrame: (frameNumber, framePosition) => {
       if (get().framePosition !== framePosition) {
         set({ frameNumber, framePosition });

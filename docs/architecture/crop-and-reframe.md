@@ -96,3 +96,27 @@ locked tracks, and scaled up, and on what basis the size was chosen.
 Because the edit applied makes exactly the previewed project, the statement
 equals the plan afterwards; `tests/crop_cost.rs` holds it to that, and to one
 undo returning the file byte for byte.
+
+## Framing on the preview
+
+From [#131](https://github.com/ismetcahangirov/blinkify/issues/131). While a
+clip's crop is framed on the player, the preview plays that clip whole, so
+the rectangle is drawn over the picture it cuts from:
+
+```
+Frame on preview ── frame_crop(clip) ── ProjectPreview.framing
+        │
+        ▼
+refresh: evaluate ─▶ Timeline::with_crop_lifted(clip) ─▶ PlaybackPlan
+                     (the preview's copy only; the export never sees it)
+```
+
+The overlay (`player/CropOverlay.tsx`) is one canvas over the preview. Its
+arithmetic is `player/cropFraming.ts`: the picture's box is worked out from
+the last frame drawn exactly as `PreviewCanvas` places it — at device pixels,
+rounded as it rounds, then back to CSS pixels — so a pointer maps to the same
+source pixel at every rotation and display scale. Every rectangle it sends is
+on the source's grid (`CropFrame.across`, `down`), inside the picture and at
+least the minimum size, and a drag is one gesture (#37). What the user sees
+and presses is specified in
+[`../design/capcut-layout-reference.md`](../design/capcut-layout-reference.md).

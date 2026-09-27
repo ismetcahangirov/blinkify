@@ -410,6 +410,23 @@ impl Timeline {
         picture
     }
 
+    /// The timeline with `clip` shown whole: its crop lifted, and nothing
+    /// else changed. What the preview plays while the crop is being framed
+    /// on it (#131): the rectangle is drawn over the whole picture, so the
+    /// picture is the uncropped one. The export never sees this.
+    #[must_use]
+    pub fn with_crop_lifted(mut self, clip: ClipId) -> Self {
+        for placement in self
+            .tracks
+            .iter_mut()
+            .flat_map(|track| track.placements.iter_mut())
+            .filter(|placement| placement.clip == clip)
+        {
+            placement.crop = None;
+        }
+        self
+    }
+
     /// Every placement, track by track.
     pub fn placements(&self) -> impl Iterator<Item = &Placement> {
         self.tracks.iter().flat_map(|track| track.placements.iter())
@@ -762,6 +779,38 @@ mod tests {
         assert_eq!(timeline.at(30).clips[0].clip, 2);
         assert!(timeline.at(60).clips.is_empty());
         assert_eq!(timeline.length(), 60);
+    }
+
+    #[test]
+    fn lifting_a_clip_s_crop_shows_that_clip_whole_and_nothing_else_changes() {
+        let crop = Operation::Crop {
+            x: 656,
+            y: 0,
+            width: 608,
+            height: 1080,
+        };
+        let trim = |from| Operation::Trim {
+            from,
+            to: from + 90_000,
+        };
+        let timeline = evaluate(&project(vec![
+            clip(1, 0, vec![trim(0), crop]),
+            clip(2, 30, vec![trim(0), crop]),
+        ]))
+        .expect("evaluate");
+        let lifted = timeline.clone().with_crop_lifted(1);
+        let crops: Vec<_> = lifted.placements().map(|p| p.crop).collect();
+        assert_eq!(crops, vec![None, crop.crop_rect()]);
+        // Its reason stays: the export still re-encodes what is cropped.
+        assert_eq!(
+            lifted.placements().next().map(|p| p.forced),
+            timeline.placements().next().map(|p| p.forced)
+        );
+        assert_eq!(
+            timeline.clone().with_crop_lifted(9),
+            timeline,
+            "no such clip"
+        );
     }
 
     #[test]
