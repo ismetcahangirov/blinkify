@@ -12,6 +12,12 @@
 //!
 //! A held clip's lane decodes its one frame; a reversed clip's lane runs a
 //! [`ReverseDecoder`], which uses the same start a chunk at a time (#113).
+//!
+//! A cropped clip's decoder cuts its rectangle out before it scales (#129),
+//! with the export's own filter, and its frames are the cropped picture's
+//! size: the ring is sized for them, and the renderer draws them at their
+//! own shape. From a proxy the rectangle is first mapped onto the proxy's
+//! pixels.
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -23,7 +29,9 @@ use crate::decode::{
     VideoFrame,
 };
 use crate::orchestrator::Orchestrator;
+use crate::picture_filter::{self, Crop, Decoded};
 use crate::probe::{Rational, VideoInfo};
+use crate::project::crop::CropRect;
 use crate::project::evaluate::Motion;
 use crate::proxy::PROXY_HEIGHT;
 use crate::seek;
@@ -54,13 +62,55 @@ pub(crate) fn rotation_of(segment: &Segment) -> u32 {
     }
 }
 
-/// The size frames of `segment` are decoded at for a `bound` surface.
+/// The size frames of `segment` are decoded at for a `bound` surface: the
+/// picture it shows — its crop, or the whole — fitted to the bound.
 pub(crate) fn frame_size(segment: &Segment, bound: (u32, u32)) -> Option<FrameSize> {
     let video = segment.source.video.as_ref()?;
+    let shown = segment
+        .crop
+        .map_or_else(|| video.info.clone(), |rect| cropped(&video.info, rect));
     Some(if segment.source.proxy.is_some() {
-        proxy_size(&video.info, bound)
+        proxy_size(&shown, bound)
     } else {
-        FrameSize::fit(&video.info, bound.0, bound.1)
+        FrameSize::fit(&shown, bound.0, bound.1)
+    })
+}
+
+/// `video` as a crop of `rect` leaves it: the rectangle's size upright, and
+/// as coded, turned the same way.
+fn cropped(video: &VideoInfo, rect: CropRect) -> VideoInfo {
+    let coded = Crop {
+        rect,
+        picture: Decoded::coded(video),
+    }
+    .decoded();
+    VideoInfo {
+        width: coded.width,
+        height: coded.height,
+        display_width: rect.width,
+        display_height: rect.height,
+        ..video.clone()
+    }
+}
+
+/// `segment`'s crop as its decoder delivers pictures: of the source as
+/// coded, or of its proxy — upright and smaller — with the rectangle mapped
+/// onto the proxy's pixels.
+fn decoded_crop(segment: &Segment, video: &VideoStream) -> Option<Crop> {
+    let rect = segment.crop?;
+    Some(match &segment.source.proxy {
+        Some(proxy) => {
+            let display = (video.info.display_width, video.info.display_height);
+            let (width, height) = proxy.frame_size(display.0, display.1);
+            Crop {
+                rect: picture_filter::onto_proxy(&rect, display, (width, height)),
+                picture: Decoded::upright(width, height),
+            }
+        }
+        None => Crop {
+            rect,
+            picture: Decoded::coded(&video.info),
+        },
     })
 }
 
@@ -104,6 +154,7 @@ pub(crate) fn start_decoder(
             size,
             max_frames,
             concat: true,
+            crop: decoded_crop(segment, video),
         };
         return Ok(VideoDecoder::start_mapped(
             orchestrator,
@@ -112,13 +163,16 @@ pub(crate) fn start_decoder(
             Some(source_frame_of_proxy(segment, video)),
         ));
     }
-    let request = plan.request(
-        &segment.source.path,
-        video.index,
-        video.time_base,
-        size,
-        max_frames,
-    );
+    let request = DecodeRequest {
+        crop: decoded_crop(segment, video),
+        ..plan.request(
+            &segment.source.path,
+            video.index,
+            video.time_base,
+            size,
+            max_frames,
+        )
+    };
     Ok(VideoDecoder::start(
         orchestrator,
         &request,

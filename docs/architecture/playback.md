@@ -171,3 +171,10 @@ bypass — does not restart playback. The player hands the new plan to the
 running feeder, which switches each affected track to a decoder with the new
 chain on an exact sample a moment ahead; the clock and the picture carry on.
 See [`audio-chain.md`](./audio-chain.md) (#47).
+
+A changed crop (#129) moves nothing in time either, so it is handled the same
+way: the sound carries on without a gap. The segment's picture lane no longer
+matches (`same_segment` compares crops), so it is retired, and the next frame
+due starts a decoder with the new crop at the clock's position. Until that
+decoder delivers, the last frame stays on screen. Paused, the change is shown
+as a seek would show it.

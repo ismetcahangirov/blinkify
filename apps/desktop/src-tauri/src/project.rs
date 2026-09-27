@@ -26,9 +26,7 @@ use blinkify_engine::export::plan::{ExportPlan, plan};
 use blinkify_engine::playback::{PlaybackPlan, SourceMedia, chain_rendered};
 use blinkify_engine::project::asset::AssetInfo;
 use blinkify_engine::project::edit::{Document, Edit, EditContext, HistoryView, SettingsImpact};
-use blinkify_engine::project::evaluate::{
-    OperationsAt, Timeline, audio_operation, evaluate, filters_picture,
-};
+use blinkify_engine::project::evaluate::{OperationsAt, Timeline, audio_operation, evaluate};
 use blinkify_engine::project::session::Session;
 use blinkify_engine::project::speed::SpeedVerdict;
 use blinkify_engine::project::split::{CutPoint, cut_point};
@@ -685,15 +683,12 @@ impl Diagnostics {
 }
 
 /// Whether the preview renders `operation`: timing always, a hold and a
-/// reverse too, as the export renders them (#113); of the audio chain, what
-/// `chain_rendered` says — and noise reduction only while its model is
-/// installed (#47). A crop is not drawn by the preview yet (#129): the
-/// export applies it whatever the preview shows.
+/// reverse too, as the export renders them (#113), and a crop, with the
+/// export's own filter (#129); of the audio chain, what `chain_rendered`
+/// says — and noise reduction only while its model is installed (#47).
 fn previewed(operation: &Operation, models: bool) -> bool {
-    !filters_picture(operation)
-        && audio_operation(operation).is_none_or(|step| {
-            chain_rendered(&step) && (models || step.stage() != AudioStage::Denoise)
-        })
+    audio_operation(operation)
+        .is_none_or(|step| chain_rendered(&step) && (models || step.stage() != AudioStage::Denoise))
 }
 
 /// What exporting the open project would do (#39): every segment of the
@@ -869,8 +864,9 @@ mod tests {
     }
 
     #[test]
-    fn a_crop_is_listed_as_not_previewed_until_the_preview_draws_it() {
+    fn a_crop_is_previewed_as_the_export_renders_it() {
         let crop = operation(r#"{"op":"crop","x":656,"y":0,"width":608,"height":1080}"#);
-        assert!(!previewed(&crop, true));
+        assert!(previewed(&crop, true));
+        assert!(previewed(&crop, false), "a crop needs no model");
     }
 }

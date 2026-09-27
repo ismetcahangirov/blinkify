@@ -24,6 +24,7 @@ pub mod export;
 pub mod filmstrip;
 pub mod keyframes;
 pub mod orchestrator;
+pub mod picture_filter;
 pub mod playback;
 pub mod probe;
 pub mod project;

@@ -64,7 +64,7 @@ and no overlap, and the output starts at zero.
 | Packet payloads     | copied byte for byte (asserted by payload hash)                      |
 | Codec configuration | NUT stream header extradata, unchanged                               |
 | Colour metadata     | in the bitstream; read back by the muxer                             |
-| Rotation            | `-display_rotation` on the muxer input (NUT cannot carry it)         |
+| Rotation            | `-display_rotation` on the muxer input (NUT cannot carry it), below  |
 | Stream metadata     | NUT stream info packets (language, handler)                          |
 | File metadata       | NUT global info (creation time), less the pipe's `encoder`           |
 | Chapters            | moved onto the output timeline, as NUT chapter info packets          |
@@ -197,6 +197,7 @@ reaches it without the plan's recorded reason.
 | reversed clip           | decodes a chunk at a time, last chunk first, each reversed (below)       |
 | speed no file carries   | retimes the pictures by the speed, then puts them on the sequence's grid |
 | clip in another shape   | scales to fit the sequence, pads the rest black, conforms the frame rate |
+| cropped clip (#128)     | cuts the clip's rectangle out, then fits it to the sequence (below)      |
 | incompatible parameters | encodes the source's pictures to the output's parameters                 |
 | gap                     | black at the sequence's shape                                            |
 
@@ -214,6 +215,35 @@ and its parameter sets travel in-band exactly as a seam's do. Where no encoder
 on this machine qualifies, the plan declines the segment and the export
 refuses before anything runs. Where nothing in the stream is copied, the
 output is the encoder's stream.
+
+### Orientation
+
+A source is decoded as coded, with `-noautorotate`, exactly as the preview
+decodes it. The output's video stream carries one display rotation: that of
+the first video segment whose packets are copied, a copy or a smart-cut,
+because a copied packet cannot be turned. Where nothing is copied, the
+rotation is 0 (`render::output_rotation`), and the muxer writes the same
+value. Every rendered picture is encoded in that orientation. It is turned
+only by the difference between its source's rotation and the output's, and
+it is fitted to the sequence's shape turned the same way. A portrait phone
+clip rendered between copies of itself is never transposed, and a gap is
+black at the coded shape. ADR-0021 has the rule and what it replaced.
+
+### Crop (#128)
+
+A cropped clip's rectangle is in the source's display pixels (ADR-0019).
+`picture_filter::Crop::filter` maps it onto the coded picture, and the
+preview decoder calls the same function (#129). The crop is the first filter
+after the trim, before the scale to fit the sequence. Scaling first would
+throw away resolution the crop keeps and then crop a rounded size. So a 9:16
+crop of a 16:9 clip in a 9:16 sequence fills the frame with no bars, and a
+crop is one filter in the one render pass: no cropped file is ever written.
+The cropped clip's sound is still a copy, and the clips around it are too.
+`tests/export_crop.rs` asserts both on packet hashes, and measures the
+region against FFmpeg's own autorotated crop of the source for a clip turned
+0° and 90°. An HDR clip or a clip no encoder here can match is declined by
+the plan before anything runs. The dialog and the report name the crop as
+the reason and suggest removing it.
 
 ### Reverse, in bounded memory
 

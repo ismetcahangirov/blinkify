@@ -2941,6 +2941,7 @@
       "dependedOnBy": [
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/index.ts"
       ],
       "coveredByTests": [],
@@ -4145,6 +4146,7 @@
       "isTest": false,
       "dependsOn": [
         "packages/types/src/generated/AudioOperation.ts",
+        "packages/types/src/generated/CropRect.ts",
         "packages/types/src/generated/Motion.ts",
         "packages/types/src/generated/Rational.ts"
       ],

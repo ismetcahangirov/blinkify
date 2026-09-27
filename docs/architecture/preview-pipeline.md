@@ -110,6 +110,27 @@ canvas transform maps each corner of the frame accordingly.
 An anamorphic source is widened by its sample aspect ratio in the decode graph,
 so every delivered frame has square pixels and the renderer only ever rotates.
 
+## Crop
+
+A cropped clip (#129) is cut in the decode graph, after the frame selection
+and before the scale, by `picture_filter::Crop::filter`. That is the function
+the export renderer crops with (#128, ADR-0021). The rectangle is stored
+upright (ADR-0019) and mapped onto the coded picture the decoder delivers, so
+the frame still arrives as coded and the renderer still only rotates it. The
+frame's size is the cropped picture's, fitted to the surface. A lane's ring is
+sized for it, the frame scheme carries it per frame (ADR-0005), and the
+canvas places the frame by its own shape, never by the source's.
+
+From a proxy, which is upright and 540 lines tall, the rectangle is first
+mapped onto the proxy's pixels (`Proxy::frame_size`, `picture_filter::onto_proxy`).
+Every edge is rounded outwards to an even pixel and clamped to the proxy's
+frame, so the proxy shows the same region.
+
+`tests/preview_crop.rs` compares a preview frame with the same frame of the
+exported file for a clip turned 0° and 90°, and a proxy's frame with the
+original's. It also changes the crop during a seek and while playing, and
+takes a cropped source offline.
+
 ## Teardown
 
 `Player::close` closes every lane's ring (waking a blocked producer), cancels

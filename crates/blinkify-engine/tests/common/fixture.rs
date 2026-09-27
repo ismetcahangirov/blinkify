@@ -304,7 +304,7 @@ pub fn min_psnr_reversed(output: &Path, source: &Path, from: i64, to: i64) -> f6
 
 /// The smallest per-frame PSNR between `[o]` of `output` and `[r]` of
 /// `source`, each made by its filter chain.
-fn psnr_between(output: &Path, source: &Path, output_chain: &str, source_chain: &str) -> f64 {
+pub fn psnr_between(output: &Path, source: &Path, output_chain: &str, source_chain: &str) -> f64 {
     let result = super::orchestrator()
         .run_to_end(
             SidecarCommand::ffmpeg()
@@ -338,6 +338,58 @@ fn psnr_between(output: &Path, source: &Path, output_chain: &str, source_chain: 
                 value.parse().unwrap_or(0.0)
             }
         })
+}
+
+/// Four seconds of `size` VP9 at 30 fps, a keyframe every second, with a
+/// 440 Hz tone in AAC stereo, in MP4 — whose 1/15360 time base holds every
+/// frame of 30 fps on a whole tick — displayed turned `rotation` degrees
+/// counter-clockwise by a display matrix, as a phone writes one. Made here
+/// with the sidecar's own encoders, so every machine can render it.
+pub fn turned(name: &str, size: (u32, u32), rotation: u32) -> Source {
+    let dir = super::scratch(name);
+    let plain = dir.join("plain.mp4");
+    let orchestrator = super::orchestrator();
+    orchestrator
+        .run_to_end(
+            SidecarCommand::ffmpeg()
+                .option("-v", "error")
+                .lavfi_input(&format!(
+                    "testsrc2=size={}x{}:rate=30:duration=4",
+                    size.0, size.1
+                ))
+                .lavfi_input("sine=frequency=440:sample_rate=48000:duration=4")
+                .option("-map", "0:v")
+                .option("-map", "1:a")
+                .option("-pix_fmt", "yuv420p")
+                .option("-c:v", "libvpx-vp9")
+                .option("-deadline", "realtime")
+                .option("-b:v", "0")
+                .option("-crf", "30")
+                .option("-g", "30")
+                .option("-keyint_min", "30")
+                .option("-c:a", "aac")
+                .option("-ac", "2")
+                .output_file(&plain),
+            Priority::Foreground,
+        )
+        .expect("encodes");
+    if rotation == 0 {
+        return Source::at(plain, Some(encoders()));
+    }
+    let turned = dir.join("turned.mp4");
+    orchestrator
+        .run_to_end(
+            SidecarCommand::ffmpeg()
+                .option("-v", "error")
+                .option("-display_rotation:v:0", rotation.to_string())
+                .input(&plain)
+                .option("-map", "0")
+                .option("-c", "copy")
+                .output_file(&turned),
+            Priority::Foreground,
+        )
+        .expect("turns");
+    Source::at(turned, Some(encoders()))
 }
 
 /// A four-second file with a keyframe every second, made here with the

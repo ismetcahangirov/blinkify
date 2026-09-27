@@ -53,7 +53,7 @@ use clock::PlaybackClock;
 use feeder::{Feeder, FeederConfig, LoopRange as FeederLoop};
 use lanes::{LANE_BUDGET_BYTES, Lanes};
 use monitor::MonitorSettings;
-use plan::{PlanSlot, only_chains_differ, same_segment};
+use plan::{PlanSlot, only_chains_or_crops_differ, same_segment};
 use scrub::{FrameCache, Picture, ScrubSlot, Worker};
 
 /// How far ahead of a boundary the next segment's video is started.
@@ -646,13 +646,16 @@ impl Inner {
             *lock(&self.loop_range) =
                 (start.min(limit) < end.min(limit)).then(|| (start.min(limit), end.min(limit)));
         }
-        let chains_only = only_chains_differ(&old, &new);
-        if chains_only
+        let untimed_only = only_chains_or_crops_differ(&old, &new);
+        if untimed_only
             && control.state == PlaybackState::Playing
             && let Some(feeder) = &control.feeder
         {
-            // Only the sound's processing changed: it takes over without a
-            // gap, the pictures and the clock untouched (#47, #49).
+            // Only the sound's processing, or a crop, changed: the sound takes
+            // over without a gap and the clock runs on (#47, #49). A segment
+            // whose crop changed lost its lane in the remap above, and the
+            // next frame due starts its new decoder where the clock is
+            // (#129); the last frame stays up until it delivers.
             feeder.retune(Arc::clone(&new));
         } else if !unchanged_here || t >= new.duration() {
             // What is on screen changed: show the new content at the same

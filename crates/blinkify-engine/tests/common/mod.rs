@@ -173,3 +173,30 @@ pub fn stream_end(path: &Path, selector: &str) -> f64 {
         })
         .fold(0.0, f64::max)
 }
+
+/// Rotate an RGBA frame counter-clockwise by a quarter-turn multiple — the
+/// same rule the renderer applies with a canvas transform.
+#[allow(clippy::indexing_slicing)]
+pub fn rotate_counter_clockwise(
+    frame: &blinkify_engine::decode::VideoFrame,
+    degrees: u32,
+) -> Vec<u8> {
+    let (w, h) = (frame.width as usize, frame.height as usize);
+    let turns = degrees.div_euclid(90) % 4;
+    let out_w = if turns % 2 == 1 { h } else { w };
+    let mut out = vec![0_u8; frame.pixels.len()];
+    for y in 0..h {
+        for x in 0..w {
+            let (nx, ny) = match turns {
+                0 => (x, y),
+                1 => (y, w - 1 - x),
+                2 => (w - 1 - x, h - 1 - y),
+                _ => (h - 1 - y, x),
+            };
+            let from = (y * w + x) * 4;
+            let to = (ny * out_w + nx) * 4;
+            out[to..to + 4].copy_from_slice(&frame.pixels[from..from + 4]);
+        }
+    }
+    out
+}

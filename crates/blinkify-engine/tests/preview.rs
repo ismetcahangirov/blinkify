@@ -184,6 +184,7 @@ fn frames_carry_the_streams_own_timestamps() {
                 },
                 max_frames: None,
                 concat: false,
+                crop: None,
             },
         );
         let decoded: Vec<i64> = frames.iter().map(|f| f.pts).collect();
@@ -223,6 +224,7 @@ fn a_decode_starts_at_exactly_the_requested_frame_and_matches_it_by_content() {
             size: FrameSize { width, height },
             max_frames: Some(1),
             concat: false,
+            crop: None,
         },
     );
     let [frame] = frames.as_slice() else {
@@ -257,6 +259,7 @@ fn a_throttled_consumer_bounds_memory_and_stalls_the_decoder() {
             size: FrameSize { width, height },
             max_frames: None,
             concat: false,
+            crop: None,
         },
         Arc::clone(&ring),
     );
@@ -436,7 +439,7 @@ fn a_portrait_video_arrives_as_coded_and_turns_upright_by_its_rotation() {
     // The renderer's rule — rotate counter-clockwise by `rotation` — applied
     // here to the delivered frame must give exactly what FFmpeg's own
     // autorotation gives.
-    let upright = rotate_counter_clockwise(frame, shown.rotation);
+    let upright = common::rotate_counter_clockwise(frame, shown.rotation);
     let reference = {
         let bytes = Arc::new(Mutex::new(Vec::new()));
         let sink = Arc::clone(&bytes);
@@ -465,29 +468,6 @@ fn a_portrait_video_arrives_as_coded_and_turns_upright_by_its_rotation() {
         upright == reference,
         "rotating the delivered frame does not give the upright picture"
     );
-}
-
-/// Rotate an RGBA frame counter-clockwise by a quarter-turn multiple — the
-/// same rule the renderer applies with a canvas transform.
-fn rotate_counter_clockwise(frame: &VideoFrame, degrees: u32) -> Vec<u8> {
-    let (w, h) = (frame.width as usize, frame.height as usize);
-    let turns = degrees.div_euclid(90) % 4;
-    let out_w = if turns % 2 == 1 { h } else { w };
-    let mut out = vec![0_u8; frame.pixels.len()];
-    for y in 0..h {
-        for x in 0..w {
-            let (nx, ny) = match turns {
-                0 => (x, y),
-                1 => (y, w - 1 - x),
-                2 => (w - 1 - x, h - 1 - y),
-                _ => (h - 1 - y, x),
-            };
-            let from = (y * w + x) * 4;
-            let to = (ny * out_w + nx) * 4;
-            out[to..to + 4].copy_from_slice(&frame.pixels[from..from + 4]);
-        }
-    }
-    out
 }
 
 #[test]
