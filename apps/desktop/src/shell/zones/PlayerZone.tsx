@@ -13,7 +13,7 @@ import { ScrubBar } from "../../player/ScrubBar.js";
 import { TransportBar } from "../../player/TransportBar.js";
 import { useFileDrop } from "../../player/useFileDrop.js";
 import { projectName, useProjectStore } from "../../project/project.store.js";
-import { useShellStore } from "../../shell.store.js";
+import { engineLabel, useShellStore } from "../../shell.store.js";
 
 /** The engine's transport event: see `media::PLAYBACK_EVENT` in the shell. */
 const PLAYBACK_EVENT = "media://playback";
@@ -43,6 +43,7 @@ const PLAYBACK_EVENT = "media://playback";
  */
 export const PlayerZone = memo(function PlayerZone() {
   const engineStatus = useShellStore((state) => state.engineStatus);
+  const engineError = useShellStore((state) => state.engineError);
   const status = usePreviewStore((state) => state.status);
   const session = usePreviewStore((state) => state.session);
   const path = usePreviewStore((state) => state.path);
@@ -192,7 +193,7 @@ export const PlayerZone = memo(function PlayerZone() {
           status that defaulted to "ready" would be the same class of claim as
           an export reporting lossless without having checked. */}
       <p className="zone__placeholder" data-testid="engine-status">
-        Engine: {engineStatus}
+        {engineLabel(engineStatus, engineError)}
       </p>
     </div>
   );

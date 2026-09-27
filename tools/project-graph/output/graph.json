@@ -132,6 +132,23 @@
         },
         {
           "dynamic": false,
+          "module": "./shell.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shell.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./shell/AppShell.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6421,9 +6438,36 @@
       "valid": true
     },
     {
+      "source": "apps/desktop/src/shell.store.test.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./shell.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/shell.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "apps/desktop/src/shell.store.ts",
       "dependencies": [],
       "dependents": [
+        "apps/desktop/src/App.tsx",
+        "apps/desktop/src/shell.store.test.ts",
         "apps/desktop/src/shell/zones/PlayerZone.tsx"
       ],
       "orphan": false,
@@ -19995,8 +20039,8 @@
     "info": 0,
     "ignore": 0,
     "advisedExitCode": 0,
-    "totalCruised": 376,
-    "totalDependenciesCruised": 918,
+    "totalCruised": 377,
+    "totalDependenciesCruised": 920,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

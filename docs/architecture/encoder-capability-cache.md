@@ -86,6 +86,13 @@ driver update is exactly the "listed but fails at export" case ADR-0003 exists
 to prevent, so being briefly unsure is the correct state, and a stale answer
 presented as current is not.
 
+The same command is what the player zone's engine line states (#151).
+`followEngine` in `shell.store.ts` asks at launch. While the answer is `None`
+the line reads "Engine: starting…" and it asks again every 500 ms. A profile
+makes it "Engine: ready". An error — the sidecar is missing — makes it "Engine:
+unavailable", followed by the engine's reason. The renderer never infers the
+state; it only repeats the answer.
+
 ## What was rejected
 
 **Reading driver versions through WMI** (`Win32_VideoController`). The same
