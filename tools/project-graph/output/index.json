@@ -5,21 +5,20 @@
     "tools"
   ],
   "totals": {
-    "files": 377,
-    "tests": 59,
+    "files": 378,
+    "tests": 60,
     "violations": 0
   },
   "byWorkspace": {
     "apps/desktop": {
-      "files": 149,
-      "tests": 53,
+      "files": 150,
+      "tests": 54,
       "untested": [
         "apps/desktop/src/export/LosslessIndicator.tsx",
         "apps/desktop/src/inspector/SequenceSummary.tsx",
         "apps/desktop/src/inspector/SourceProperties.tsx",
         "apps/desktop/src/inspector/SpeedControl.tsx",
         "apps/desktop/src/inspector/VideoInspector.tsx",
-        "apps/desktop/src/library/AssetCard.tsx",
         "apps/desktop/src/main.tsx",
         "apps/desktop/src/player/DecodeStatsOverlay.tsx",
         "apps/desktop/src/player/PreviewCanvas.tsx",
@@ -993,6 +992,19 @@
       ],
       "hasNoDependents": false
     },
+    "apps/desktop/src/library/AssetCard.test.tsx": {
+      "workspace": "apps/desktop",
+      "layer": "renderer",
+      "isTest": true,
+      "dependsOn": [
+        "apps/desktop/src/library/AssetCard.tsx",
+        "apps/desktop/src/library/assets.ts",
+        "apps/desktop/src/library/libraryMedia.ts"
+      ],
+      "dependedOnBy": [],
+      "coveredByTests": [],
+      "hasNoDependents": true
+    },
     "apps/desktop/src/library/AssetCard.tsx": {
       "workspace": "apps/desktop",
       "layer": "renderer",
@@ -1002,9 +1014,12 @@
         "apps/desktop/src/library/libraryMedia.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/library/AssetCard.test.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx"
       ],
-      "coveredByTests": [],
+      "coveredByTests": [
+        "apps/desktop/src/library/AssetCard.test.tsx"
+      ],
       "hasNoDependents": false
     },
     "apps/desktop/src/library/MediaLibrary.test.tsx": {
@@ -1082,12 +1097,14 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/library/AssetCard.test.tsx",
         "apps/desktop/src/library/AssetCard.tsx",
         "apps/desktop/src/library/MediaLibrary.test.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/library/library.store.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/library/AssetCard.test.tsx",
         "apps/desktop/src/library/MediaLibrary.test.tsx"
       ],
       "hasNoDependents": false
@@ -1133,11 +1150,13 @@
         "packages/types/src/index.ts"
       ],
       "dependedOnBy": [
+        "apps/desktop/src/library/AssetCard.test.tsx",
         "apps/desktop/src/library/AssetCard.tsx",
         "apps/desktop/src/library/MediaLibrary.tsx",
         "apps/desktop/src/library/libraryMedia.test.ts"
       ],
       "coveredByTests": [
+        "apps/desktop/src/library/AssetCard.test.tsx",
         "apps/desktop/src/library/libraryMedia.test.ts"
       ],
       "hasNoDependents": false

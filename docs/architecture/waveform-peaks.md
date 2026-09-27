@@ -46,6 +46,10 @@ is checked against the bytes present. Layout: `waveform/format.rs`.
 ## To the renderer
 
 `generate_waveform` returns at once with `pending`, and `media://waveform`
-events carry progress and then `ready`: the timeline draws a placeholder, not an
-empty track, until then. `waveform_peaks` returns one screen of summed peaks as
+events carry progress and then `ready` or `failed`: the timeline draws a
+placeholder, not an empty track, until then. `failed` carries the reason, and
+every way generation stops without peaks ends in one (#152) — a file that cannot
+be probed, a missing sidecar, a stream that does not decode — so nothing told
+`pending` waits forever. The shell does not remember a failure: the next ask
+retries. The renderer does not ask again by itself. `waveform_peaks` returns one screen of summed peaks as
 raw little-endian `i16` pairs — binary, because a screen is thousands of numbers.

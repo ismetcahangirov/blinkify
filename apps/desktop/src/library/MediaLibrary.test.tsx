@@ -25,6 +25,7 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
 vi.mock("./libraryMedia.js", () => ({
   cardTile: () => null,
   waveformReady: () => false,
+  waveformFailure: () => null,
   onLibraryMedia: () => () => undefined,
   setLibrarySources: () => undefined,
 }));

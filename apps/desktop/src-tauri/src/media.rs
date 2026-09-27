@@ -406,11 +406,16 @@ pub fn index_keyframes(
 
 /// Start generating the waveform of audio `stream` of `path`, and say where it
 /// stands. Returns at once: `pending` means the timeline draws a placeholder
-/// until [`WAVEFORM_EVENT`] reports `ready`.
+/// until [`WAVEFORM_EVENT`] reports `ready` or `failed`.
+///
+/// Every way generation can stop without a waveform ends in a `failed` event
+/// (#152), so nothing that was told `pending` waits forever. A failure is not
+/// remembered: asking again retries.
 ///
 /// # Errors
 ///
-/// The sidecar is missing, or the file cannot be probed.
+/// The sidecar is missing, or the file cannot be probed. The same failure is
+/// also sent as an event, for anyone else already waiting on this waveform.
 #[tauri::command(async)]
 // Tauri injects managed state and arguments by value; see
 // `updater::pending_update`.
@@ -432,25 +437,36 @@ pub fn generate_waveform(
         }
         waveforms.insert(key.clone(), Waveform::Pending(0.0));
     }
-    let info = engine.prober()?.probe(&path).map_err(|e| e.to_string())?;
-    let generator = Waveforms::new(engine.orchestrator()?.clone(), engine.cache.clone());
+    let emit = move |app: &AppHandle, status: WaveformStatus| {
+        let _ = app.emit(
+            WAVEFORM_EVENT,
+            WaveformUpdate {
+                path: path.display().to_string(),
+                stream,
+                status,
+            },
+        );
+    };
+    let prepared = engine.prober().and_then(|prober| {
+        let info = prober.probe(&key.0).map_err(|e| e.to_string())?;
+        let generator = Waveforms::new(engine.orchestrator()?.clone(), engine.cache.clone());
+        Ok((info, generator))
+    });
+    let (info, generator) = match prepared {
+        Ok(prepared) => prepared,
+        Err(reason) => {
+            let status = settle_waveform(&engine.waveforms, key, Err(reason.clone()));
+            emit(&app, status);
+            return Err(reason);
+        }
+    };
     let waveforms = Arc::clone(&engine.waveforms);
     thread::spawn(move || {
-        let emit = |status: WaveformStatus| {
-            let _ = app.emit(
-                WAVEFORM_EVENT,
-                WaveformUpdate {
-                    path: path.display().to_string(),
-                    stream,
-                    status,
-                },
-            );
-        };
         let progress_app = app.clone();
-        let progress_path = path.display().to_string();
+        let progress_path = key.0.display().to_string();
         let progress_slots = Arc::clone(&waveforms);
         let progress_key = key.clone();
-        let result = generator.peaks(&path, &info, stream, move |fraction| {
+        let result = generator.peaks(&key.0, &info, stream, move |fraction| {
             progress_slots
                 .lock()
                 .unwrap_or_else(PoisonError::into_inner)
@@ -464,17 +480,32 @@ pub fn generate_waveform(
                 },
             );
         });
-        let mut slots = waveforms.lock().unwrap_or_else(PoisonError::into_inner);
-        if let Ok((peaks, _)) = result {
-            slots.insert(key, Waveform::Ready(peaks));
-            drop(slots);
-            emit(WaveformStatus::Ready);
-        } else {
-            // Forget it, so asking again retries rather than waiting forever.
-            slots.remove(&key);
-        }
+        let result = result.map(|(peaks, _)| peaks).map_err(|e| e.to_string());
+        let status = settle_waveform(&waveforms, key, result);
+        emit(&app, status);
     });
     Ok(WaveformStatus::Pending { fraction: 0.0 })
+}
+
+/// Record how generating the waveform at `key` ended, and return what to
+/// report. A failure forgets the slot rather than keeping it, so the next ask
+/// retries instead of waiting on work that has stopped (#152).
+fn settle_waveform(
+    slots: &Mutex<HashMap<(PathBuf, u32), Waveform>>,
+    key: (PathBuf, u32),
+    result: Result<Arc<Peaks>, String>,
+) -> WaveformStatus {
+    let mut slots = slots.lock().unwrap_or_else(PoisonError::into_inner);
+    match result {
+        Ok(peaks) => {
+            slots.insert(key, Waveform::Ready(peaks));
+            WaveformStatus::Ready
+        }
+        Err(reason) => {
+            slots.remove(&key);
+            WaveformStatus::Failed { reason }
+        }
+    }
 }
 
 /// The summed `(min, max)` peaks for `pixels` columns starting at
@@ -1100,6 +1131,28 @@ pub fn serve_sheet(engine: &MediaEngine, path: &str) -> Option<Response<Vec<u8>>
 #[allow(clippy::expect_used, clippy::indexing_slicing)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_failed_waveform_is_reported_and_forgotten_so_asking_again_retries() {
+        let slots = Mutex::new(HashMap::new());
+        let key = (PathBuf::from(r"C:\media\broken.mp4"), 1);
+        slots
+            .lock()
+            .expect("unpoisoned")
+            .insert(key.clone(), Waveform::Pending(0.4));
+        let status = settle_waveform(
+            &slots,
+            key.clone(),
+            Err("could not decode the audio".to_owned()),
+        );
+        assert_eq!(
+            status,
+            WaveformStatus::Failed {
+                reason: "could not decode the audio".to_owned()
+            }
+        );
+        assert!(!slots.lock().expect("unpoisoned").contains_key(&key));
+    }
 
     #[test]
     fn stream_extents_are_whole_ticks_the_file_has() {
