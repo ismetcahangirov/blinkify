@@ -22,13 +22,13 @@ pub struct Sequence {
 
 /// Reads bits, most significant first, from a NAL unit's payload with its
 /// emulation-prevention bytes removed.
-struct Bits {
+pub(super) struct Bits {
     bytes: Vec<u8>,
     at: usize,
 }
 
 impl Bits {
-    fn new(nal: &[u8]) -> Self {
+    pub(super) fn new(nal: &[u8]) -> Self {
         let mut bytes = Vec::with_capacity(nal.len());
         let mut zeros = 0;
         for &byte in nal {
@@ -42,14 +42,14 @@ impl Bits {
         Self { bytes, at: 0 }
     }
 
-    fn bit(&mut self) -> Option<u32> {
+    pub(super) fn bit(&mut self) -> Option<u32> {
         let byte = *self.bytes.get(self.at >> 3)?;
         let shift = 7 - (self.at & 7);
         self.at += 1;
         Some(u32::from((byte >> shift) & 1))
     }
 
-    fn bits(&mut self, count: u32) -> Option<u32> {
+    pub(super) fn bits(&mut self, count: u32) -> Option<u32> {
         let mut value = 0_u32;
         for _ in 0..count.min(32) {
             value = (value << 1) | self.bit()?;
@@ -57,13 +57,13 @@ impl Bits {
         Some(value)
     }
 
-    fn skip(&mut self, count: usize) -> Option<()> {
+    pub(super) fn skip(&mut self, count: usize) -> Option<()> {
         self.at = self.at.checked_add(count)?;
         (self.at <= self.bytes.len() * 8).then_some(())
     }
 
     /// Unsigned Exp-Golomb.
-    fn ue(&mut self) -> Option<u32> {
+    pub(super) fn ue(&mut self) -> Option<u32> {
         let mut zeros = 0;
         while self.bit()? == 0 {
             zeros += 1;
@@ -73,6 +73,55 @@ impl Bits {
         }
         Some((1_u32 << zeros) - 1 + self.bits(zeros)?)
     }
+
+    /// Signed Exp-Golomb.
+    pub(super) fn se(&mut self) -> Option<i64> {
+        let code = i64::from(self.ue()?);
+        Some(if code & 1 == 1 {
+            (code + 1) >> 1
+        } else {
+            -(code >> 1)
+        })
+    }
+
+    /// How many bits have been read.
+    pub(super) fn position(&self) -> usize {
+        self.at
+    }
+
+    /// The payload being read, emulation prevention removed.
+    pub(super) fn rbsp(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+
+/// Skip an HEVC `profile_tier_level` with its sub-layers, returning the
+/// general profile and level.
+pub(super) fn profile_tier_level(bits: &mut Bits, sub_layers: u32) -> Option<(u32, u32)> {
+    bits.skip(3)?; // profile_space, tier
+    let profile = bits.bits(5)?;
+    bits.skip(32 + 48)?; // compatibility and constraint flags
+    let level = bits.bits(8)?;
+    let mut profile_present = Vec::new();
+    let mut level_present = Vec::new();
+    for _ in 0..sub_layers {
+        profile_present.push(bits.bit()? == 1);
+        level_present.push(bits.bit()? == 1);
+    }
+    if sub_layers > 0 {
+        for _ in sub_layers..8 {
+            bits.skip(2)?;
+        }
+    }
+    for (profile, level) in profile_present.into_iter().zip(level_present) {
+        if profile {
+            bits.skip(88)?;
+        }
+        if level {
+            bits.skip(8)?;
+        }
+    }
+    Some((profile, level))
 }
 
 fn byte(value: u32) -> Option<u8> {
@@ -113,29 +162,7 @@ fn hevc(nal: &[u8]) -> Option<Sequence> {
     bits.skip(4)?; // sps_video_parameter_set_id
     let sub_layers = bits.bits(3)?;
     bits.skip(1)?; // temporal_id_nesting
-    bits.skip(3)?; // profile_space, tier
-    let profile = bits.bits(5)?;
-    bits.skip(32 + 48)?; // compatibility and constraint flags
-    let level = bits.bits(8)?;
-    let mut profile_present = Vec::new();
-    let mut level_present = Vec::new();
-    for _ in 0..sub_layers {
-        profile_present.push(bits.bit()? == 1);
-        level_present.push(bits.bit()? == 1);
-    }
-    if sub_layers > 0 {
-        for _ in sub_layers..8 {
-            bits.skip(2)?;
-        }
-    }
-    for (profile, level) in profile_present.into_iter().zip(level_present) {
-        if profile {
-            bits.skip(88)?;
-        }
-        if level {
-            bits.skip(8)?;
-        }
-    }
+    let (profile, level) = profile_tier_level(&mut bits, sub_layers)?;
     bits.ue()?; // sps_seq_parameter_set_id
     let chroma = bits.ue()?;
     if chroma == 3 {

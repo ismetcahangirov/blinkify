@@ -85,5 +85,6 @@ Why it was plausible. Why it lost.
 | [0017](./ADR-0017-reversed-preview-decodes-backwards-a-chunk-at-a-time.md)                   | Preview a reversed clip by decoding it backwards a chunk at a time              | Accepted |
 | [0018](./ADR-0018-the-attribution-document-is-generated-from-local-sources.md)               | Generate the attribution document ourselves, from local sources only            | Accepted |
 | [0019](./ADR-0019-a-crop-is-a-rectangle-per-clip-in-display-pixels.md)                       | A crop is a rectangle per clip, in the source's display pixels                  | Accepted |
+| [0020](./ADR-0020-crop-is-not-done-through-the-codec-cropping-window.md)                     | A crop is re-encoded; the codec's cropping window is not a lossless crop        | Accepted |
 | [0021](./ADR-0021-one-crop-filter-in-the-decoders-orientation.md)                            | One crop filter, applied in the orientation each decoder delivers               | Accepted |
 | [0022](./ADR-0022-reframe-is-one-edit-of-settings-and-per-clip-crops.md)                     | Reframe is one edit of settings and per-clip crops, sized by the sources        | Accepted |

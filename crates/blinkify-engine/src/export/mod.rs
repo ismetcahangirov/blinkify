@@ -11,6 +11,7 @@
 
 pub mod audio;
 pub mod cost;
+pub mod crop_window;
 pub mod execute;
 pub mod facts;
 pub mod loudness;
