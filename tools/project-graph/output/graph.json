@@ -9749,6 +9749,7 @@
       "dependents": [
         "packages/types/src/generated/Edit.ts",
         "packages/types/src/generated/Placement.ts",
+        "packages/types/src/generated/SegmentSource.ts",
         "packages/types/src/generated/index.ts"
       ],
       "orphan": false,
@@ -12487,6 +12488,24 @@
             "import"
           ],
           "resolved": "packages/types/src/generated/AudioOperation.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./CropRect",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "packages/types/src/generated/CropRect.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -18308,7 +18327,7 @@
     "ignore": 0,
     "advisedExitCode": 0,
     "totalCruised": 355,
-    "totalDependenciesCruised": 836,
+    "totalDependenciesCruised": 837,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

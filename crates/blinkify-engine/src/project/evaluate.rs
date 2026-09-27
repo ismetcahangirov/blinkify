@@ -161,13 +161,6 @@ pub fn forces_re_encode(operation: &Operation) -> Option<ReEncodeReason> {
     }
 }
 
-/// Whether `operation` filters the picture itself — a crop — rather than
-/// choosing which pictures play when.
-#[must_use]
-pub fn filters_picture(operation: &Operation) -> bool {
-    matches!(operation, Operation::Crop { .. })
-}
-
 /// Whether the re-encode `reason` forces reaches the clip's sound too. A
 /// hold and a reverse re-time it; a crop changes pixels and nothing else, so
 /// the sound of a cropped clip is still a copy.

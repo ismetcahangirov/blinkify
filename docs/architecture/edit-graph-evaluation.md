@@ -121,8 +121,8 @@ Epic #7's insert and the meter. Denoise (#47) and normalise (#48) are
 evaluated and exported, but the preview does not render them yet. The
 diagnostic view says so for each one, rather than letting the sound suggest
 the export will skip them. Hold and reverse are previewed (#113) and are not
-marked. A crop (#127) is not drawn by the preview until #129, and is marked
-the same way.
+marked. A crop (#127) is previewed (#129): the decoder cuts the rectangle out
+with the filter the export renders with, so it is not marked either.
 
 ## A graph change
 
@@ -132,8 +132,11 @@ evaluated; the open graph is then unchanged. `Player::set_plan` then
 swaps the plan in place:
 
 - sources already opened (probe, keyframe index, proxy) are reused;
-- a lane whose segment is unchanged (same source, range, speed and place)
-  keeps its decoder under its new index;
+- a lane whose segment is unchanged (same source, range, speed, place and
+  crop) keeps its decoder under its new index;
+- a change of audio chain or of crop alone moves nothing in time, so while
+  playing the sound takes over without a gap (#47, #49) and a segment whose
+  crop changed gets a new picture decoder at the clock's position (#129);
 - if what is under the playhead changed, it is shown again at the same
   position, as a seek would; otherwise playback carries on and only the sound
   restarts on the new plan;

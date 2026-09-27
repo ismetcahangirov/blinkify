@@ -27,6 +27,7 @@ use thiserror::Error;
 
 use crate::keyframes::KeyframeIndex;
 use crate::probe::{MediaInfo, Rational, StreamInfo, VideoInfo};
+use crate::project::crop::CropRect;
 use crate::project::evaluate::{AudioOperation, Motion, Placement, Timeline};
 use crate::project::{ClipId, SourceId, TrackKind};
 use crate::proxy::Proxy;
@@ -37,26 +38,42 @@ use crate::time::{self, MICROSECONDS, Rounding};
 pub(crate) type PlanSlot = Arc<std::sync::Mutex<Arc<PlaybackPlan>>>;
 
 /// Whether two segments play the same thing at the same place, so a decoder
-/// for one serves the other.
+/// for one serves the other: the same pictures, cropped the same way.
 pub(crate) fn same_segment(a: &Segment, b: &Segment) -> bool {
+    same_timing(a, b) && a.crop == b.crop
+}
+
+/// Whether two segments play the same source ticks at the same place, the
+/// same way — whatever their crops. A crop changes the pictures and nothing
+/// that is heard.
+fn same_timing(a: &Segment, b: &Segment) -> bool {
+    let uncropped = |segment: &Segment| {
+        segment.placement.as_deref().map(|placement| Placement {
+            crop: None,
+            ..placement.clone()
+        })
+    };
     Arc::ptr_eq(&a.source, &b.source)
         && a.source_in == b.source_in
         && a.source_out == b.source_out
         && a.timeline_start == b.timeline_start
         && a.speed == b.speed
-        && a.placement == b.placement
+        && uncropped(a) == uncropped(b)
 }
 
-/// Whether `new` is `old` with only its segments' audio chains changed: the
-/// same segments of the same sources in the same places, heard the same way.
-pub(crate) fn only_chains_differ(old: &PlaybackPlan, new: &PlaybackPlan) -> bool {
+/// Whether `new` is `old` with only what does not move in time changed —
+/// its segments' audio chains, and their crops (#129): the same segments of
+/// the same sources in the same places. The sound carries on through such a
+/// change without a gap; a segment whose crop changed gets a new picture
+/// decoder, since [`same_segment`] tells them apart.
+pub(crate) fn only_chains_or_crops_differ(old: &PlaybackPlan, new: &PlaybackPlan) -> bool {
     let (a, b) = (old.timed_tracks(), new.timed_tracks());
     old.main_sound == new.main_sound
         && a.len() == b.len()
         && a.iter().zip(&b).all(|((a_id, a), (b_id, b))| {
             a_id == b_id
                 && a.len() == b.len()
-                && a.iter().zip(b.iter()).all(|(a, b)| same_segment(a, b))
+                && a.iter().zip(b.iter()).all(|(a, b)| same_timing(a, b))
         })
 }
 
@@ -248,6 +265,10 @@ pub struct Segment {
     /// names the frame at each of its sequence frames. `None` for a clip
     /// that plays forwards.
     pub placement: Option<Arc<Placement>>,
+    /// The rectangle of the pictures shown, in the source's display pixels,
+    /// as the evaluator resolved it (#127); `None` for the whole picture.
+    /// The decoder crops it (#129) exactly as the export does (#128).
+    pub crop: Option<CropRect>,
 }
 
 impl Segment {
@@ -268,6 +289,7 @@ impl Segment {
             audio: Vec::new(),
             clip: None,
             placement: None,
+            crop: None,
         }
     }
 
@@ -755,6 +777,7 @@ fn segment_of(
             .motion
             .is_some()
             .then(|| Arc::new(placement.clone())),
+        crop: placement.crop,
     })
 }
 

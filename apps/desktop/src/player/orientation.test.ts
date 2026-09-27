@@ -29,6 +29,18 @@ describe("placeFrame", () => {
     expect(placement.angle).toBeCloseTo(-Math.PI / 2);
   });
 
+  it("fits a cropped frame by its own shape, not its source's (#129)", () => {
+    // A 9:16 crop of a portrait phone clip arrives coded 320x180 and turned:
+    // shown 180x320, it fills the height of a 16:9 canvas with side bars.
+    const placement = placeFrame(320, 180, 90, 1600, 900);
+    expect(placement.width).toBeCloseTo(900);
+    expect(placement.height).toBeCloseTo(506.25);
+    // The same crop, upright, fills a 9:16 canvas with no bars at all.
+    const upright = placeFrame(180, 320, 0, 900, 1600);
+    expect(upright.width).toBeCloseTo(900);
+    expect(upright.height).toBeCloseTo(1600);
+  });
+
   it("treats any quarter-turn multiple, including negative, as its turn", () => {
     expect(placeFrame(4, 2, 450, 10, 10).angle).toBeCloseTo(-Math.PI / 2);
     expect(placeFrame(4, 2, -90, 10, 10).angle).toBeCloseTo(-(3 * Math.PI) / 2);

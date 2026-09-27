@@ -150,6 +150,23 @@ pub struct Proxy {
 }
 
 impl Proxy {
+    /// The size of the proxy's pictures, upright, for a source displayed
+    /// `display_width` × `display_height`: what the `scale=-2:{height}` it was
+    /// made with gives — the source's shape in its own pixels, at the proxy's
+    /// height, the width rounded to the nearest even pixel. A crop drawn on
+    /// the source is mapped onto these pixels (#129).
+    #[must_use]
+    pub fn frame_size(&self, display_width: u32, display_height: u32) -> (u32, u32) {
+        let height = u64::from(self.height);
+        let (width, tall) = (u64::from(display_width), u64::from(display_height));
+        if tall == 0 {
+            return (0, self.height);
+        }
+        // FFmpeg's `av_rescale`, to the nearest, in steps of two.
+        let pairs = (height * width + tall).div_euclid(2 * tall);
+        (u32::try_from(pairs * 2).unwrap_or(u32::MAX), self.height)
+    }
+
     /// The proxy's segments as one input: an FFmpeg concat list beside them,
     /// written the first time it is asked for. Relative names, so a user
     /// directory with a quote in it needs no escaping. The list is text, not
@@ -482,5 +499,30 @@ mod tests {
 
         asset.detach_proxy();
         assert!(!asset.preview_source().is_proxy());
+    }
+
+    #[test]
+    fn the_proxy_frame_is_what_its_scale_makes_of_the_upright_source() {
+        let proxy = Proxy {
+            version: FORMAT_VERSION,
+            height: PROXY_HEIGHT,
+            segments: Vec::new(),
+        };
+        // Each checked against `scale=-2:540` in the bundled sidecar.
+        for (display, width) in [
+            ((1920, 1080), 960),
+            ((1921, 1081), 960),
+            ((720, 1280), 304),
+            ((1234, 999), 668),
+            ((3840, 1600), 1296),
+            ((720, 576), 676),
+        ] {
+            assert_eq!(
+                proxy.frame_size(display.0, display.1),
+                (width, PROXY_HEIGHT),
+                "{display:?}"
+            );
+        }
+        assert_eq!(proxy.frame_size(1920, 0), (0, PROXY_HEIGHT));
     }
 }

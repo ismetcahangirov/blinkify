@@ -34,6 +34,7 @@ use ts_rs::TS;
 
 use super::profile::{EncoderChoice, Unmatched};
 use crate::probe::Rational;
+use crate::project::crop::CropRect;
 use crate::project::evaluate::{AudioOperation, Motion, Placement, Timeline, crop};
 use crate::project::settings::{Mismatch, SequenceSettings, StreamGeometry, copy_eligibility};
 use crate::project::speed;
@@ -404,6 +405,13 @@ pub struct SegmentSource {
     /// The clip's audio chain, as the evaluator resolved it: what the audio
     /// path (#43) applies to this source's sound. Empty for pictures.
     pub audio: Vec<AudioOperation>,
+    /// The rectangle of the pictures kept, in the source's display pixels,
+    /// as the evaluator resolved it (#127): what the renderer crops before
+    /// it fits the sequence (#128). Absent for the whole picture, and on
+    /// sound, which a crop never reaches.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub crop: Option<CropRect>,
 }
 
 /// A range of source ticks a smart-cut re-encodes; everything else in the
@@ -619,6 +627,7 @@ fn source_of(placement: &Placement, stream: u32, time_base: Rational) -> Segment
         speed: placement.speed,
         motion: placement.motion,
         audio: Vec::new(),
+        crop: None,
     }
 }
 
@@ -807,7 +816,10 @@ fn plan_video(
             media: Media::Video,
             start: piece.start,
             length: piece.length,
-            sources: vec![source_of(piece, video.stream, piece.time_base)],
+            sources: vec![SegmentSource {
+                crop: piece.crop,
+                ..source_of(piece, video.stream, piece.time_base)
+            }],
             tier: ExportTier::StreamCopy,
             causes,
             windows,

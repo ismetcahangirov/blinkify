@@ -20,6 +20,11 @@
 //!   and the frame is delivered as coded; the renderer rotates it at draw
 //!   time from the probe's display matrix, which costs nothing on the GPU and
 //!   keeps a portrait phone video upright without a transpose per frame.
+//! - **A crop is applied here** (#129), before the scale, by the filter the
+//!   export renderer uses ([`crate::picture_filter`], ADR-0021): the frame
+//!   delivered is the cropped picture, still as coded, and its size is the
+//!   cropped size. The renderer never cuts a sub-rectangle out of a whole
+//!   frame, so there is one definition of the crop, not two.
 //! - **Frame-exact start.** Decoding starts at a keyframe (the seek point) and
 //!   frames before the requested first frame are discarded inside FFmpeg, by
 //!   timestamp — before they are scaled, converted or piped.
@@ -43,6 +48,7 @@ pub use ring::{FrameRing, RingStats};
 use crate::orchestrator::{
     CancelToken, Flow, JobError, JobOptions, Orchestrator, Priority, SidecarCommand,
 };
+use crate::picture_filter::Crop;
 use crate::probe::{Rational, VideoInfo};
 use crate::time::{Rounding, rescale};
 
@@ -169,6 +175,9 @@ pub struct DecodeRequest {
     /// `source` is an FFmpeg concat list — a proxy's segments — rather than
     /// a media file.
     pub concat: bool,
+    /// The clip's crop, as this decode's pictures are coded: cut out before
+    /// the scale to `size`.
+    pub crop: Option<Crop>,
 }
 
 impl DecodeRequest {
@@ -196,8 +205,12 @@ impl DecodeRequest {
                 .flag("-noaccurate_seek")
                 .option("-ss", seconds_at_or_after(seek, self.time_base));
         }
+        let crop = self
+            .crop
+            .map(|crop| format!("{},", crop.filter()))
+            .unwrap_or_default();
         let graph = format!(
-            "select=gte(pts\\,{first}),scale={width}:{height}:flags=bilinear,format=rgba,showinfo=checksum=0",
+            "select=gte(pts\\,{first}),{crop}scale={width}:{height}:flags=bilinear,format=rgba,showinfo=checksum=0",
             first = self.first_pts,
             width = self.size.width,
             height = self.size.height,
@@ -636,6 +649,7 @@ mod tests {
             },
             max_frames: Some(1),
             concat: false,
+            crop: None,
         };
         let command = request.command().to_string();
         assert!(command.contains("-ss 0.700000"), "{command}");

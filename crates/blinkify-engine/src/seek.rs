@@ -77,6 +77,7 @@ impl SeekPlan {
             size,
             max_frames,
             concat: false,
+            crop: None,
         }
     }
 }

@@ -1092,28 +1092,6 @@ fn codec_of(inputs: &BTreeMap<SourceId, ExportInput>, source: &SegmentSource) ->
         .clone()
 }
 
-/// The display rotation of the first video source, which the copied stream
-/// must keep: NUT does not carry it, so the muxer is told.
-fn rotation(plan: &ExportPlan, inputs: &BTreeMap<SourceId, ExportInput>) -> u32 {
-    plan.segments
-        .iter()
-        .filter(|segment| segment.media == Media::Video)
-        .find_map(|segment| segment.sources.first())
-        .and_then(|source| {
-            inputs
-                .get(&source.source)?
-                .info
-                .streams
-                .iter()
-                .find(|stream| stream.index == source.stream)
-                .and_then(|stream| match &stream.kind {
-                    StreamKind::Video(video) => Some(video.rotation),
-                    _ => None,
-                })
-        })
-        .unwrap_or(0)
-}
-
 /// The sources' chapters, moved onto the output timeline: a chapter starting
 /// inside a copied segment starts at the same point of that segment's
 /// output, and ends with the chapter or the segment, whichever is first.
@@ -1584,7 +1562,9 @@ fn muxer_command(
     let mut command = SidecarCommand::ffmpeg()
         .option("-v", "error")
         .option("-f", "nut");
-    let angle = rotation(plan, inputs);
+    // The rotation the copied packets keep: NUT does not carry it, so the
+    // muxer is told, and every rendered picture was encoded to match it.
+    let angle = render::output_rotation(plan, inputs);
     if angle != 0 && streams.iter().any(|s| s.class == nut::Class::Video) {
         command = command.option("-display_rotation:v:0", angle.to_string());
     }
