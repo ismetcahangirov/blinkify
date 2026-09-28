@@ -209,7 +209,6 @@
         "packages/ui/src/components/NumberInput.stories.tsx",
         "packages/ui/src/components/Popover.stories.tsx",
         "packages/ui/src/components/ScrollArea.stories.tsx",
-        "packages/ui/src/components/ScrollArea.tsx",
         "packages/ui/src/components/Select.stories.tsx",
         "packages/ui/src/components/Slider.stories.tsx",
         "packages/ui/src/components/StoryRow.tsx",
@@ -5549,9 +5548,12 @@
       ],
       "dependedOnBy": [
         "packages/ui/src/components/ScrollArea.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
         "packages/ui/src/index.ts"
       ],
-      "coveredByTests": [],
+      "coveredByTests": [
+        "packages/ui/src/components/components.test.tsx"
+      ],
       "hasNoDependents": false
     },
     "packages/ui/src/components/Select.stories.tsx": {
@@ -5759,6 +5761,7 @@
         "packages/ui/src/components/Menu.tsx",
         "packages/ui/src/components/NumberInput.tsx",
         "packages/ui/src/components/Popover.tsx",
+        "packages/ui/src/components/ScrollArea.tsx",
         "packages/ui/src/components/Select.tsx",
         "packages/ui/src/components/Slider.tsx",
         "packages/ui/src/components/Switch.tsx",

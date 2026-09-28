@@ -719,6 +719,18 @@
   height: 100%;
 }
 
+/*
+ * Radix wraps the viewport's content in `display: table`, which grows to its
+ * widest unbreakable row and carries every other row out with it. Without a
+ * horizontal scrollbar that excess is clipped, not scrollable (#157). A
+ * region that scrolls only vertically therefore lays its content out at the
+ * viewport's width, as a block, so text wraps and rows are bound by the panel.
+ * The declaration overrides an inline style, which only `!important` can do.
+ */
+.bk-scroll-area[data-orientation="vertical"] .bk-scroll-area__viewport > div {
+  display: block !important;
+}
+
 .bk-scroll-area__scrollbar {
   display: flex;
   padding: var(--scrollbar-padding);

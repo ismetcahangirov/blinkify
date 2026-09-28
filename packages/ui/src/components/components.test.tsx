@@ -16,6 +16,7 @@ import { IconButton } from "./IconButton.js";
 import { DropdownMenu } from "./Menu.js";
 import { NumberInput } from "./NumberInput.js";
 import { Popover } from "./Popover.js";
+import { ScrollArea } from "./ScrollArea.js";
 import { Select } from "./Select.js";
 import { Slider } from "./Slider.js";
 import { Switch } from "./Switch.js";
@@ -616,5 +617,27 @@ describe("the brand gradient cannot carry a label", () => {
         resolveToken(tokens, "--accent"),
       ),
     ).toBeGreaterThanOrEqual(WCAG_AA.normalText);
+  });
+});
+
+describe("ScrollArea", () => {
+  // jsdom lays nothing out, so the width itself is measured in a browser
+  // (#157). What can be held here is the pair the fix depends on: the region
+  // says which way it scrolls, and a vertical one's content is a block.
+  it("binds a vertical region's content to its width, not its widest row (#157)", () => {
+    const { container } = render(
+      <ScrollArea>
+        <p>content</p>
+      </ScrollArea>,
+    );
+    expect(
+      container
+        .querySelector(".bk-scroll-area")
+        ?.getAttribute("data-orientation"),
+    ).toBe("vertical");
+    const css = readFileSync(join(HERE, "components.css"), "utf8");
+    expect(css).toMatch(
+      /\.bk-scroll-area\[data-orientation="vertical"\]\s+\.bk-scroll-area__viewport\s*>\s*div\s*\{\s*display:\s*block\s*!important;/,
+    );
   });
 });

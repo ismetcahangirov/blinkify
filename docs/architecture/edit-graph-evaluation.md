@@ -72,6 +72,17 @@ evaluator never sees a source, so a proxy cannot change its result. The
 agreement test builds the plan with and without a proxy and checks that the
 segments are identical.
 
+## When the player opens the project
+
+The player opens the project's preview (`open_project_preview`) as soon as the
+evaluated timeline places anything, whether or not the project was saved
+(#156). It opens again when a different project is put in the window: new,
+opened, restored or launched. The project store counts those in `opened`,
+because an untitled project has no path to tell it from the one before. A save
+keeps the project and the preview. An empty timeline is not asked for: the
+engine has nothing to plan and refuses (`PlanError::Empty`). Once a preview is
+open, each edit updates its plan in place (`project::refresh`).
+
 ## Preview: from frames to microseconds
 
 The player's clock is in microseconds; the timeline is in frames of the

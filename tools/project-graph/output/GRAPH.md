@@ -19,7 +19,7 @@ TypeScript only. The Rust crate boundaries are checked by
 | --- | ---: | ---: | ---: |
 | `apps/desktop` | 150 | 54 | 22 |
 | `packages/types` | 153 | 0 | 152 |
-| `packages/ui` | 39 | 6 | 18 |
+| `packages/ui` | 39 | 6 | 17 |
 | `tools` | 36 | 0 | 36 |
 
 ## Architecture rule violations

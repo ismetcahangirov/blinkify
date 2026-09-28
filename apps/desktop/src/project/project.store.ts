@@ -31,6 +31,13 @@ import { usePreviewStore } from "../player/preview.store.js";
  */
 interface ProjectState {
   view: DeepReadonly<ProjectView> | null;
+  /**
+   * Counts the projects this window has put in `view`: launched, new,
+   * opened or restored (#156). A save keeps the project, so it keeps the
+   * count. An untitled project has no path to tell it from the one before,
+   * so this is what the player reopens its preview on.
+   */
+  opened: number;
   /** Why the launch project could not be opened, in the shell's words. */
   error: string | null;
   /** Why the last relink was refused. */
@@ -163,6 +170,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
   return {
     view: null,
+    opened: 0,
     error: null,
     relinkError: null,
     editError: null,
@@ -177,7 +185,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     loadLaunch: async () => {
       try {
         const view = await invoke<ProjectView | null>("launch_project");
-        set({ view, error: null, selection: [] });
+        set({ view, opened: get().opened + 1, error: null, selection: [] });
       } catch (cause) {
         set({ view: null, error: message(cause) });
       }
@@ -211,7 +219,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     restore: async (offer) => {
       const view = await command<ProjectView>("restore_recovery", { offer });
       if (view) {
-        set({ view, selection: [] });
+        set({ view, opened: get().opened + 1, selection: [] });
         set({ recovery: get().recovery.filter((o) => o !== offer) });
       }
     },
@@ -229,13 +237,13 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         name,
         settings,
       });
-      if (view) set({ view, selection: [] });
+      if (view) set({ view, opened: get().opened + 1, selection: [] });
     },
 
     openProject: async (path) => {
       const view = await command<ProjectView>("open_project", { path });
       if (view) {
-        set({ view, selection: [] });
+        set({ view, opened: get().opened + 1, selection: [] });
         await get().loadRecent();
       }
     },
