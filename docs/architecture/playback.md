@@ -94,6 +94,16 @@ with `-copyts` cuts at the sample, after a seek half a second early so the
 decoder has converged. The test compares the samples either side of a boundary
 with an independent decode of the source and pins them to the exact sample.
 
+That test plays in real time, and a machine too loaded to keep up changes what
+it records: the player drops a late frame and counts it, and a late decoder or
+an empty buffer is heard as silence. Both are the player working as designed,
+and neither says anything about the seam. So the test judges the seam only on
+a run that kept up: the test saw every frame the player showed, none was
+dropped, and the sound never held exact zero for eight samples, which a tone
+never does. A run that did not keep up is played again, up to four times, and
+the failure lists why each one did not (#159). A wrong seam is wrong on a run
+that kept up, and fails there on the first attempt.
+
 ## Frame steps
 
 A step moves to the next or previous **real frame** of the source, from the
