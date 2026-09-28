@@ -481,9 +481,12 @@
   gap: var(--space-1);
 }
 
+/* Rows wrap: the inspector can be 228px wide inside its padding, and two
+   number fields side by side are wider than that (#157). */
 .gain-control__fields,
 .gain-control__row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
@@ -497,6 +500,7 @@
 
 .inspector-section__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
@@ -518,6 +522,7 @@
 
 .speed-control__factor {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);

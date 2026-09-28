@@ -39,6 +39,7 @@ export function ScrollArea({
   return (
     <RadixScrollArea.Root
       className={classNames("bk-scroll-area", className)}
+      data-orientation={orientation}
       /* `hover` rather than `always`: the bar appears when the pointer is in
          the region and stays out of the way otherwise. `scroll` would hide it
          from a user who has not scrolled yet and therefore does not know there

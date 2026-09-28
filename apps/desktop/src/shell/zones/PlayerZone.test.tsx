@@ -1,4 +1,4 @@
-import type { PlaybackStatus } from "@blinkify/types";
+import type { Placement, PlaybackStatus, ProjectView } from "@blinkify/types";
 import { TooltipProvider } from "@blinkify/ui";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -37,6 +37,75 @@ const PLAYBACK: PlaybackStatus = {
 
 const OPEN = { status: "open" as const, session: 7, playback: PLAYBACK };
 
+const CLIP: Placement = {
+  track: 1,
+  kind: "video",
+  clip: 7,
+  source: 1,
+  stream: 0,
+  timeBase: { num: 1, den: 1000 },
+  sourceIn: 0,
+  sourceOut: 1000,
+  start: 0,
+  length: 30,
+  speed: { num: 1, den: 1 },
+  audio: [],
+  sequenceTimeBase: { num: 1, den: 30 },
+  silent: false,
+};
+
+/** A project named Trip, saved at `path`, whose timeline holds `clips`. */
+function projectView(
+  path: string | null = "C:\\Work\\Trip.blinkify",
+  clips: Placement[] = [CLIP],
+): ProjectView {
+  return {
+    path,
+    dirty: false,
+    project: {
+      schemaVersion: 1,
+      name: "Trip",
+      sources: {},
+      sequence: {
+        settings: {
+          width: 1920,
+          height: 1080,
+          frameRate: { num: 30, den: 1 },
+          pixelAspect: { num: 1, den: 1 },
+          colour: "sdr",
+        },
+        matchFirstClip: false,
+        tracks: [],
+      },
+    },
+    unavailable: {},
+    affectedClips: [],
+    eligibility: {},
+    extents: [],
+    assets: {},
+    speeds: {},
+    frames: {},
+    timeline: {
+      timeBase: { num: 1, den: 30 },
+      frameRate: { num: 30, den: 1 },
+      tracks: [
+        {
+          id: 1,
+          kind: "video",
+          visible: true,
+          audible: true,
+          placements: clips,
+        },
+      ],
+    },
+    history: { entries: [], applied: 0 },
+  };
+}
+
+const previewOpens = () =>
+  invoked.mock.calls.filter(([command]) => command === "open_project_preview")
+    .length;
+
 beforeEach(() => {
   invoked.mockReset();
   // jsdom has no 2D canvas. The surface then draws nothing, which is all
@@ -52,7 +121,12 @@ beforeEach(() => {
     error: null,
     stats: null,
   });
-  useProjectStore.setState({ view: null, error: null, relinkError: null });
+  useProjectStore.setState({
+    view: null,
+    opened: 0,
+    error: null,
+    relinkError: null,
+  });
 });
 
 describe("PlayerZone", () => {
@@ -153,37 +227,7 @@ describe("PlayerZone", () => {
           : { position: 0, clips: [] },
       ),
     );
-    useProjectStore.setState({
-      view: {
-        path: "C:\\Work\\Trip.blinkify",
-        dirty: false,
-        project: {
-          schemaVersion: 1,
-          name: "Trip",
-          sources: {},
-          sequence: {
-            settings: {
-              width: 1920,
-              height: 1080,
-              frameRate: { num: 30, den: 1 },
-              pixelAspect: { num: 1, den: 1 },
-              colour: "sdr",
-            },
-            matchFirstClip: false,
-            tracks: [],
-          },
-        },
-        unavailable: {},
-        affectedClips: [],
-        eligibility: {},
-        extents: [],
-        assets: {},
-        speeds: {},
-        frames: {},
-        timeline: null,
-        history: { entries: [], applied: 0 },
-      },
-    });
+    useProjectStore.setState({ view: projectView(), opened: 1 });
     render(
       <TooltipProvider>
         <PlayerZone />
@@ -206,6 +250,57 @@ describe("PlayerZone", () => {
       "Nothing on the timeline at frame 0.",
     );
     expect(invoked).toHaveBeenCalledWith("operations_at", { session: 9 });
+  });
+
+  it("plays a project that was never saved (#156)", async () => {
+    invoked.mockResolvedValue({ session: 9, status: PLAYBACK });
+    useProjectStore.setState({ view: projectView(null), opened: 1 });
+    render(
+      <TooltipProvider>
+        <PlayerZone />
+      </TooltipProvider>,
+    );
+    await vi.waitFor(() => expect(previewOpens()).toBe(1));
+    expect(usePreviewStore.getState()).toMatchObject({
+      session: 9,
+      kind: "project",
+    });
+  });
+
+  it("waits for the first clip on an empty timeline, then plays it (#156)", async () => {
+    invoked.mockResolvedValue({ session: 9, status: PLAYBACK });
+    useProjectStore.setState({ view: projectView(null, []), opened: 1 });
+    render(
+      <TooltipProvider>
+        <PlayerZone />
+      </TooltipProvider>,
+    );
+    await Promise.resolve();
+    expect(previewOpens()).toBe(0);
+    expect(screen.queryByRole("alert")).toBeNull();
+
+    useProjectStore.setState({ view: projectView(null, [CLIP]) });
+    await vi.waitFor(() => expect(previewOpens()).toBe(1));
+  });
+
+  it("keeps the preview through a save, and reopens it for another project (#156)", async () => {
+    invoked.mockResolvedValue({ session: 9, status: PLAYBACK });
+    useProjectStore.setState({ view: projectView(null), opened: 1 });
+    render(
+      <TooltipProvider>
+        <PlayerZone />
+      </TooltipProvider>,
+    );
+    await vi.waitFor(() => expect(previewOpens()).toBe(1));
+
+    // Saving gives the same project a path: nothing to reopen.
+    useProjectStore.setState({ view: projectView("C:\\Work\\Trip.blinkify") });
+    await Promise.resolve();
+    expect(previewOpens()).toBe(1);
+
+    // A new untitled project is a different one, path or not.
+    useProjectStore.setState({ view: projectView(null), opened: 2 });
+    await vi.waitFor(() => expect(previewOpens()).toBe(2));
   });
 
   it("offers no operations for a dropped file, which has no graph", () => {

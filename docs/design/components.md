@@ -52,6 +52,12 @@ Tailwind.
 | `Dialog`       | `react-dialog`        | Export, and confirming an overwrite               | Escape closes, focus is trapped and returned     |
 | `ScrollArea`   | `react-scroll-area`   | A thin scrollbar that belongs to the dark chrome  | Untouched — the region stays natively scrollable |
 
+`ScrollArea` lays a vertical region's content out at the region's width
+(#157). Radix wraps that content in `display: table`, which grows to its widest
+unbreakable row and carries every other row out with it, and a region with no
+horizontal scrollbar clips the excess. A panel's rows therefore wrap rather than
+run past the edge.
+
 Sizes come from `--control-height-sm|md|lg` (24, 28, 32px). 28px is the default
 because that is what a dense editing toolbar wants; 32px is a web form and puts
 four fewer controls in the same toolbar.

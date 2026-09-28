@@ -18,6 +18,15 @@ import { engineLabel, useShellStore } from "../../shell.store.js";
 /** The engine's transport event: see `media::PLAYBACK_EVENT` in the shell. */
 const PLAYBACK_EVENT = "media://playback";
 
+/** Whether the evaluated timeline places anything the preview could play. */
+function hasSomethingToPlay(
+  view: ReturnType<typeof useProjectStore.getState>["view"],
+): boolean {
+  return (
+    view?.timeline?.tracks.some((track) => track.placements.length > 0) ?? false
+  );
+}
+
 /**
  * The preview player.
  *
@@ -55,7 +64,8 @@ export const PlayerZone = memo(function PlayerZone() {
   const proxy = usePreviewStore((state) => state.playback?.proxy ?? false);
   const kind = usePreviewStore((state) => state.kind);
   const openProject = usePreviewStore((state) => state.openProject);
-  const project = useProjectStore((state) => state.view);
+  const opened = useProjectStore((state) => state.opened);
+  const playable = useProjectStore((state) => hasSomethingToPlay(state.view));
   const [showStats, setShowStats] = useState(false);
   const [showOperations, setShowOperations] = useState(false);
   const surface = useRef<HTMLDivElement>(null);
@@ -76,10 +86,13 @@ export const PlayerZone = memo(function PlayerZone() {
   );
   useFileDrop(surface, openDropped);
 
-  // A project Blinkify was opened with plays as soon as it is known.
-  const projectPath = project?.path ?? null;
+  // The open project plays as soon as there is something in it to play
+  // (#156): at once if it opened with clips, or on the first clip placed on
+  // an empty timeline. Saved or not makes no difference. An empty timeline is
+  // not asked for, because the engine has nothing to plan and says so; later
+  // edits reach a preview only once one is open.
   useEffect(() => {
-    if (projectPath === null) return;
+    if (!playable) return;
     const element = surface.current;
     const ratio = window.devicePixelRatio || 1;
     void openProject(
@@ -87,7 +100,7 @@ export const PlayerZone = memo(function PlayerZone() {
       (element?.clientWidth ?? 0) * ratio,
       (element?.clientHeight ?? 0) * ratio,
     );
-  }, [projectPath, openProject]);
+  }, [opened, playable, openProject]);
 
   // What the engine changes on its own — reaching the end, a new audio
   // device — arrives as an event rather than as an answer.

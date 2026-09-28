@@ -18556,6 +18556,7 @@
       ],
       "dependents": [
         "packages/ui/src/components/ScrollArea.stories.tsx",
+        "packages/ui/src/components/components.test.tsx",
         "packages/ui/src/index.ts"
       ],
       "orphan": false,
@@ -19057,6 +19058,23 @@
             "import"
           ],
           "resolved": "packages/ui/src/components/Popover.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./ScrollArea.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "packages/ui/src/components/ScrollArea.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -20103,7 +20121,7 @@
     "ignore": 0,
     "advisedExitCode": 0,
     "totalCruised": 378,
-    "totalDependenciesCruised": 923,
+    "totalDependenciesCruised": 924,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,
