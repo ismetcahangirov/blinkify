@@ -2,8 +2,10 @@ import type { CutPoint, Placement, Timeline } from "@blinkify/types";
 import { describe, expect, it } from "vitest";
 import {
   cutStatement,
+  deleteAction,
   duplicateAction,
   freezeAction,
+  mainTrack,
   reverseAction,
   splitAction,
 } from "./editActions.js";
@@ -167,5 +169,63 @@ describe("the keyframe indicator", () => {
     });
     expect(cutStatement(cut({ openGop: true })).text).toMatch(/Open-GOP/);
     expect(cutStatement(null).state).toBe("none");
+  });
+});
+
+describe("the main track magnet (#162)", () => {
+  const WITH_OVERLAY: Timeline = {
+    ...TIMELINE,
+    tracks: [
+      ...TIMELINE.tracks,
+      {
+        id: 4,
+        kind: "video",
+        visible: true,
+        audible: true,
+        placements: [clip(5, 0, 30, { track: 4 })],
+      },
+    ],
+  };
+
+  it("takes the first video track as the main track", () => {
+    expect(mainTrack(WITH_OVERLAY)).toBe(1);
+    expect(
+      mainTrack({ ...TIMELINE, tracks: [TIMELINE.tracks[1]!] }),
+    ).toBeNull();
+    expect(mainTrack(null)).toBeNull();
+  });
+
+  it("closes the gap when a main-track clip is deleted", () => {
+    expect(deleteAction(WITH_OVERLAY, [1], true).edit).toEqual({
+      edit: "ripple-delete",
+      clips: [1],
+    });
+    // With its sound, so the two stay in sync.
+    expect(deleteAction(WITH_OVERLAY, [1, 3], true).edit).toEqual({
+      edit: "ripple-delete",
+      clips: [1, 3],
+    });
+  });
+
+  it("leaves other tracks' gaps, and every gap with the magnet off", () => {
+    expect(deleteAction(WITH_OVERLAY, [5], true).edit).toEqual({
+      edit: "remove-clips",
+      clips: [5],
+    });
+    expect(deleteAction(WITH_OVERLAY, [3], true).edit).toEqual({
+      edit: "remove-clips",
+      clips: [3],
+    });
+    expect(deleteAction(WITH_OVERLAY, [1], false).edit).toEqual({
+      edit: "remove-clips",
+      clips: [1],
+    });
+  });
+
+  it("does nothing with nothing selected", () => {
+    expect(deleteAction(WITH_OVERLAY, [], true)).toEqual({
+      edit: null,
+      notice: null,
+    });
   });
 });

@@ -71,6 +71,10 @@ interface TimelineViewState {
    * does the opposite of it for one drag. */
   snapping: boolean;
   setSnapping: (on: boolean) => void;
+  /** The main track magnet (#162): on the main track, delete and trim
+   * close the gap they would leave. On by default. */
+  magnet: boolean;
+  setMagnet: (on: boolean) => void;
   /** The clips Ctrl+C copied (#38), by id: what Ctrl+V pastes. */
   clipboard: readonly number[];
   setClipboard: (clips: readonly number[]) => void;
@@ -88,6 +92,7 @@ export const useTimelineStore = create<TimelineViewState>((set, get) => ({
   snapToKeyframe: false,
   cut: null,
   snapping: true,
+  magnet: true,
   clipboard: [],
 
   setSize: (width, height) => {
@@ -132,5 +137,6 @@ export const useTimelineStore = create<TimelineViewState>((set, get) => ({
   setSnapToKeyframe: (snapToKeyframe) => set({ snapToKeyframe }),
   setCut: (cut) => set({ cut }),
   setSnapping: (snapping) => set({ snapping }),
+  setMagnet: (magnet) => set({ magnet }),
   setClipboard: (clips) => set({ clipboard: [...clips] }),
 }));

@@ -46,6 +46,10 @@ the project.
 | Select every clip                        | Ctrl+A                        | Same                                                                                                          |
 | Split at the playhead                    | Ctrl+B                        | Same                                                                                                          |
 
+With the main track magnet on (the default), **Delete** on a clip of the
+main track closes its gap as well, as Shift+Delete does — see
+[`../architecture/clip-interaction.md`](../architecture/clip-interaction.md#the-main-track-magnet).
+
 A paste never splits a clip: with the playhead inside a clip on a track the
 copies go to, it is refused and says so. Copied clips that have been deleted
 since cannot be pasted.

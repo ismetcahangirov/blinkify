@@ -236,6 +236,7 @@ export function TimelineCanvas() {
       view,
       playhead: useTimelineStore.getState().playhead,
       extents: useProjectStore.getState().view?.extents ?? [],
+      magnet: useTimelineStore.getState().magnet,
     });
     useTimelineStore.getState().setDrag(current.result);
   };

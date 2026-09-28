@@ -50,6 +50,7 @@ describe("typed clip timing", () => {
       view: { scale: 4, origin: 0, scrollTop: 0, width: 800, height: 200 },
       playhead: null,
       extents: [],
+      magnet: false,
     }).edit;
     expect(timingEdit(PLACEMENT, "in", 34)).toEqual(dragged);
     expect(timingEdit(PLACEMENT, "duration", 20)).toEqual({

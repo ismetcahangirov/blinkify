@@ -26,8 +26,11 @@ moves it took.
 | ------------------- | ------------------- | ----------------------------------------------- |
 | a clip's body       | moves the selection | onto another track of the same kind             |
 | a clip's end (6 px) | trims that edge     | **Shift** ripples, **Ctrl** rolls a shared edge |
-| the ruler           | scrubs the playhead |                                                 |
-| anything            |                     | **Alt** suspends snapping, **Escape** abandons  |
+
+On the main track with the magnet on, a trim ripples and **Shift** makes it
+leave a gap instead — see [below](#the-main-track-magnet).
+| the ruler | scrubs the playhead | |
+| anything | | **Alt** suspends snapping, **Escape** abandons |
 
 Clicking selects one clip, **Ctrl**-click adds or removes one, **Shift**-click
 selects the run of clips on that track from the last one selected, and a
@@ -37,6 +40,30 @@ clip (see [`../design/shortcuts.md`](../design/shortcuts.md)).
 
 A drop onto a track of the other kind, or onto another clip, is refused in
 the preview (red ghost) and by the engine.
+
+## The main track magnet
+
+From [#162](https://github.com/ismetcahangirov/blinkify/issues/162). The main
+track is the first video track, the one the preview plays. It is the
+programme, and a hole in it plays as black, so with the **Main track magnet**
+on — the default, a toggle in the timeline toolbar — it closes the gaps an
+edit would leave:
+
+| Edit                              | Magnet on                           | Magnet off        |
+| --------------------------------- | ----------------------------------- | ----------------- |
+| **Delete** with a main-track clip | `RippleDelete`: later clips move up | `RemoveClips`     |
+| Trim a main-track clip's edge     | ripple trim; **Shift** leaves a gap | **Shift** ripples |
+| Anything on another track         | unchanged: gaps stay                | unchanged         |
+
+A ripple delete closes the gap on every track that lost a clip, so a clip's
+detached sound deleted with it stays in sync; a clip on another track that
+was not selected keeps its place. Each case is still one edit and one undo
+entry — the magnet only chooses which edit is sent
+(`editActions.ts: deleteAction`, `interaction.ts: trimTo`). It is renderer
+state, not part of the project.
+
+Moving a clip along the main track does not yet reorder the track around it;
+that needs an insert-move edit in the engine.
 
 ## Snapping is in pixels
 
