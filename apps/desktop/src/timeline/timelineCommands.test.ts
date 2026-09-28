@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useProjectStore } from "../project/project.store.js";
 import { runTimelineAction } from "./timelineCommands.js";
+import { useTimelineStore } from "./timeline.store.js";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -87,6 +88,29 @@ describe("the timeline's editing commands", () => {
         context: { selection: [2], playhead: 0 },
       }),
     );
+    // The main track magnet (#162) is on by default: a main-track delete
+    // closes its gap; with it off the gap stays. Each edit answers with an
+    // empty selection, so the clip is selected again before each.
+    invoked.mockClear();
+    useProjectStore.setState({ selection: [2] });
+    runTimelineAction("delete");
+    await vi.waitFor(() =>
+      expect(invoked).toHaveBeenCalledWith("edit_project", {
+        edit: { edit: "ripple-delete", clips: [2] },
+        context: { selection: [2], playhead: 0 },
+      }),
+    );
+    useTimelineStore.getState().setMagnet(false);
+    invoked.mockClear();
+    useProjectStore.setState({ selection: [2] });
+    runTimelineAction("delete");
+    await vi.waitFor(() =>
+      expect(invoked).toHaveBeenCalledWith("edit_project", {
+        edit: { edit: "remove-clips", clips: [2] },
+        context: { selection: [2], playhead: 0 },
+      }),
+    );
+    useTimelineStore.getState().setMagnet(true);
     runTimelineAction("select-all");
     expect(useProjectStore.getState().selection).toEqual([1, 2, 3]);
     invoked.mockClear();

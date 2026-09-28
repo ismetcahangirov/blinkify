@@ -1,6 +1,8 @@
 import { useProjectStore } from "../project/project.store.js";
+import { deleteAction } from "./editActions.js";
 import { allClips } from "./interaction.js";
 import { layoutRows } from "./rows.js";
+import { useTimelineStore } from "./timeline.store.js";
 
 /**
  * The timeline's editing commands (#34): delete, ripple delete, select all
@@ -30,9 +32,15 @@ export function runTimelineAction(action: TimelineAction): void {
         ),
       );
       return;
-    case "delete":
-      if (clips.length > 0) void project.edit({ edit: "remove-clips", clips });
+    case "delete": {
+      const { edit } = deleteAction(
+        project.view?.timeline,
+        clips,
+        useTimelineStore.getState().magnet,
+      );
+      if (edit) void project.edit(edit);
       return;
+    }
     case "split":
       void splitter();
       return;

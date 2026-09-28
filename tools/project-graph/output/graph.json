@@ -9527,7 +9527,8 @@
         "apps/desktop/src/shortcuts/handlers.ts",
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
-        "apps/desktop/src/timeline/editActions.test.ts"
+        "apps/desktop/src/timeline/editActions.test.ts",
+        "apps/desktop/src/timeline/timelineCommands.ts"
       ],
       "orphan": false,
       "valid": true
@@ -10236,7 +10237,9 @@
         "apps/desktop/src/timeline/TrackHeaders.tsx",
         "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
-        "apps/desktop/src/timeline/mountTimeline.ts"
+        "apps/desktop/src/timeline/mountTimeline.ts",
+        "apps/desktop/src/timeline/timelineCommands.test.ts",
+        "apps/desktop/src/timeline/timelineCommands.ts"
       ],
       "orphan": false,
       "valid": true
@@ -10254,6 +10257,23 @@
             "import"
           ],
           "resolved": "apps/desktop/src/project/project.store.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./timeline.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/timeline.store.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -10323,6 +10343,23 @@
         },
         {
           "dynamic": false,
+          "module": "./editActions.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/editActions.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./interaction.js",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -10348,6 +10385,23 @@
             "import"
           ],
           "resolved": "apps/desktop/src/timeline/rows.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./timeline.store.js",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "apps/desktop/src/timeline/timeline.store.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -20121,7 +20175,7 @@
     "ignore": 0,
     "advisedExitCode": 0,
     "totalCruised": 378,
-    "totalDependenciesCruised": 924,
+    "totalDependenciesCruised": 927,
     "optionsUsed": {
       "combinedDependencies": false,
       "detectJSDocImports": false,

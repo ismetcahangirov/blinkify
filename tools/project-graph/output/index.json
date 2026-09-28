@@ -2620,7 +2620,8 @@
         "apps/desktop/src/shortcuts/handlers.ts",
         "apps/desktop/src/timeline/EditToolbar.tsx",
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
-        "apps/desktop/src/timeline/editActions.test.ts"
+        "apps/desktop/src/timeline/editActions.test.ts",
+        "apps/desktop/src/timeline/timelineCommands.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/timeline/TrackHeaders.test.tsx",
@@ -2806,11 +2807,14 @@
         "apps/desktop/src/timeline/TrackHeaders.tsx",
         "apps/desktop/src/timeline/assetDropTarget.ts",
         "apps/desktop/src/timeline/mountTimeline.test.ts",
-        "apps/desktop/src/timeline/mountTimeline.ts"
+        "apps/desktop/src/timeline/mountTimeline.ts",
+        "apps/desktop/src/timeline/timelineCommands.test.ts",
+        "apps/desktop/src/timeline/timelineCommands.ts"
       ],
       "coveredByTests": [
         "apps/desktop/src/shortcuts/shortcuts.test.ts",
-        "apps/desktop/src/timeline/mountTimeline.test.ts"
+        "apps/desktop/src/timeline/mountTimeline.test.ts",
+        "apps/desktop/src/timeline/timelineCommands.test.ts"
       ],
       "hasNoDependents": false
     },
@@ -2820,6 +2824,7 @@
       "isTest": true,
       "dependsOn": [
         "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/timeline.store.ts",
         "apps/desktop/src/timeline/timelineCommands.ts",
         "packages/types/src/index.ts"
       ],
@@ -2833,8 +2838,10 @@
       "isTest": false,
       "dependsOn": [
         "apps/desktop/src/project/project.store.ts",
+        "apps/desktop/src/timeline/editActions.ts",
         "apps/desktop/src/timeline/interaction.ts",
-        "apps/desktop/src/timeline/rows.ts"
+        "apps/desktop/src/timeline/rows.ts",
+        "apps/desktop/src/timeline/timeline.store.ts"
       ],
       "dependedOnBy": [
         "apps/desktop/src/shortcuts/handlers.ts",

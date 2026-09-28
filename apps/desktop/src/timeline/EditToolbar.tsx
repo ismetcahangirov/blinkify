@@ -102,6 +102,8 @@ export function EditToolbar() {
   const setSnap = useTimelineStore((state) => state.setSnapToKeyframe);
   const snapping = useTimelineStore((state) => state.snapping);
   const setSnapping = useTimelineStore((state) => state.setSnapping);
+  const magnet = useTimelineStore((state) => state.magnet);
+  const setMagnet = useTimelineStore((state) => state.setMagnet);
   const cut = useCutPoint();
   const statement = cutStatement(cut);
   const project = () => useProjectStore.getState();
@@ -175,6 +177,12 @@ export function EditToolbar() {
             notice: null,
           })
         }
+      />
+      <Switch
+        label="Main track magnet"
+        checked={magnet}
+        onCheckedChange={setMagnet}
+        disabled={!hasTimeline}
       />
       <Switch
         label="Snapping"

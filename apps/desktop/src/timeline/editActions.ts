@@ -152,6 +152,42 @@ export function reverseAction(
   };
 }
 
+/**
+ * The main track (#162): the first video track, the one the preview plays
+ * (`docs/architecture/edit-graph-evaluation.md`). `null` without one.
+ */
+export function mainTrack(timeline: View): number | null {
+  return timeline?.tracks.find((t) => t.kind === "video")?.id ?? null;
+}
+
+/**
+ * Delete the selected clips. With the main track magnet on and a clip of the
+ * main track among them, the gaps close — on every track that lost a clip,
+ * so a clip's detached sound deleted with it stays in sync. Other tracks
+ * keep their gaps, and so does everything with the magnet off.
+ */
+export function deleteAction(
+  timeline: View,
+  selection: readonly number[],
+  magnet: boolean,
+): Action {
+  if (selection.length === 0) return { edit: null, notice: null };
+  const main = mainTrack(timeline);
+  const onMain =
+    magnet &&
+    (timeline?.tracks ?? []).some(
+      (t) =>
+        t.id === main && t.placements.some((p) => selection.includes(p.clip)),
+    );
+  return {
+    edit: {
+      edit: onMain ? "ripple-delete" : "remove-clips",
+      clips: [...selection],
+    },
+    notice: null,
+  };
+}
+
 export function duplicateAction(selection: readonly number[]): Action {
   return selection.length === 0
     ? { edit: null, notice: "Select a clip to duplicate." }

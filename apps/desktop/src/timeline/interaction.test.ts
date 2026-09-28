@@ -97,6 +97,7 @@ function input(overrides: Partial<DragInput> = {}): DragInput {
     view: view(4),
     playhead: null,
     extents: EXTENTS,
+    magnet: false,
     ...overrides,
   };
 }
@@ -270,6 +271,58 @@ describe("trimming", () => {
         input({ frames: 5, modifiers: { ...NONE, ctrl: true, alt: true } }),
       ).edit,
     ).toMatchObject({ edit: "trim-edge", clip: 3, edge: "start", frames: 5 });
+  });
+
+  it("ripples on the main track with the magnet on (#162)", () => {
+    const magnet = { magnet: true, modifiers: { ...NONE, alt: true } };
+    expect(
+      dragTo(trimDrag(0, "end"), input({ frames: 10, ...magnet })).edit,
+    ).toEqual({
+      edit: "trim-edge",
+      clip: 1,
+      edge: "end",
+      frames: 10,
+      ripple: true,
+    });
+    // A start trim that ripples keeps the clip's start and pulls the rest in.
+    const start = dragTo(trimDrag(1, "start"), input({ frames: 6, ...magnet }));
+    expect(start.edit).toMatchObject({ edge: "start", ripple: true });
+    expect(start.ghosts[0]).toMatchObject({ clip: 2, start: 30, length: 24 });
+  });
+
+  it("leaves a gap with Shift while the magnet is on", () => {
+    const result = dragTo(
+      trimDrag(1, "start"),
+      input({
+        frames: 6,
+        magnet: true,
+        modifiers: { ...NONE, shift: true, alt: true },
+      }),
+    );
+    expect(result.edit).toMatchObject({ edge: "start", ripple: false });
+    expect(result.ghosts[0]).toMatchObject({ clip: 2, start: 36, length: 24 });
+  });
+
+  it("does not ripple another track because of the magnet", () => {
+    const other: TrackRow = { ...V2, placements: [clip(9, 0, 30)] };
+    const drag: TrimDrag = {
+      kind: "trim",
+      placement: at(other, 0),
+      row: other,
+      edge: "end",
+      neighbour: null,
+    };
+    expect(
+      dragTo(
+        drag,
+        input({
+          frames: -5,
+          magnet: true,
+          rows: [V1, other, A1],
+          modifiers: { ...NONE, alt: true },
+        }),
+      ).edit,
+    ).toMatchObject({ clip: 9, ripple: false });
   });
 
   it("never trims a clip below one frame", () => {

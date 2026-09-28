@@ -270,6 +270,9 @@ export interface DragInput {
   readonly view: Viewport;
   readonly playhead: number | null;
   readonly extents: readonly StreamExtent[];
+  /** The main track magnet (#162): a trim on the main track ripples, and
+   * Shift does the opposite. */
+  readonly magnet: boolean;
 }
 
 export function dragTo(drag: Drag, input: DragInput): DragResult {
@@ -336,7 +339,8 @@ function moveTo(drag: MoveDrag, input: DragInput): DragResult {
 
 function trimTo(drag: TrimDrag, input: DragInput): DragResult {
   const { placement, row, edge } = drag;
-  const ripple = input.modifiers.shift;
+  const onMain = input.rows.find((r) => r.kind === "video")?.id === row.id;
+  const ripple = (input.magnet && onMain) !== input.modifiers.shift;
   const rolling = input.modifiers.ctrl && drag.neighbour !== null;
   const end = placement.start + placement.length;
   let delta = Math.round(input.frames);
