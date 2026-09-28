@@ -30,7 +30,7 @@ use blinkify_engine::orchestrator::{
 use blinkify_engine::playback::timecode;
 use blinkify_engine::playback::{
     AudioChoice, DefaultDevice, LoopRange, PlaybackPlan, PlaybackState, Player, PlayerOptions,
-    PreviewSpeed, Segment, ShownFrame, SourceMedia, TransportCommand,
+    PreviewSpeed, ProgramTime, Segment, ShownFrame, SourceMedia, TransportCommand,
 };
 use blinkify_engine::probe::Prober;
 use blinkify_engine::time::{self, Rounding};
@@ -236,11 +236,12 @@ fn capture_at_least(captured: &Captured, frames: usize) -> Vec<f32> {
 
 /// Where the captured audio stops being the silence captured before Play.
 fn first_sound(samples: &[f32]) -> usize {
-    samples
-        .iter()
-        .position(|s| s.abs() > 1e-6)
-        .expect("something was played")
-        & !1
+    sound_starts(samples).expect("something was played")
+}
+
+/// Where the first sound is, on a whole stereo frame, if there is any.
+fn sound_starts(samples: &[f32]) -> Option<usize> {
+    samples.iter().position(|s| s.abs() > 1e-6).map(|i| i & !1)
 }
 
 #[test]
@@ -380,76 +381,173 @@ fn a_step_crosses_a_clip_boundary_onto_the_neighbouring_frame() {
     player.close();
 }
 
+/// How many times the boundary is played before the machine is judged unable
+/// to play it in real time at all.
+const REAL_TIME_ATTEMPTS: usize = 4;
+
+/// A tone never holds exact zero for this many samples in a row. Only the
+/// silence written for a starved decoder or an underrun does.
+const STALL_SAMPLES: usize = 8;
+
+/// One real-time play of a plan: the frames the test saw, the sound the sink
+/// consumed, and what the player said it had to give up to keep time.
+struct RealTimeRun {
+    frames: Vec<Arc<ShownFrame>>,
+    heard: Vec<f32>,
+    dropped: u64,
+    resyncs: u32,
+}
+
+impl RealTimeRun {
+    fn play(orchestrator: &Orchestrator, plan: PlaybackPlan, seconds: f64) -> Self {
+        let (player, captured) = capturing_player(orchestrator, plan);
+        player.command(TransportCommand::Play);
+        let started = Instant::now();
+        let mut after = 0;
+        let mut frames: Vec<Arc<ShownFrame>> = Vec::new();
+        let mut first = None;
+        while started.elapsed() < Duration::from_secs_f64(seconds) {
+            if let Some(frame) = player.next_frame(after, Duration::from_millis(50)) {
+                after = frame.seq;
+                // What the player gave up is counted from the first frame
+                // watched, not from its start-up.
+                first.get_or_insert_with(|| player.stats());
+                frames.push(frame);
+            }
+        }
+        let last = player.stats();
+        let heard = captured.lock().expect("captured").clone();
+        player.close();
+        let first = first.unwrap_or_else(|| last.clone());
+        Self {
+            frames,
+            heard,
+            dropped: last.dropped_frames - first.dropped_frames,
+            resyncs: last.resyncs - first.resyncs,
+        }
+    }
+
+    /// Where the boundary `at` samples into the sound was heard, or why this
+    /// run did not happen in real time. The player is built to give time up
+    /// rather than stop the clock (see the feeder): a late frame is dropped
+    /// and counted, a late decoder or an empty buffer is heard as silence. On
+    /// a loaded machine that is correct behaviour, and it moves what a
+    /// sample-exact comparison compares.
+    fn kept_up(&self, at: usize, span: usize) -> Result<usize, String> {
+        if let Some(w) = self.frames.windows(2).find(|w| w[1].seq != w[0].seq + 1) {
+            return Err(format!(
+                "the test missed frames {}..{} the player showed",
+                w[0].seq + 1,
+                w[1].seq
+            ));
+        }
+        if self.dropped > 0 || self.resyncs > 0 {
+            return Err(format!(
+                "the player dropped {} late frames and resynced {} times",
+                self.dropped, self.resyncs
+            ));
+        }
+        let start = sound_starts(&self.heard).ok_or("nothing was heard")?;
+        let boundary = start + at;
+        let Some(heard) = self.heard.get(start..boundary + span) else {
+            return Err(format!(
+                "{} samples were heard, not {}",
+                self.heard.len() - start,
+                at + span
+            ));
+        };
+        let mut run = 0;
+        for (i, sample) in heard.iter().enumerate() {
+            run = if *sample == 0.0 { run + 1 } else { 0 };
+            if run == STALL_SAMPLES {
+                return Err(format!(
+                    "the sound stalled {} samples after it started",
+                    i + 1 - STALL_SAMPLES
+                ));
+            }
+        }
+        Ok(boundary)
+    }
+}
+
 #[test]
 fn a_clip_boundary_plays_without_a_gap_in_audio_or_video() {
     let orchestrator = orchestrator();
     let path = common::corpus("h264-high-closed-gop.mp4");
     let src = source(&orchestrator, &path);
-    let plan = PlaybackPlan::new(vec![
-        segment(&src, 0.0, 1.0, 0.0),
-        segment(&src, 2.0, 3.5, 1.0),
-    ])
-    .expect("plan");
-    let (player, captured) = capturing_player(&orchestrator, plan);
-    player.command(TransportCommand::Play);
-    let started = Instant::now();
-    let mut after = 0;
-    let mut positions = Vec::new();
-    while started.elapsed() < Duration::from_millis(2000) {
-        if let Some(frame) = player.next_frame(after, Duration::from_millis(50)) {
-            after = frame.seq;
-            positions.push(frame.position);
-        }
-    }
-    let heard = captured.lock().expect("captured").clone();
-    player.close();
-
-    // Video: every frame shown in turn, across the boundary, none skipped
-    // and none repeated.
-    let across: Vec<_> = positions
-        .windows(2)
-        .filter(|w| w[0] < 1_000_000 && w[1] >= 1_000_000)
-        .collect();
-    assert_eq!(
-        across.len(),
-        1,
-        "the boundary was crossed once: {positions:?}"
-    );
-    assert!(
-        positions
-            .windows(2)
-            .all(|w| w[1] > w[0] && w[1] - w[0] < 70_000),
-        "a gap or a repeat in the picture: {positions:?}"
-    );
-
-    // Audio: the sample after the boundary is the source's sample at 2.0 s,
-    // and the one before it the source's last before 1.0 s — on the exact
-    // sample. Exact equality is not available after a seek: the corpus audio
-    // is AAC with perceptual noise substitution, whose decoder carries a
-    // random generator that a seek restarts, leaving differences near
-    // -95 dB. A one-sample misplacement of a 440 Hz tone differs by more than
-    // -50 dB, so a tolerance between the two still pins the sample.
     let reference = reference_audio(&orchestrator, &path);
-    let start = first_sound(&heard);
-    let origin = first_sound(&reference);
-    let boundary = start + 2 * RATE as usize;
-    let one = origin + 2 * RATE as usize;
-    let two = origin + 2 * 2 * RATE as usize;
     let span = 4800;
-    let after = &heard[boundary..boundary + span];
-    let before = &heard[boundary - span..boundary];
-    assert!(
-        max_difference(after, &reference[two..two + span]) < 1e-4,
-        "the second clip's audio does not start on its first sample"
-    );
-    assert!(
-        max_difference(after, &reference[two + 2..two + 2 + span]) > 1e-3
-            && max_difference(after, &reference[two - 2..two - 2 + span]) > 1e-3,
-        "the tolerance cannot tell neighbouring samples apart"
-    );
-    assert!(
-        max_difference(before, &reference[one - span..one]) < 1e-4,
-        "the first clip's audio does not run to its last sample"
+
+    // What is judged is the seam, not the machine's speed. A run the machine
+    // could not keep up with (#159) says nothing about the seam either way,
+    // so it is played again. A seam that is wrong is wrong on a run that
+    // kept up, and fails there.
+    let mut starved = Vec::new();
+    for attempt in 1..=REAL_TIME_ATTEMPTS {
+        let plan = PlaybackPlan::new(vec![
+            segment(&src, 0.0, 1.0, 0.0),
+            segment(&src, 2.0, 3.5, 1.0),
+        ])
+        .expect("plan");
+        let run = RealTimeRun::play(&orchestrator, plan, 2.4);
+        let boundary = match run.kept_up(2 * RATE as usize, span) {
+            Ok(boundary) => boundary,
+            Err(why) => {
+                starved.push(format!("attempt {attempt}: {why}"));
+                continue;
+            }
+        };
+        let positions: Vec<ProgramTime> = run.frames.iter().map(|f| f.position).collect();
+        let heard = &run.heard;
+
+        // Video: every frame shown in turn, across the boundary, none skipped
+        // and none repeated.
+        let across: Vec<_> = positions
+            .windows(2)
+            .filter(|w| w[0] < 1_000_000 && w[1] >= 1_000_000)
+            .collect();
+        assert_eq!(
+            across.len(),
+            1,
+            "the boundary was crossed once: {positions:?}"
+        );
+        assert!(
+            positions
+                .windows(2)
+                .all(|w| w[1] > w[0] && w[1] - w[0] < 70_000),
+            "a gap or a repeat in the picture: {positions:?}"
+        );
+
+        // Audio: the sample after the boundary is the source's sample at
+        // 2.0 s, and the one before it the source's last before 1.0 s — on
+        // the exact sample. Exact equality is not available after a seek: the
+        // corpus audio is AAC with perceptual noise substitution, whose
+        // decoder carries a random generator that a seek restarts, leaving
+        // differences near -95 dB. A one-sample misplacement of a 440 Hz tone
+        // differs by more than -50 dB, so a tolerance between the two still
+        // pins the sample.
+        let origin = first_sound(&reference);
+        let one = origin + 2 * RATE as usize;
+        let two = origin + 2 * 2 * RATE as usize;
+        let after = &heard[boundary..boundary + span];
+        let before = &heard[boundary - span..boundary];
+        assert!(
+            max_difference(after, &reference[two..two + span]) < 1e-4,
+            "the second clip's audio does not start on its first sample"
+        );
+        assert!(
+            max_difference(after, &reference[two + 2..two + 2 + span]) > 1e-3
+                && max_difference(after, &reference[two - 2..two - 2 + span]) > 1e-3,
+            "the tolerance cannot tell neighbouring samples apart"
+        );
+        assert!(
+            max_difference(before, &reference[one - span..one]) < 1e-4,
+            "the first clip's audio does not run to its last sample"
+        );
+        return;
+    }
+    panic!(
+        "the boundary was never played in real time, so the seam could not be judged: {starved:#?}"
     );
 }
 
